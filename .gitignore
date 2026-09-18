@@ -36,6 +36,11 @@ datasets/
 *.dcm
 *.zip
 
+# Uploaded studies (local file storage, not PostgreSQL)
+/uploads/
+backend/uploads/*
+!backend/uploads/.gitkeep
+
 # IDE / OS
 .idea/
 .vscode/

@@ -1,0 +1,101 @@
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.05s ease;
+}
+
+.base:active {
+  transform: translateY(1px);
+}
+
+.base:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+        /*  Размеры  */
+
+.sm {
+  padding: 6px 12px;
+  font-size: var(--fs-small);
+  height: 32px;
+}
+
+.md {
+  padding: 9px 18px;
+  font-size: var(--fs-body);
+  height: 40px;
+}
+
+.lg {
+  padding: 12px 24px;
+  font-size: var(--fs-body);
+  height: 48px;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+        /*  Варианты  */
+
+/* Primary — градиентная, как в макете */
+.primary {
+  background: var(--gradient-button);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--gradient-button-hover);
+}
+
+/* Secondary — светлая с рамкой */
+.secondary {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--color-bg-soft);
+  border-color: var(--color-border-strong);
+}
+
+/* Ghost — прозрачная */
+.ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--color-bg-soft);
+  color: var(--color-text-primary);
+}
+
+/* Danger — красная (без градиента, для акцента) */
+.danger {
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+}
+
+.danger:hover:not(:disabled) {
+  background: #9C2E2E;
+}
+
+        /*  Иконка  */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}

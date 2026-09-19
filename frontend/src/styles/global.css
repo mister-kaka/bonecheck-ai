@@ -1,0 +1,187 @@
+/*    Reset + базовая типографика + утилиты     */
+
+        /*  Reset  */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+        /*  Базовая типографика  */
+
+body {
+  font-family: var(--font-family) !important;
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  line-height: var(--lh-tight);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+h1 { font-size: var(--fs-h1); }
+h2 { font-size: var(--fs-h2); }
+h3 { font-size: var(--fs-h3); }
+h4 { font-size: var(--fs-body); }
+
+p {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+        /*  Формы и кнопки  */
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+input:focus,
+select:focus,
+button:focus,
+textarea:focus {
+  outline: none;
+}
+
+        /*  Ссылки  */
+
+a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+        /*  Изображения  */
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+        /*  Оболочка приложения  */
+
+.app-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+  padding: var(--space-6);
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+        /*  Утилитарные классы  */
+
+/* Карточка с градиентом (основной паттерн макета) */
+.surfaceCard {
+  background: var(--gradient-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+/* Кнопка с градиентом */
+.gradientButton {
+  background: var(--gradient-button);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
+  font-weight: 600;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.gradientButton:hover {
+  background: var(--gradient-button-hover);
+}
+
+.gradientButton:active {
+  transform: translateY(1px);
+}
+
+        /*  Скроллбар  */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+        /*  Адаптив контейнера  */
+
+@media (max-width: 1024px) {
+  .app-main {
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 640px) {
+  .app-main {
+    padding: var(--space-4);
+  }
+}

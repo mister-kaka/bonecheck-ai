@@ -1,0 +1,118 @@
+/*    Палитра, градиенты, отступы, радиусы, тени    */
+
+:root {
+             /*  Базовые цвета */
+
+  /* Основной фон приложения */
+  --color-bg: #F2F4F5;
+
+  /* Основной текст */
+  --color-text-primary: #252D38;
+
+  /* Второстепенный текст (подписи, метаданные) */
+  --color-text-secondary: #6E839F;
+
+  /* Цвет текста на тёмных элементах */
+  --color-text-inverse: #FFFFFF;
+
+  /*  Производные (для совместимости)  */
+
+  --color-ink: #252D38;
+  --color-muted: #6E839F;
+  --color-slate: #5A6B7F;
+  --color-deep: #212B37;
+  --color-accent: #6E839F;
+  --color-surface: #E8EEF2;
+  --color-black: #1A2028;
+
+             /*  Фоны поверхностей  */
+  --color-bg-app: var(--color-bg);
+  --color-bg-surface: #F2F4F5;
+  --color-bg-soft: #E8EEF2;
+
+             /*  Градиенты  */
+
+  /* Карточка: вертикальный градиент сверху вниз */
+  --gradient-card: linear-gradient(180deg, #CAD4E3 0%, #F2F4F5 100%);
+
+  /* Кнопка (основная): диагональный градиент */
+  --gradient-button: linear-gradient(135deg, #5A6B7F 0%, #434F60 100%);
+
+  /* Кнопка (hover): чуть темнее */
+  --gradient-button-hover: linear-gradient(135deg, #434F60 0%, #384556 100%);
+
+  /* Шапка приложения */
+  --gradient-header: linear-gradient(135deg, #212B37 0%, #3E4B5A 100%);
+
+                /*  Границы  */
+
+  --color-border: #D6DEE5;
+  --color-border-strong: #B9C4CE;
+
+                /*  Статусы  */
+
+  /* Успех — «Качественно», «Корректно» */
+  --color-success: #2E7D5B;
+  --color-success-bg: #E3F3EB;
+
+  /* Предупреждение — «Нарушение» */
+  --color-warning: #B5731A;
+  --color-warning-bg: #FBEEDB;
+
+  /* Ошибка — «Ошибка», «Не удалось обработать» */
+  --color-danger: #B23A3A;
+  --color-danger-bg: #F8E3E3;
+
+  /* Информация / акцент */
+  --color-info: #6E839F;
+  --color-info-bg: #E8EEF2;
+
+                 /*  Радиусы  */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+                 /*  Тени  */
+  --shadow-sm: 0 1px 2px rgba(33, 43, 55, 0.06);
+  --shadow-md: 0 4px 12px rgba(33, 43, 55, 0.08);
+  --shadow-lg: 0 12px 32px rgba(33, 43, 55, 0.12);
+
+                /*  Отступы  */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+                 /*  Типографика  */
+
+  --font-family: "PT Sans Caption", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+
+  --fs-h1: 28px;
+  --fs-h2: 22px;
+  --fs-h3: 18px;
+  --fs-body: 15px;
+  --fs-small: 13px;
+  --fs-tiny: 12px;
+
+  --lh-tight: 1.2;
+  --lh-normal: 1.45;
+  --lh-loose: 1.6;
+
+                 /*  Специфика проекта  */
+
+  /* Фон DICOM-просмотрщика (тёмный) */
+  --color-viewer-bg: #1A2028;
+
+  /* Цвет прогресс-бара (заполненный) */
+  --color-progress: #252D38;
+
+  /* Цвет прогресс-бара (пустой трек) */
+  --color-progress-track: #E8EEF2;
+}

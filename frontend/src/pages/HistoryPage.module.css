@@ -1,0 +1,84 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 100%;
+}
+
+/* ===== Шапка ===== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--fs-h1);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: var(--lh-tight);
+}
+
+.subtitle {
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--lh-normal);
+}
+
+/* ===== Кнопки в правом верхнем углу ===== */
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* ===== Блоки-заглушки ===== */
+.block {
+  background: var(--gradient-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  min-height: 80px;
+}
+
+.footer {
+  padding: var(--space-3) 0;
+  min-height: 40px;
+}
+
+/* ===== Адаптив ===== */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions > * {
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    gap: var(--space-4);
+  }
+
+  .block {
+    padding: var(--space-4);
+  }
+}

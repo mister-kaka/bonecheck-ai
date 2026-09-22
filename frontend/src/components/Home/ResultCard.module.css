@@ -1,0 +1,103 @@
+.resultCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-card);
+  box-shadow: var(--shadow-sm);
+}
+
+        /*  Шапка  */
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: var(--fs-h3);
+  font-weight: 700;
+}
+
+.iconOk {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.iconWarn {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.headText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--fs-h3);
+}
+
+        /*  Регион / уверенность  */
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: var(--fs-small);
+}
+
+.metaRow dt {
+  color: var(--color-text-secondary);
+}
+
+.metaRow dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+        /*  Нарушения и описание  */
+
+.violations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.description {
+  font-size: var(--fs-small);
+  line-height: var(--lh-loose);
+}
+
+        /*  Кнопки  */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.actions > button {
+  flex: 1;
+}

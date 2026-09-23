@@ -1,7 +1,5 @@
 import type { SelectOption } from "../types/study";
 
-/*  Опции для селектов в фильтрах истории  */
-
 export const mockRegions: SelectOption[] = [
   { value: "all", label: "Все регионы" },
   { value: "Поясничный отдел позвоночника", label: "Поясничный отдел позвоночника" },

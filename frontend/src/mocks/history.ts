@@ -1,7 +1,5 @@
 import type { HistoryItem } from "../types/study";
 
-/*  Мок-данные для таблицы истории (пока нет API)  */
-
 export const mockHistory: HistoryItem[] = [
   {
     id: "3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b21",

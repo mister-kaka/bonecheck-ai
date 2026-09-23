@@ -1,8 +1,5 @@
 import type { StudyResult } from "../types/study";
 
-/*  Мок-результаты анализа для главной (пока нет API)  */
-
-/** Исследование корректно */
 export const mockResultOk: StudyResult = {
   id: "3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b21",
   path_to_study: "uploads/study_4012/CR000000.dcm",
@@ -17,7 +14,6 @@ export const mockResultOk: StudyResult = {
   description: "",
 };
 
-/** Обнаружено нарушение качества (несколько типов через «;») */
 export const mockResultViolation: StudyResult = {
   id: "8f14e45f-ceea-4e7a-9b1d-2c3a4d5e6f70",
   path_to_study: "uploads/study_4013/CR000001.dcm",

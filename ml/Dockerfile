@@ -7,8 +7,8 @@ COPY src ./src
 COPY models ./models
 COPY notebooks ./notebooks
 
-# Heavy ML libraries stay in requirements.txt for local/training installs.
-# The placeholder image only needs the stdlib process so Compose can build.
+# Тяжёлые библиотеки ML остаются в requirements.txt для локальной установки и обучения.
+# Образ-заглушка использует только стандартную библиотеку, чтобы Compose мог собраться.
 
 EXPOSE 8000
 

@@ -19,6 +19,11 @@ services:
     environment:
       BACKEND_PORT: 3000
       BACKEND_HOST: 0.0.0.0
+      DATABASE_PATH: /app/data/bonecheck.sqlite
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/uploads:/app/uploads
 
   ml-service:
     build:

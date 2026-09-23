@@ -3,3 +3,8 @@ dist
 coverage
 *.log
 .git
+data
+uploads
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

@@ -1,9 +1,9 @@
-# Environment
+# Окружение
 .env
 .env.local
 .env.*.local
 
-# Node
+# Node.js
 node_modules/
 dist/
 build/
@@ -12,7 +12,7 @@ coverage/
 npm-debug.log*
 .npm
 
-# Python
+# Интерпретатор Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -21,7 +21,7 @@ venv/
 .pytest_cache/
 .mypy_cache/
 
-# ML artifacts (not part of the scaffold)
+# Артефакты ML (не часть каркаса)
 ml/models/**
 !ml/models/.gitkeep
 *.pt
@@ -30,22 +30,29 @@ ml/models/**
 *.ckpt
 *.h5
 
-# Datasets (never commit medical data)
+# Датасеты (медицинские данные не коммитить)
 data/
 datasets/
 *.dcm
 *.zip
 
-# Uploaded studies (local file storage, not PostgreSQL)
+# Загруженные исследования (локальные файлы, не база)
 /uploads/
 backend/uploads/*
 !backend/uploads/.gitkeep
 
-# IDE / OS
+# Локальный SQLite (файл метаданных MVP; не коммитить)
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.db
+
+# Редакторы и система
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
 
-# Docker
+# Журналы Docker
 *.log

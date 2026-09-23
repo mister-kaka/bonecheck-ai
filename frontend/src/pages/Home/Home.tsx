@@ -6,6 +6,7 @@ import { Progress } from "../../components/Progress";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
 import { Spinner } from "../../components/Spinner";
+import { DicomViewer } from "../../components/Home/DicomViewer";
 
 type ScreenState = "idle" | "uploading" | "processing" | "result" | "error";
 
@@ -103,9 +104,10 @@ function Home() {
       {state === "result" && (
         <div className={styles.resultGrid}>
           <Card title="Исследование" subtitle="Снимок 1 из 1" padded={false}>
-            <div className={styles.viewerPlaceholder}>
-              <span>DICOM-ИЗОБРАЖЕНИЕ</span>
-            </div>
+            <DicomViewer
+              file={null}
+              layers={{ original: true, heatmap: false, contour: false, keypoints: false }}
+            />
           </Card>
 
           <Card

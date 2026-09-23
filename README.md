@@ -27,16 +27,16 @@
 
 ## Текущий статус
 
-Дата фиксации: 2026-09-18.
+Дата фиксации: 2026-09-23.
 
 | Слой | Статус | Что есть в репозитории |
 | --- | --- | --- |
-| Backend | CONFIRMED, работает | NestJS REST: health, загрузка DICOM, статус, результат, Swagger, mock ML, файлы на диске, in-memory метаданные |
-| Frontend | CONFIRMED, заглушка | React + Vite, страница-заголовок, `API_BASE_URL` без вызовов API |
+| Backend | CONFIRMED, работает | NestJS REST: health, загрузка DICOM, список, статус, результат, Swagger, mock ML, файлы на диске, SQLite |
+| Frontend | CONFIRMED, каркас UI | React + Vite, маршруты `/` и `/history`. Страницы — заглушки. При старте создаётся `session_id` в `localStorage` |
 | ML | CONFIRMED, каркас | Python-процесс-заглушка, пустые пакеты, Docker-контейнер без HTTP и без модели |
 | Docker | CONFIRMED | `docker-compose.yml`: frontend, backend, ml-service (dev-сборка) |
-| PostgreSQL | PLANNED | не подключена |
-| Auth | PLANNED | нет |
+| Метаданные | SQLite | файл `DATABASE_PATH`, не PostgreSQL |
+| Auth | не входит в MVP | нет пользователей, JWT и ролей |
 | Документация | CONFIRMED | этот README и файлы в `docs/` |
 
 ---
@@ -63,13 +63,13 @@ ML (Python)
    v
 Backend
    |-- сохраняет DICOM на диск (UPLOAD_DIR)
-   |-- метаданные в памяти процесса
+   |-- метаданные в SQLite (DATABASE_PATH)
    |-- MockMlClient (задержка, фиксированный ответ)
    v
 Результат JSON
 ```
 
-PostgreSQL в схеме нет. Подробности: [docs/architecture.md](docs/architecture.md).
+Метаданные — локальный файл SQLite, не PostgreSQL и не отдельный контейнер. Подробности: [docs/architecture.md](docs/architecture.md), [docs/database.md](docs/database.md).
 
 ---
 
@@ -104,9 +104,12 @@ bonecheck-ai/
 │   └── Dockerfile
 ├── frontend/
 │   ├── src/
-│   │   ├── api/client.ts    # только базовый URL
-│   │   ├── pages/Home.tsx   # заглушка
-│   │   ├── App.tsx
+│   │   ├── api/client.ts         # только базовый URL, без fetch
+│   │   ├── pages/Home.tsx        # заглушка, маршрут /
+│   │   ├── pages/HistoryPage.tsx # заглушка, маршрут /history
+│   │   ├── components/           # AppHeader, Button, Card; Spinner пустой
+│   │   ├── styles/               # tokens.css, global.css
+│   │   ├── App.tsx               # хедер и маршруты
 │   │   └── main.tsx
 │   └── Dockerfile
 ├── ml/
@@ -161,7 +164,7 @@ npm run start:dev
 - Swagger: http://localhost:3000/api/docs
 - Контракт: [docs/api.md](docs/api.md)
 
-Метаданные исследований живут **в памяти процесса**. Перезапуск backend их стирает. Файлы пишутся в `UPLOAD_DIR` (по умолчанию `./uploads` относительно cwd backend).
+Метаданные исследований пишутся в SQLite. Путь: `DATABASE_PATH` или `backend/data/bonecheck.sqlite`, если переменная не задана и процесс запущен из `backend/`. Перезапуск backend записи не стирает. Файлы DICOM пишутся в `UPLOAD_DIR` (по умолчанию `./uploads` относительно cwd backend).
 
 ### Frontend
 
@@ -172,7 +175,7 @@ npm run dev
 ```
 
 - UI: http://localhost:5173
-- Сейчас это статическая страница, без загрузки DICOM.
+- Маршруты: `/` (главная) и `/history` (история). Обе страницы - заглушки, без загрузки DICOM.
 
 ### ML
 
@@ -195,7 +198,7 @@ docker compose up --build
 - backend: http://localhost:3000
 - ml-service: контейнер-заглушка, порт хоста 8000 проброшен, но процесс внутри HTTP не поднимает
 
-Compose **не** соединяет backend с ml-service. PostgreSQL в Compose нет.
+Compose **не** соединяет backend с ml-service. Отдельного сервиса БД нет: SQLite — файл в volume `./backend/data`.
 
 ```bash
 docker compose down
@@ -215,6 +218,7 @@ docker compose down
 | --- | --- | --- |
 | GET | `/health` | liveness |
 | POST | `/api/studies` | загрузить один DICOM, создать запись, запустить анализ |
+| GET | `/api/studies` | история; `?session_id=` оставляет исследования этой сессии |
 | GET | `/api/studies/:id` | статус |
 | GET | `/api/studies/:id/result` | результат в формате полей ТЗ |
 
@@ -240,8 +244,8 @@ docker compose down
 ## Что не реализовано
 
 - реальный inference и HTTP ML-сервиса;
-- PostgreSQL;
-- авторизация;
+- авторизация (в MVP не входит);
+- экран переключателя «Мои / Все» (API списка и `session_id` уже есть);
 - UI загрузки и отображения результата;
 - пакетная загрузка нескольких файлов;
 - веса модели и датасет в репозитории;

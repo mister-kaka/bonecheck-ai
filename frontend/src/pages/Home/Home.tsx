@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import styles from "../../styles/Home.module.css";
 
-import { Badge } from "../../components/Badge";
+// import { Badge } from "../../components/Badge";
 import { Progress } from "../../components/Progress";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
 import { Spinner } from "../../components/Spinner";
-import { DicomViewer } from "../../components/Home/DicomViewer";
+import { ResultBlock } from "../../components/Home/ResultBlock";
 
 type ScreenState = "idle" | "uploading" | "processing" | "result" | "error";
 
@@ -115,40 +115,18 @@ function Home() {
       )}
 
       {/*  RESULT  */}
+        { /* загрушка */ } 
       {state === "result" && (
-        <div className={styles.resultGrid}>
-          <Card title="Исследование" subtitle="Снимок 1 из 1" padded={false}>
-            <DicomViewer
-              file={testFile}   // поменять на реальный файл после интеграции с бэкендом
-              layers={{ original: true, heatmap: false, contour: false, keypoints: false }}
-            />
-          </Card>
-
-          <Card
-            title="Результат анализа"
-            right={<Badge tone="success">Качественно</Badge>}
-          >
-            <div className={styles.resultHead}>
-              <div className={styles.resultIconOk}>✓</div>
-              <div>
-                <h3>Исследование корректно</h3>
-                <p className={styles.resultSub}>
-                  Регион: Поясничный отдел позвоночника
-                </p>
-                <p className={styles.resultSub}>Уверенность: 91%</p>
-              </div>
-            </div>
-
-            <div className={styles.resultActions}>
-              <Button variant="secondary" iconLeft={<span>⤓</span>}>
-                Экспорт XLSX
-              </Button>
-              <Button onClick={goIdle} iconLeft={<span>↻</span>}>
-                Новое исследование
-              </Button>
-            </div>
-          </Card>
-        </div>
+        <ResultBlock
+          file={testFile}
+          isOk={true}
+          region="Поясничный отдел позвоночника"
+          confidence={0.91}
+          violations={[]}
+          description="Исследование выполнено корректно. Укладка соответствует стандарту, ось позвоночника выровнена."
+          onExport={() => console.log("export")}
+          onNewStudy={goIdle}
+        />
       )}
 
       {/*  ERROR  */}

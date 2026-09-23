@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "../../styles/Home.module.css";
 
 import { Badge } from "../../components/Badge";
@@ -11,7 +11,9 @@ import { DicomViewer } from "../../components/Home/DicomViewer";
 type ScreenState = "idle" | "uploading" | "processing" | "result" | "error";
 
 function Home() {
+
   const [state, setState] = useState<ScreenState>("idle");
+  const [testFile, setTestFile] = useState<File | null>(null);
 
   // Временные кнопки для проверки состояний. УДАЛИТЬ перед сдачей!
   const goIdle = () => setState("idle");
@@ -19,6 +21,18 @@ function Home() {
   const goProcessing = () => setState("processing");
   const goResult = () => setState("result");
   const goError = () => setState("error");
+
+
+      // тестовый файл для демонстрации результата. УДАЛИТЬ перед сдачей!
+  useEffect(() => {
+    fetch("/test.dcm")
+      .then((r) => {
+        if (!r.ok) throw new Error("Не найден /test.dcm");
+        return r.blob();
+      })
+      .then((blob) => setTestFile(new File([blob], "test.dcm")))
+      .catch((err) => console.error("Не удалось загрузить test.dcm", err));
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -105,7 +119,7 @@ function Home() {
         <div className={styles.resultGrid}>
           <Card title="Исследование" subtitle="Снимок 1 из 1" padded={false}>
             <DicomViewer
-              file={null}
+              file={testFile}   // поменять на реальный файл после интеграции с бэкендом
               layers={{ original: true, heatmap: false, contour: false, keypoints: false }}
             />
           </Card>

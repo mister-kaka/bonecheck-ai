@@ -1,10 +1,8 @@
 import { Spinner } from "../Spinner";
-import styles from "./AnalysisBlock.module.css";
+import styles from "../../styles/AnalysisBlock.module.css";
 
 interface AnalysisBlockProps {
-  /** Регион, который определила модель */
   region?: string;
-  /** Сколько секунд идёт анализ */
   seconds?: number;
 }
 

@@ -1,7 +1,6 @@
-import styles from "./Divider.module.css";
+import styles from "../styles/Divider.module.css";
 
 interface DividerProps {
-  /** Подпись по центру линии. Если не передана — обычная линия */
   label?: string;
 }
 

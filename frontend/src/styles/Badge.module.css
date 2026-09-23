@@ -11,8 +11,6 @@
   white-space: nowrap;
 }
 
-        /*  Тона  */
-
 .success {
   color: var(--color-success);
   background: var(--color-success-bg);

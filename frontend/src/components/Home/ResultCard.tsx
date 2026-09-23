@@ -1,14 +1,12 @@
 import { Badge } from "../Badge";
 import { Button } from "../Button";
 import { Divider } from "../Divider";
-import styles from "./ResultCard.module.css";
+import styles from "../../styles/ResultCard.module.css";
 
 interface ResultCardProps {
   isOk: boolean;
   region: string;
-  /** Уверенность модели 0–1 (выводится в процентах) */
   confidence: number;
-  /** Список нарушений (violation_type, разбитый по «;») */
   violations?: string[];
   description?: string;
   onExport?: () => void;

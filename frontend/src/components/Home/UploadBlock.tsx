@@ -1,5 +1,5 @@
 import { Button } from "../Button";
-import styles from "./UploadBlock.module.css";
+import styles from "../../styles/UploadBlock.module.css";
 
 export function UploadBlock() {
   return (

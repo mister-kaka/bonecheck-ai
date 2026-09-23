@@ -1,5 +1,5 @@
 import { Button } from "../Button";
-import styles from "./ErrorBlock.module.css";
+import styles from "../../styles/ErrorBlock.module.css";
 
 interface ErrorBlockProps {
   reason?: string;

@@ -1,12 +1,16 @@
 import { Button } from "../Button";
 import { Progress } from "../Progress";
-import styles from "./UploadProgressBlock.module.css";
+import styles from "../../styles/UploadProgressBlock.module.css";
+
+function clamp(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(100, Math.max(0, value));
+}
 
 interface UploadProgressBlockProps {
   fileName?: string;
   fileSize?: string;
   fileFormat?: string;
-  /** Процент загрузки 0–100 */
   value?: number;
   onCancel?: () => void;
 }
@@ -18,6 +22,8 @@ export function UploadProgressBlock({
   value = 67,
   onCancel,
 }: UploadProgressBlockProps) {
+  const percent = clamp(value);
+
   return (
     <section className={styles.uploadProgressBlock}>
       <div className={styles.head}>
@@ -38,9 +44,9 @@ export function UploadProgressBlock({
         </Button>
       </div>
 
-      <Progress value={value} ariaLabel={`Загрузка файла ${fileName}`} />
+      <Progress value={percent} label={`Загрузка файла ${fileName}`} />
 
-      <p className={styles.status}>Загрузка… {Math.round(value)}%</p>
+      <p className={styles.status}>Загрузка... {Math.round(percent)}%</p>
     </section>
   );
 }

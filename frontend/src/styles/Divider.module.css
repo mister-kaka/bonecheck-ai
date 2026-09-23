@@ -6,8 +6,6 @@
   border-top: 1px solid var(--color-border);
 }
 
-        /*  С подписью по центру  */
-
 .labeled {
   display: flex;
   align-items: center;

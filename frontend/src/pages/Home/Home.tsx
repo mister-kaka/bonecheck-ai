@@ -1,21 +1,18 @@
 import { useState } from "react";
-import styles from "./Home.module.css";
+import styles from "../../styles/Home.module.css";
 
-// потом расскомментировать
-// import { Badge } from "../components/Badge";
-// import { Progress } from "../components/Progress";
-
-import { Card } from "../components/Card";
-import { Button } from "../components/Button";
-import { Spinner } from "../components/Spinner";
+import { Badge } from "../../components/Badge";
+import { Progress } from "../../components/Progress";
+import { Card } from "../../components/Card";
+import { Button } from "../../components/Button";
+import { Spinner } from "../../components/Spinner";
 
 type ScreenState = "idle" | "uploading" | "processing" | "result" | "error";
 
 function Home() {
   const [state, setState] = useState<ScreenState>("idle");
 
-  // Временные кнопки для проверки состояний.
-  // УДАЛИТЬ перед сдачей!
+  // Временные кнопки для проверки состояний. УДАЛИТЬ перед сдачей!
   const goIdle = () => setState("idle");
   const goUploading = () => setState("uploading");
   const goProcessing = () => setState("processing");
@@ -75,10 +72,7 @@ function Home() {
                 <button className={styles.cancel}>✕ Отмена</button>
               </div>
 
-              {/* Заменить на <Progress value={67} />, когда Маша М. сдаст */}
-              <div className={styles.progressPlaceholder}>
-                <div className={styles.progressFill} />
-              </div>
+              <Progress value={67} />
 
               <div className={styles.uploadMeta}>
                 <span>Размер: 83 КБ</span>
@@ -116,10 +110,7 @@ function Home() {
 
           <Card
             title="Результат анализа"
-            right={
-              // Заменить на <Badge tone="success">Качественно</Badge>, когда Маша М. сдаст
-              <span className={styles.badgePlaceholder}>Качественно</span>
-            }
+            right={<Badge tone="success">Качественно</Badge>}
           >
             <div className={styles.resultHead}>
               <div className={styles.resultIconOk}>✓</div>

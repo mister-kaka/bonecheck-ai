@@ -1,4 +1,4 @@
-import styles from "./Spinner.module.css";
+import styles from "../styles/Spinner.module.css";
 
 interface SpinnerProps {
   label?: string;
@@ -13,3 +13,4 @@ export function Spinner({ label, size = "md" }: SpinnerProps) {
     </div>
   );
 }
+

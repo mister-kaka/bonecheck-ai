@@ -1,0 +1,30 @@
+.skeleton {
+  display: block;
+  width: 100%;
+  height: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

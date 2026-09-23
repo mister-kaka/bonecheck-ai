@@ -12,8 +12,6 @@
   box-shadow: var(--shadow-md);
 }
 
-        /*  Бренд  */
-
 .brand {
   display: flex;
   align-items: center;
@@ -36,8 +34,6 @@
   color: var(--color-text-inverse);
   letter-spacing: -0.01em;
 }
-
-        /*  Навигация  */
 
 .nav {
   display: flex;
@@ -72,8 +68,6 @@
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
 }
-
-        /*  Адаптив  */
 
 @media (max-width: 640px) {
   .header {

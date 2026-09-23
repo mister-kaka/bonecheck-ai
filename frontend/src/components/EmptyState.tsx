@@ -1,4 +1,4 @@
-import styles from './EmptyState.module.css';
+import styles from '../styles/EmptyState.module.css';
 
 interface EmptyStateProps {
   onResetFilters?: () => void;

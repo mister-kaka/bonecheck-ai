@@ -1,4 +1,3 @@
-import { StatusBadge } from './StatusBadge';
 import { EmptyState } from './EmptyState';
 import type { HistoryItem } from '../types/study';
 import styles from '../styles/HistoryTable.module.css';
@@ -19,6 +18,19 @@ function formatDate(iso: string): string {
   return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
 }
 
+function getStatusLabel(item: HistoryItem): string {
+  if (item.status === 'Failure') return 'Ошибка';
+  if (item.quality_class === 1) return 'Нарушение';
+  return 'Качественно';
+}
+
+function getQualityLabel(item: HistoryItem): string {
+  if (item.status === 'Failure') return 'Ошибка обработки';
+  if (item.quality_class === 1) return 'Некорректно';
+  if (item.quality_class === 0) return 'Корректно';
+  return '—';
+}
+
 export function HistoryTable({ items, onRowClick, onResetFilters }: HistoryTableProps) {
   if (items.length === 0) {
     return <EmptyState onResetFilters={onResetFilters} />;
@@ -33,6 +45,7 @@ export function HistoryTable({ items, onRowClick, onResetFilters }: HistoryTable
             <th className={styles.thUid}>UID</th>
             <th className={styles.thRegion}>Регион</th>
             <th className={styles.thStatus}>Статус</th>
+            <th className={styles.thQuality}>Качество</th>
           </tr>
         </thead>
         <tbody>
@@ -45,9 +58,8 @@ export function HistoryTable({ items, onRowClick, onResetFilters }: HistoryTable
               <td>{formatDate(item.date)}</td>
               <td className={styles.uid}>{item.uid}</td>
               <td>{item.region}</td>
-              <td>
-                <StatusBadge status={item.status} qualityClass={item.quality_class} />
-              </td>
+              <td>{getStatusLabel(item)}</td>
+              <td>{getQualityLabel(item)}</td>
             </tr>
           ))}
         </tbody>

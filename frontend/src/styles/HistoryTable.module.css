@@ -4,6 +4,11 @@
   border-radius: var(--radius-lg);
   background: var(--gradient-card);
 }
+.thDate { width: 160px; }
+.thUid { width: auto; }
+.thRegion { width: 220px; }
+.thStatus { width: 140px; }
+.thQuality { width: 220px; }
 
 .table {
   width: 100%;

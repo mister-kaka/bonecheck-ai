@@ -13,3 +13,4 @@ export function Spinner({ label, size = "md" }: SpinnerProps) {
     </div>
   );
 }
+

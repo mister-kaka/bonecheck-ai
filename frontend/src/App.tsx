@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AppHeader } from "./components/AppHeader";
-import { Home } from "./pages/Home/Home";
+import Home from "./pages/Home/Home";
 import { HistoryPage } from "./pages/HistoryPage/HistoryPage";
 
 export function App() {

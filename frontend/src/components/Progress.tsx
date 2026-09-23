@@ -1,10 +1,8 @@
-import styles from "./Progress.module.css";
+import styles from "../styles/Progress.module.css";
 
 interface ProgressProps {
-  /** Процент заполнения 0–100. Значения за пределами обрезаются */
   value: number;
-  /** Подпись для скринридеров */
-  ariaLabel?: string;
+  label?: string;
 }
 
 function clampPercent(value: number): number {
@@ -12,19 +10,8 @@ function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, value));
 }
 
-export function Progress({ value, ariaLabel = "Прогресс загрузки" }: ProgressProps) {
+export function Progress({ value, label = "Прогресс загрузки" }: ProgressProps) {
   const percent = clampPercent(value);
 
-  return (
-    <div
-      className={styles.track}
-      role="progressbar"
-      aria-label={ariaLabel}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(percent)}
-    >
-      <div className={styles.fill} style={{ width: `${percent}%` }} />
-    </div>
-  );
+  return <progress className={styles.bar} max={100} value={percent} aria-label={label} />;
 }

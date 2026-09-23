@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router-dom';
-import styles from './Tabs.module.css';
+import { NavLink } from "react-router-dom";
+import styles from "../styles/Tabs.module.css";
 
 export interface TabItem {
   to: string;
@@ -19,9 +19,7 @@ export function Tabs({ items }: TabsProps) {
           to={item.to}
           end
           className={({ isActive }) =>
-            [styles.tab, isActive ? styles.active : '']
-              .filter(Boolean)
-              .join(' ')
+            [styles.tab, isActive ? styles.active : ""].filter(Boolean).join(" ")
           }
         >
           {item.label}

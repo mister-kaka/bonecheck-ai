@@ -1,7 +1,7 @@
-import { InputHTMLAttributes, ReactNode } from 'react';
-import styles from './Input.module.css';
+import { InputHTMLAttributes, ReactNode } from "react";
+import styles from "../styles/Input.module.css";
 
-interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   icon?: ReactNode;
   error?: boolean;
   errorText?: string;
@@ -20,23 +20,17 @@ export function Input({
       <div
         className={[
           styles.inputContainer,
-          error ? styles.error : '',
-          disabled ? styles.disabled : '',
-          className ?? '',
+          error ? styles.error : "",
+          disabled ? styles.disabled : "",
+          className ?? "",
         ]
           .filter(Boolean)
-          .join(' ')}
+          .join(" ")}
       >
         {icon && <span className={styles.icon}>{icon}</span>}
-        <input
-          className={styles.input}
-          disabled={disabled}
-          {...rest}
-        />
+        <input {...rest} className={styles.input} disabled={disabled} />
       </div>
-      {error && errorText && (
-        <span className={styles.errorText}>{errorText}</span>
-      )}
+      {error && errorText && <span className={styles.errorText}>{errorText}</span>}
     </div>
   );
 }

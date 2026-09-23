@@ -1,12 +1,12 @@
-import { SelectHTMLAttributes } from 'react';
-import styles from './Select.module.css';
+import { SelectHTMLAttributes } from "react";
+import styles from "../styles/Select.module.css";
 
 export interface SelectOption {
   value: string;
   label: string;
 }
 
-interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
+interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> {
   options: SelectOption[];
   placeholder?: string;
   error?: boolean;
@@ -26,19 +26,14 @@ export function Select({
       <div
         className={[
           styles.selectContainer,
-          error ? styles.error : '',
-          disabled ? styles.disabled : '',
-          className ?? '',
+          error ? styles.error : "",
+          disabled ? styles.disabled : "",
+          className ?? "",
         ]
           .filter(Boolean)
-          .join(' ')}
+          .join(" ")}
       >
-        <select
-          className={styles.select}
-          disabled={disabled}
-          value={value}
-          {...rest}
-        >
+        <select {...rest} className={styles.select} disabled={disabled} value={value}>
           {placeholder && (
             <option value="" disabled>
               {placeholder}

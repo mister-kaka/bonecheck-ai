@@ -25,7 +25,6 @@
   box-shadow: 0 0 0 3px var(--color-info-bg);
 }
 
-/* ===== Размеры ===== */
 .sm {
   width: 30px;
   height: 30px;
@@ -38,9 +37,6 @@
   border-radius: var(--radius-md);
 }
 
-/* ===== Варианты ===== */
-
-/* ghost — прозрачная, лёгкий фон при ховере */
 .ghost {
   background: transparent;
   border-color: transparent;
@@ -56,7 +52,6 @@
   background-color: var(--color-bg-soft);
 }
 
-/* outline — с рамкой */
 .outline {
   background: transparent;
   border-color: var(--color-border);
@@ -72,7 +67,6 @@
   background-color: var(--color-bg-soft);
 }
 
-/* ===== Иконка ===== */
 .icon {
   display: flex;
   align-items: center;

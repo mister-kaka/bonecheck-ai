@@ -1,7 +1,7 @@
-import { InputHTMLAttributes, ReactNode } from 'react';
-import styles from './Checkbox.module.css';
+import { InputHTMLAttributes, ReactNode, useId } from "react";
+import styles from "../styles/Checkbox.module.css";
 
-interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
   label: ReactNode;
 }
 
@@ -12,34 +12,25 @@ export function Checkbox({
   id,
   ...rest
 }: CheckboxProps) {
-  const checkboxId = id ?? `checkbox-${Math.random().toString(36).slice(2, 9)}`;
+  const autoId = useId();
+  const fieldId = id ?? autoId;
 
   return (
     <label
-      htmlFor={checkboxId}
-      className={[
-        styles.wrapper,
-        disabled ? styles.disabled : '',
-        className ?? '',
-      ]
+      htmlFor={fieldId}
+      className={[styles.wrapper, disabled ? styles.disabled : "", className ?? ""]
         .filter(Boolean)
-        .join(' ')}
+        .join(" ")}
     >
       <input
-        id={checkboxId}
+        {...rest}
+        id={fieldId}
         type="checkbox"
         className={styles.input}
         disabled={disabled}
-        {...rest}
       />
       <span className={styles.box} aria-hidden="true">
-        <svg
-          className={styles.check}
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-        >
+        <svg className={styles.check} width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path
             d="M2 6L5 9L10 3"
             stroke="currentColor"

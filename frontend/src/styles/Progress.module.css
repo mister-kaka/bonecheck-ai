@@ -1,0 +1,25 @@
+.bar {
+  display: block;
+  width: 100%;
+  height: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  appearance: none;
+  background: var(--color-progress-track);
+}
+
+.bar::-webkit-progress-bar {
+  background: var(--color-progress-track);
+  border-radius: var(--radius-pill);
+}
+
+.bar::-webkit-progress-value {
+  background: var(--color-progress);
+  border-radius: var(--radius-pill);
+}
+
+.bar::-moz-progress-bar {
+  background: var(--color-progress);
+  border-radius: var(--radius-pill);
+}

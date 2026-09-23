@@ -8,32 +8,46 @@
 
 ## Что есть (CONFIRMED)
 
-Стек: React 19, TypeScript, Vite 7. Пакет: `ruen-frontend`.
+Стек: React 19, TypeScript, Vite 7, React Router 7. Пакет: `ruen-frontend`.
 
 ```text
 frontend/src/
-├── main.tsx
-├── App.tsx              # рендерит Home
-├── pages/Home.tsx       # заголовок и placeholder статуса
-├── api/client.ts        # VITE_API_BASE_URL
-├── components/          # пусто
-└── assets/              # пусто
+├── main.tsx                 # BrowserRouter; при старте создаёт session_id
+├── App.tsx                  # AppHeader и маршруты
+├── pages/Home.tsx           # заглушка главной
+├── pages/HistoryPage.tsx    # заглушка истории
+├── api/session.ts           # localStorage bonecheck_session_id
+├── api/client.ts            # базовый URL, createStudy, listStudies
+├── components/
+│   ├── AppHeader.tsx        # навигация: Главная, История
+│   ├── Button.tsx           # базовый компонент, страницы его не рендерят
+│   ├── Card.tsx             # базовый компонент; Card.module.css пустой
+│   └── Spinner.tsx          # пустой файл-заготовка, нигде не импортируется
+├── styles/tokens.css
+├── styles/global.css
+└── assets/                  # пусто
 ```
+
+Маршруты в `App.tsx`:
+
+| Путь | Страница |
+| --- | --- |
+| `/` | `Home` |
+| `/history` | `HistoryPage` |
+| любой другой | редирект на `/` |
 
 `Home` показывает:
 
 - заголовок `RUEN AI Densitometry`;
 - текст «Статус сервиса:» и «Backend connection placeholder».
 
-Загрузки файла, поллинга, экрана результата, роутинга и CSS-фреймворка нет.
+`HistoryPage` показывает заголовок «История исследований» и текст, что таблица появится позже.
 
-`src/api/client.ts`:
+Страницы по-прежнему заглушки: формы загрузки и таблицы истории нет. При первом открытии приложения `main.tsx` вызывает `getOrCreateSessionId()`: если в `localStorage` нет ключа `bonecheck_session_id`, записывается `crypto.randomUUID()`. Повторные загрузки страницы читают тот же идентификатор.
 
-```text
-API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
-```
+`createStudy(file)` отправляет этот `session_id` полем multipart вместе с файлом. `listMyStudies()` запрашивает `GET /api/studies?session_id=...`, `listAllStudies()` — список без фильтра. Страницы эти функции пока не вызывают.
 
-Функций `fetch` / axios нет.
+CSS-фреймворка нет: свои `styles/tokens.css` и `styles/global.css`.
 
 Запуск: [README.md](../README.md). Порт 5173.
 
@@ -43,7 +57,8 @@ API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 
 Когда UI начнёт ходить в backend, использовать только [api.md](api.md):
 
-- `POST /api/studies`
+- `POST /api/studies` (поле `session_id`)
+- `GET /api/studies` и `GET /api/studies?session_id=`
 - `GET /api/studies/:id`
 - `GET /api/studies/:id/result`
 - `GET /health`
@@ -71,7 +86,7 @@ API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 ## TBD
 
 - утверждённый макет;
-- состав маршрутов;
+- финальный набор экранов сверх заглушек `/` и `/history`;
 - библиотека UI;
 - как показывать несколько нарушений из строки с `;`;
 - нужен ли просмотр самого DICOM в браузере.

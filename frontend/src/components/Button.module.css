@@ -47,7 +47,7 @@
 
         /*  Варианты  */
 
-/* Primary — градиентная, как в макете */
+/* Основная - градиентная, как в макете */
 .primary {
   background: var(--gradient-button);
   color: var(--color-text-inverse);
@@ -58,7 +58,7 @@
   background: var(--gradient-button-hover);
 }
 
-/* Secondary — светлая с рамкой */
+/* Вторичная - светлая с рамкой */
 .secondary {
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
@@ -70,7 +70,7 @@
   border-color: var(--color-border-strong);
 }
 
-/* Ghost — прозрачная */
+/* Прозрачная - без фона */
 .ghost {
   background: transparent;
   color: var(--color-text-secondary);
@@ -81,7 +81,7 @@
   color: var(--color-text-primary);
 }
 
-/* Danger — красная (без градиента, для акцента) */
+/* Опасная - красная (без градиента, для акцента) */
 .danger {
   background: var(--color-danger);
   color: var(--color-text-inverse);

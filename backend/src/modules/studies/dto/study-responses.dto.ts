@@ -10,11 +10,24 @@ export class CreateStudyResponseDto {
 
   @ApiProperty({ example: '2026-09-18T11:21:00.000Z' })
   createdAt: string;
+
+  @ApiProperty({
+    nullable: true,
+    description: 'Технический идентификатор браузерной сессии. Не user id.',
+    example: '6f1c2a40-9b3e-4d7a-8c11-2e5b7a9d0c44',
+  })
+  sessionId: string | null;
 }
 
 export class StudyStatusResponseDto {
   @ApiProperty()
   id: string;
+
+  @ApiProperty({
+    nullable: true,
+    description: 'Технический идентификатор браузерной сессии. Не user id.',
+  })
+  sessionId: string | null;
 
   @ApiProperty({ enum: StudyStatus })
   status: StudyStatus;
@@ -28,11 +41,16 @@ export class StudyStatusResponseDto {
   @ApiProperty()
   updatedAt: string;
 
-  @ApiPropertyOptional({ nullable: true, description: 'Заполнено, если status = error' })
+  @ApiPropertyOptional({ nullable: true, description: 'Заполнено, если статус равен «error»' })
   error: string | null;
 
-  @ApiProperty({ description: 'true, если анализ завершён и доступен GET .../result' })
+  @ApiProperty({ description: 'Истина, если анализ завершён и результат можно запросить' })
   hasResult: boolean;
+}
+
+export class StudyListResponseDto {
+  @ApiProperty({ type: [StudyStatusResponseDto] })
+  items: StudyStatusResponseDto[];
 }
 
 export class StudyResultResponseDto {

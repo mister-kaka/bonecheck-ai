@@ -9,6 +9,7 @@ export enum StudyStatus {
 
 export type StudyRecord = {
   id: string;
+  sessionId: string | null;
   status: StudyStatus;
   originalFileName: string;
   storedFilePath: string;
@@ -23,4 +24,5 @@ export const STUDY_REPOSITORY = Symbol('STUDY_REPOSITORY');
 export interface StudyRepository {
   save(study: StudyRecord): Promise<StudyRecord>;
   findById(id: string): Promise<StudyRecord | null>;
+  findAll(sessionId?: string): Promise<StudyRecord[]>;
 }

@@ -8,7 +8,7 @@
 
 ```text
 ┌─────────────────────┐
-│ Frontend (React)    │  сейчас страница-заглушка
+│ Frontend (React)    │  заглушки / и /history
 └──────────┬──────────┘
            │ REST JSON  (вызовы из UI пока не сделаны)
            v
@@ -22,7 +22,7 @@
 └─────────────────────┘
 ```
 
-PostgreSQL в runtime **нет**.
+Метаданные — файл SQLite, не PostgreSQL и не отдельный контейнер БД. См. [database.md](database.md).
 
 ## Основной поток данных (как работает код)
 
@@ -33,22 +33,23 @@ PostgreSQL в runtime **нет**.
 Frontend (опционально, позже)
     |
     v
-POST /api/studies  (multipart поле file)
+POST /api/studies  (multipart: file, опционально session_id)
     |
     v
 Backend
     |-- проверка: файл есть, не пустой, DICOM, <= 50 МБ
     |-- запись на диск: UPLOAD_DIR/<uuid>/<filename>
-    |-- запись метаданных в InMemoryStudyRepository
+    |-- запись метаданных в SQLite (SqliteStudyRepository)
     |-- статус сразу processing
     |-- асинхронно MockMlClient.analyze()
     v
 ML (сейчас mock внутри backend, не Python-контейнер)
     |
     v
-Результат в памяти (quality_class, violation_type, ...)
+Результат в той же строке SQLite (quality_class, violation_type, ...)
     |
     v
+GET /api/studies
 GET /api/studies/:id
 GET /api/studies/:id/result
     |
@@ -61,7 +62,8 @@ Frontend / пользователь
 Статус: заглушка. Подробности: [frontend.md](frontend.md).
 
 - стек: React + TypeScript + Vite;
-- одна страница `Home`: заголовок и текст «Backend connection placeholder»;
+- маршруты `/` (`Home`) и `/history` (`HistoryPage`), обе страницы - заглушки;
+- хедер с навигацией; `Button` и `Card` в страницах не используются;
 - `src/api/client.ts` задаёт `VITE_API_BASE_URL`, запросов нет;
 - ML не вызывается из браузера. Это принятое правило, даже когда UI появится.
 
@@ -80,7 +82,7 @@ Frontend / пользователь
 Важное поведение:
 
 - CORS включён глобально;
-- OpenAPI на `/api/docs`, заголовок Swagger: «RUEN API», версия `0.2.0`;
+- OpenAPI на `/api/docs`, заголовок Swagger: «RUEN API», версия `0.3.0`;
 - единый формат ошибок: `statusCode`, `error`, `code`, `message`;
 - единица API-записи называется `study`, но **один POST = один файл**. Это не папка исследования из датасета.
 
@@ -99,9 +101,9 @@ Backend **не** парсит DICOM и **не** обучает модель.
 
 ## База данных
 
-Статус: **PLANNED**. Подробности: [database.md](database.md).
+Статус: **CONFIRMED**, файл SQLite. Подробности: [database.md](database.md).
 
-Метаданные: `Map` в процессе Node. Файлы: локальная ФС.
+Метаданные: `SqliteStudyRepository`, путь `DATABASE_PATH`. Файлы DICOM: локальная ФС.
 
 ## Файловое хранение
 
@@ -122,7 +124,7 @@ Backend **не** парсит DICOM и **не** обучает модель.
 | Frontend -> Backend | задумано через REST; UI ещё не ходит в API |
 | Backend -> ML контейнер | нет |
 | Backend -> MockMlClient | да, in-process |
-| Backend -> PostgreSQL | нет |
+| Backend -> БД | да, локальный файл SQLite; отдельного сервиса БД нет |
 | Compose: frontend depends_on backend | да |
 | Compose: backend depends_on ml-service | нет |
 

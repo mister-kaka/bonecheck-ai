@@ -1,4 +1,4 @@
-"""RUEN ML service placeholder. No model or DICOM processing yet."""
+"""Заглушка ML-сервиса RUEN. Модели и обработки DICOM пока нет."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import time
 
 
 def main() -> None:
-    print("RUEN ML service placeholder is running")
+    print("Заглушка ML-сервиса RUEN запущена")
     while True:
         time.sleep(60)
 

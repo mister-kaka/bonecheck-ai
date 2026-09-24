@@ -10,9 +10,9 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('RUEN API')
     .setDescription(
-      'API сервиса оценки качества DXA/DICOM-исследований. Контракт для frontend: docs/api.md',
+      'API сервиса оценки качества DXA/DICOM-исследований. Контракт для фронтенда: docs/api.md',
     )
-    .setVersion('0.2.0')
+    .setVersion('0.3.0')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

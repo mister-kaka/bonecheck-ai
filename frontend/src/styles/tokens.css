@@ -33,6 +33,35 @@
   --color-info: #6e839f;
   --color-info-bg: #e8eef2;
 
+  /* Кнопка (наведение): чуть темнее */
+  --gradient-button-hover: linear-gradient(135deg, #434F60 0%, #384556 100%);
+
+  /* Шапка приложения */
+  --gradient-header: linear-gradient(135deg, #212B37 0%, #3E4B5A 100%);
+
+  /*  Границы  */
+  --color-border: #D6DEE5;
+  --color-border-strong: #B9C4CE;
+
+  /*  Статусы  */
+
+  /* Успех - «Качественно», «Корректно» */
+  --color-success: #2E7D5B;
+  --color-success-bg: #E3F3EB;
+
+  /* Предупреждение - «Нарушение» */
+  --color-warning: #B5731A;
+  --color-warning-bg: #FBEEDB;
+
+  /* Ошибка - «Ошибка», «Не удалось обработать» */
+  --color-danger: #B23A3A;
+  --color-danger-bg: #F8E3E3;
+
+  /* Информация / акцент */
+  --color-info: #6E839F;
+  --color-info-bg: #E8EEF2;
+
+   /*  Радиусы  */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
@@ -66,7 +95,14 @@
   --lh-normal: 1.45;
   --lh-loose: 1.6;
 
-  --color-viewer-bg: #1a2028;
-  --color-progress: #252d38;
-  --color-progress-track: #e8eef2;
+   /*  Специфика проекта  */
+
+  /* Фон DICOM-просмотрщика (тёмный) */
+  --color-viewer-bg: #1A2028;
+
+  /* Цвет прогресс-бара (заполненный) */
+  --color-progress: #252D38;
+
+  /* Цвет прогресс-бара (пустая полоса) */
+  --color-progress-track: #E8EEF2;
 }

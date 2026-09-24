@@ -3,7 +3,9 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { FileStorageService } from './file-storage.service';
@@ -17,6 +19,7 @@ import {
 } from './study.types';
 import {
   CreateStudyResponseDto,
+  StudyListResponseDto,
   StudyResultResponseDto,
   StudyStatusResponseDto,
 } from './dto/study-responses.dto';
@@ -29,15 +32,30 @@ type UploadedFile = {
 };
 
 @Injectable()
-export class StudiesService {
+export class StudiesService implements OnModuleInit {
+  private readonly logger = new Logger(StudiesService.name);
+
   constructor(
     @Inject(STUDY_REPOSITORY) private readonly studies: StudyRepository,
     @Inject(ML_CLIENT) private readonly mlClient: MlClient,
     private readonly fileStorage: FileStorageService,
   ) {}
 
-  async create(file: UploadedFile | undefined): Promise<CreateStudyResponseDto> {
+  async onModuleInit(): Promise<void> {
+    const studies = await this.studies.findAll();
+    for (const study of studies) {
+      if (study.status === StudyStatus.Processing) {
+        void this.processStudy(study.id);
+      }
+    }
+  }
+
+  async create(
+    file: UploadedFile | undefined,
+    sessionId?: unknown,
+  ): Promise<CreateStudyResponseDto> {
     this.assertFile(file);
+    const normalizedSessionId = this.normalizeSessionId(sessionId);
 
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -45,6 +63,7 @@ export class StudiesService {
 
     const study: StudyRecord = {
       id,
+      sessionId: normalizedSessionId,
       status: StudyStatus.Processing,
       originalFileName: file.originalname,
       storedFilePath,
@@ -61,21 +80,21 @@ export class StudiesService {
       id: study.id,
       status: study.status,
       createdAt: study.createdAt,
+      sessionId: study.sessionId,
+    };
+  }
+
+  async list(sessionId?: unknown): Promise<StudyListResponseDto> {
+    const normalizedSessionId = this.normalizeSessionId(sessionId);
+    const studies = await this.studies.findAll(normalizedSessionId ?? undefined);
+
+    return {
+      items: studies.map((study) => this.toStatus(study)),
     };
   }
 
   async getById(id: string): Promise<StudyStatusResponseDto> {
-    const study = await this.requireStudy(id);
-
-    return {
-      id: study.id,
-      status: study.status,
-      originalFileName: study.originalFileName,
-      createdAt: study.createdAt,
-      updatedAt: study.updatedAt,
-      error: study.error,
-      hasResult: study.status === StudyStatus.Completed && study.result !== null,
-    };
+    return this.toStatus(await this.requireStudy(id));
   }
 
   async getResult(id: string): Promise<StudyResultResponseDto> {
@@ -114,7 +133,7 @@ export class StudiesService {
     if (!file) {
       throw new BadRequestException({
         code: 'FILE_REQUIRED',
-        message: 'Файл исследования не передан. Ожидается поле multipart/form-data с именем file.',
+        message: 'Файл исследования не передан. Ожидается поле формы с именем file.',
       });
     }
 
@@ -140,6 +159,46 @@ export class StudiesService {
     }
   }
 
+  private normalizeSessionId(value: unknown): string | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+
+    if (typeof value !== 'string') {
+      throw new BadRequestException({
+        code: 'INVALID_SESSION_ID',
+        message: 'session_id должен быть строкой.',
+      });
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (trimmed.length > 128) {
+      throw new BadRequestException({
+        code: 'INVALID_SESSION_ID',
+        message: 'session_id слишком длинный. Максимум 128 символов.',
+      });
+    }
+
+    return trimmed;
+  }
+
+  private toStatus(study: StudyRecord): StudyStatusResponseDto {
+    return {
+      id: study.id,
+      sessionId: study.sessionId,
+      status: study.status,
+      originalFileName: study.originalFileName,
+      createdAt: study.createdAt,
+      updatedAt: study.updatedAt,
+      error: study.error,
+      hasResult: study.status === StudyStatus.Completed && study.result !== null,
+    };
+  }
+
   private async requireStudy(id: string): Promise<StudyRecord> {
     const study = await this.studies.findById(id);
 
@@ -154,28 +213,40 @@ export class StudiesService {
   }
 
   private async processStudy(id: string): Promise<void> {
-    const study = await this.studies.findById(id);
-    if (!study) {
-      return;
-    }
-
     try {
-      const result = await this.mlClient.analyze({
-        studyId: study.id,
-        filePath: study.storedFilePath,
-        originalFileName: study.originalFileName,
-      });
+      const study = await this.studies.findById(id);
+      if (!study || study.status !== StudyStatus.Processing) {
+        return;
+      }
 
-      study.result = result;
-      study.status = StudyStatus.Completed;
-      study.error = null;
-    } catch {
-      study.status = StudyStatus.Error;
-      study.error = 'Ошибка обработки ML.';
-      study.result = null;
+      try {
+        const result = await this.mlClient.analyze({
+          studyId: study.id,
+          filePath: study.storedFilePath,
+          originalFileName: study.originalFileName,
+        });
+
+        study.result = result;
+        study.status = StudyStatus.Completed;
+        study.error = null;
+      } catch {
+        study.status = StudyStatus.Error;
+        study.error = 'Ошибка обработки ML.';
+        study.result = null;
+      }
+
+      const current = await this.studies.findById(id);
+      if (!current || current.status !== StudyStatus.Processing) {
+        return;
+      }
+
+      study.updatedAt = new Date().toISOString();
+      await this.studies.save(study);
+    } catch (error) {
+      this.logger.error(
+        `Failed to process study ${id}`,
+        error instanceof Error ? error.stack : undefined,
+      );
     }
-
-    study.updatedAt = new Date().toISOString();
-    await this.studies.save(study);
   }
 }

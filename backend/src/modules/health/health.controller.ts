@@ -8,9 +8,9 @@ export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Liveness probe' })
+  @ApiOperation({ summary: 'Проверка, что сервис жив' })
   @ApiOkResponse({
-    description: 'Service is running',
+    description: 'Сервис запущен',
     schema: {
       type: 'object',
       properties: {

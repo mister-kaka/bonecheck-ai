@@ -161,6 +161,14 @@ describe('StudiesService', () => {
     expect(all.items.map((item) => item.id).sort()).toEqual([first.id, second.id].sort());
   });
 
+  it('returns an empty list when there are no studies', async () => {
+  const { service } = createService();
+
+  const result = await service.list();
+
+  expect(result).toEqual({ items: [] });
+});
+
   it('returns RESULT_NOT_READY while analysis is still running', async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {

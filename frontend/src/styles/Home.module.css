@@ -1,0 +1,302 @@
+/* ============================================
+   Home page — стили
+   ============================================ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.pageHead h1 {
+  font-size: var(--fs-h1);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+  max-width: 720px;
+}
+
+/* ---------- Dev-панель (удалить перед сдачей) ---------- */
+
+.devPanel {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--color-bg-soft);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-tiny);
+  color: var(--color-text-secondary);
+  flex-wrap: wrap;
+}
+
+.devLabel {
+  font-weight: 600;
+}
+
+.devPanel button {
+  padding: 4px 10px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-tiny);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.devPanel button:hover {
+  background: var(--color-bg-app);
+}
+
+/* ---------- Общий контейнер для центрированных блоков ---------- */
+
+.centered {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  min-height: 360px;
+  padding-top: var(--space-4);
+}
+
+/* ---------- IDLE ---------- */
+
+.uploadBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-6);
+  min-width: 520px;
+}
+
+.uploadIcon {
+  font-size: 40px;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.hint {
+  color: var(--color-text-secondary);
+}
+
+.uploadActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.formats {
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+}
+
+/* ---------- UPLOADING ---------- */
+
+.uploadProgress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 480px;
+  padding: var(--space-3) 0;
+}
+
+.uploadHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.fileName {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.cancel {
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.cancel:hover {
+  color: var(--color-text-primary);
+}
+
+/* Временная замена <Progress />. Удалить, когда Маша М. сдаст. */
+.progressPlaceholder {
+  width: 100%;
+  height: 8px;
+  background: var(--color-progress-track);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.progressFill {
+  width: 67%;
+  height: 100%;
+  background: var(--color-progress);
+  border-radius: var(--radius-pill);
+  transition: width 0.3s ease;
+}
+
+.uploadMeta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.percent {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* ---------- PROCESSING ---------- */
+
+.processing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-width: 400px;
+}
+
+.region {
+  color: var(--color-text-primary);
+}
+
+.time {
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+}
+
+/* ---------- RESULT ---------- */
+
+.resultGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+  gap: var(--space-5);
+}
+
+@media (max-width: 1080px) {
+  .resultGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viewerPlaceholder {
+  background: var(--color-viewer-bg);
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: var(--fs-small);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius-lg);
+}
+
+/* Временная замена <Badge />. Удалить, когда Маша М. сдаст. */
+.badgePlaceholder {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.resultHead {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+}
+
+.resultIconOk {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.resultSub {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-small);
+  margin-top: 2px;
+}
+
+.resultActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  flex-wrap: wrap;
+}
+
+/* ---------- ERROR ---------- */
+
+.errorBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  min-width: 420px;
+}
+
+.errorIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.errorText {
+  color: var(--color-text-secondary);
+  max-width: 420px;
+}
+
+/* ---------- Адаптив ---------- */
+
+@media (max-width: 640px) {
+  .uploadBlock,
+  .uploadProgress,
+  .processing,
+  .errorBlock {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .centered {
+    min-height: auto;
+    padding-top: var(--space-3);
+  }
+}

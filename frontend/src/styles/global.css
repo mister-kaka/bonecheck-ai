@@ -1,7 +1,5 @@
 /*    Сброс + базовая типографика + утилиты     */
 
-        /*  Сброс  */
-
 *,
 *::before,
 *::after {
@@ -15,8 +13,6 @@ body,
   margin: 0;
   padding: 0;
 }
-
-        /*  Базовая типографика  */
 
 body {
   font-family: var(--font-family) !important;   /* «!important» - временно, чтобы перебить чужое правило. */
@@ -57,8 +53,6 @@ ol {
   list-style: none;
 }
 
-        /*  Формы и кнопки  */
-
 button {
   font-family: inherit;
   font-size: inherit;
@@ -89,8 +83,6 @@ textarea:focus {
   outline: none;
 }
 
-        /*  Ссылки  */
-
 a {
   color: var(--color-text-secondary);
   text-decoration: none;
@@ -101,15 +93,11 @@ a:hover {
   text-decoration: none;
 }
 
-        /*  Изображения  */
-
 img,
 svg {
   display: block;
   max-width: 100%;
 }
-
-        /*  Оболочка приложения  */
 
 .app-shell {
   min-height: 100%;
@@ -125,16 +113,12 @@ svg {
   margin: 0 auto;
 }
 
-        /*  Утилитарные классы  */
-
-/* Карточка с градиентом (основной паттерн макета) */
 .surfaceCard {
   background: var(--gradient-card);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
 }
 
-/* Кнопка с градиентом */
 .gradientButton {
   background: var(--gradient-button);
   color: var(--color-text-inverse);
@@ -151,8 +135,6 @@ svg {
 .gradientButton:active {
   transform: translateY(1px);
 }
-
-        /*  Скроллбар  */
 
 ::-webkit-scrollbar {
   width: 10px;
@@ -171,8 +153,6 @@ svg {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary);
 }
-
-        /*  Адаптив контейнера  */
 
 @media (max-width: 1024px) {
   .app-main {

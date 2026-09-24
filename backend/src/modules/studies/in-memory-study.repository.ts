@@ -25,4 +25,14 @@ export class InMemoryStudyRepository implements StudyRepository {
       result: study.result ? { ...study.result } : null,
     };
   }
+
+  async findAll(): Promise<StudyRecord[]> {
+    const allStudies = Array.from(this.studies.values());
+    return allStudies.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ).map(study => ({
+      ...study,
+      result: study.result ? { ...study.result } : null,
+    }));
+  }
 }

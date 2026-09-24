@@ -52,6 +52,7 @@ export class StudiesService {
       updatedAt: now,
       error: null,
       result: null,
+      processingTime: null,
     };
 
     await this.studies.save(study);
@@ -75,6 +76,7 @@ export class StudiesService {
       updatedAt: study.updatedAt,
       error: study.error,
       hasResult: study.status === StudyStatus.Completed && study.result !== null,
+      processingTime: study.processingTime,
     };
   }
 
@@ -154,6 +156,8 @@ export class StudiesService {
   }
 
   private async processStudy(id: string): Promise<void> {
+    const startedAt = Date.now();
+
     const study = await this.studies.findById(id);
     if (!study) {
       return;
@@ -169,13 +173,30 @@ export class StudiesService {
       study.result = result;
       study.status = StudyStatus.Completed;
       study.error = null;
+      study.processingTime = (Date.now() - startedAt) / 1000;
     } catch {
       study.status = StudyStatus.Error;
       study.error = 'Ошибка обработки ML.';
       study.result = null;
+      study.processingTime = (Date.now() - startedAt) / 1000;
     }
 
     study.updatedAt = new Date().toISOString();
     await this.studies.save(study);
+  }
+
+  async getAll(): Promise<StudyStatusResponseDto[]> {
+    const studies = await this.studies.findAll();
+    
+    return studies.map(study => ({
+      id: study.id,
+      status: study.status,
+      originalFileName: study.originalFileName,
+      createdAt: study.createdAt,
+      updatedAt: study.updatedAt,
+      error: study.error,
+      hasResult: study.status === StudyStatus.Completed && study.result !== null,
+      processingTime: study.processingTime,
+    }));
   }
 }

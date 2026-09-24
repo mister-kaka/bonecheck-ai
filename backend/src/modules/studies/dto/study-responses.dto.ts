@@ -3,50 +3,57 @@ import { StudyStatus } from '../study.types';
 
 export class CreateStudyResponseDto {
   @ApiProperty({ example: '3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b21' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ enum: StudyStatus, example: StudyStatus.Processing })
-  status: StudyStatus;
+  status!: StudyStatus;
 
   @ApiProperty({ example: '2026-09-18T11:21:00.000Z' })
-  createdAt: string;
+  createdAt!: string;
 }
 
 export class StudyStatusResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty({ enum: StudyStatus })
-  status: StudyStatus;
+  status!: StudyStatus;
 
   @ApiProperty({ example: 'spine.dcm' })
-  originalFileName: string;
+  originalFileName!: string;
 
   @ApiProperty()
-  createdAt: string;
+  createdAt!: string;
 
   @ApiProperty()
-  updatedAt: string;
+  updatedAt!: string;
+
+  @ApiPropertyOptional({
+  description: 'Время обработки исследования в секундах.',
+  nullable: true,
+  example: 1.25,
+  })
+  processingTime!: number | null;
 
   @ApiPropertyOptional({ nullable: true, description: 'Заполнено, если status = error' })
-  error: string | null;
+  error!: string | null;
 
   @ApiProperty({ description: 'true, если анализ завершён и доступен GET .../result' })
-  hasResult: boolean;
+  hasResult!: boolean;
 }
 
 export class StudyResultResponseDto {
   @ApiProperty()
-  studyId: string;
+  studyId!: string;
 
   @ApiProperty({ enum: [0, 1], description: '0 - корректное изображение, 1 - нарушение качества' })
-  quality_class: 0 | 1;
+  quality_class!: 0 | 1;
 
   @ApiProperty({
     description: 'Типы нарушений через «;». Пустая строка, если нарушений нет.',
     example: '',
   })
-  violation_type: string;
+  violation_type!: string;
 
   @ApiPropertyOptional({
     description: 'Вероятность нарушения [0; 1].',
@@ -63,16 +70,16 @@ export class StudyResultResponseDto {
 
 export class ApiErrorResponseDto {
   @ApiProperty({ example: 400 })
-  statusCode: number;
+  statusCode!: number;
 
   @ApiProperty({ example: 'Bad Request' })
-  error: string;
+  error!: string;
 
   @ApiProperty({ example: 'FILE_REQUIRED' })
-  code: string;
+  code!: string;
 
   @ApiProperty({ example: 'Файл исследования не передан.' })
-  message: string;
+  message!: string;
 
   @ApiPropertyOptional({ description: 'Текущий статус исследования, если ошибка связана с жизненным циклом' })
   status?: string;

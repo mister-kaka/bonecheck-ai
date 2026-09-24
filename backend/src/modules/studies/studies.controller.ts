@@ -71,24 +71,14 @@ export class StudiesController {
     return this.studiesService.create(file);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Получить статус исследования' })
-  @ApiOkResponse({ type: StudyStatusResponseDto })
-  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
-  getById(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-  ): Promise<StudyStatusResponseDto> {
-    return this.studiesService.getById(id);
-  }
-
-  @Get(':id/result')
-  @ApiOperation({ summary: 'Получить результат анализа' })
-  @ApiOkResponse({ type: StudyResultResponseDto })
-  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
-  @ApiConflictResponse({ type: ApiErrorResponseDto })
-  getResult(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-  ): Promise<StudyResultResponseDto> {
-    return this.studiesService.getResult(id);
+  @Get()
+  @ApiOperation({
+    summary: 'Получить историю всех исследований',
+  })
+  @ApiOkResponse({
+    type: [StudyStatusResponseDto],
+  })
+  getAll(): Promise<StudyStatusResponseDto[]> {
+    return this.studiesService.getAll();
   }
 }

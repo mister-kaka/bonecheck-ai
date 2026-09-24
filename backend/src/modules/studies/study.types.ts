@@ -16,6 +16,7 @@ export type StudyRecord = {
   updatedAt: string;
   error: string | null;
   result: MlPrediction | null;
+  processingTime: number | null;
 };
 
 export const STUDY_REPOSITORY = Symbol('STUDY_REPOSITORY');
@@ -23,4 +24,5 @@ export const STUDY_REPOSITORY = Symbol('STUDY_REPOSITORY');
 export interface StudyRepository {
   save(study: StudyRecord): Promise<StudyRecord>;
   findById(id: string): Promise<StudyRecord | null>;
+  findAll(): Promise<StudyRecord[]>;
 }

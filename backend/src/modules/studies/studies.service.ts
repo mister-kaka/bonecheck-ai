@@ -116,15 +116,13 @@ export class StudiesService implements OnModuleInit {
       });
     }
 
-    return {
+return {
       studyId: study.id,
       quality_class: study.result.quality_class,
       violation_type: study.result.violation_type,
+      anatomical_region: study.result.anatomical_region as string, // Прямо указываем, что это строка
       ...(study.result.quality_prob !== undefined
         ? { quality_prob: study.result.quality_prob }
-        : {}),
-      ...(study.result.anatomical_region
-        ? { anatomical_region: study.result.anatomical_region }
         : {}),
     };
   }
@@ -226,6 +224,8 @@ export class StudiesService implements OnModuleInit {
           originalFileName: study.originalFileName,
         });
 
+       this.validateMlResult(result);
+
         study.result = result;
         study.status = StudyStatus.Completed;
         study.error = null;
@@ -247,6 +247,65 @@ export class StudiesService implements OnModuleInit {
         `Failed to process study ${id}`,
         error instanceof Error ? error.stack : undefined,
       );
+    }
+  }
+
+private validateMlResult(result: unknown): void {
+
+if (!result || typeof result !== 'object' || Array.isArray(result)) {
+  throw new Error('Ответ ML не является объектом');
+}
+
+    const { quality_class, violation_type, anatomical_region, quality_prob } = result as any;
+
+    // Structural validation
+    if (quality_class !== 0 && quality_class !== 1) {
+      throw new Error('Некорректный quality_class');
+    }
+    if (typeof violation_type !== 'string') {
+      throw new Error('violation_type должен быть строкой');
+    }
+    if (typeof anatomical_region !== 'string') {
+      throw new Error('anatomical_region обязателен');
+    }
+    
+    if (quality_prob !== undefined && quality_prob !== null) {
+      if (
+        typeof quality_prob !== 'number' ||
+        !Number.isFinite(quality_prob) ||
+        quality_prob < 0 ||
+        quality_prob > 1
+      ) {
+        throw new Error('quality_prob должен быть числом от 0 до 1');
+      }
+    }
+
+    const validRegions = ['Поясничный отдел позвоночника', 'Проксимальный отдел бедра'];
+    if (!validRegions.includes(anatomical_region)) {
+      throw new Error('Неизвестный anatomical_region');
+    }
+
+    if (quality_class === 0) {
+      if (violation_type !== '') {
+        throw new Error('При quality_class = 0 строка violation_type должна быть пустой');
+      }
+    } else {
+      if (violation_type === '') {
+        throw new Error('При quality_class = 1 строка violation_type не может быть пустой');
+      }
+
+      const violations = violation_type.split(';');
+      const validSpine = ['Некорректная укладка', 'Не выравнена ось позвоночника', 'Присутствуют посторонние предметы'];
+      const validHip = ['Некорректная укладка', 'Некорректная область интереса'];
+      const allowedViolations = anatomical_region === 'Поясничный отдел позвоночника' ? validSpine : validHip;
+
+      const seen = new Set<string>();
+      for (const v of violations) {
+        if (v === '') throw new Error('Пустой фрагмент нарушения');
+        if (seen.has(v)) throw new Error('Дублирование нарушения');
+        if (!allowedViolations.includes(v)) throw new Error('Нарушение не соответствует региону');
+        seen.add(v);
+      }
     }
   }
 }

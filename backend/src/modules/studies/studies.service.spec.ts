@@ -46,6 +46,7 @@ function createService(analyze?: () => Promise<unknown>) {
           quality_class: 0,
           violation_type: '',
           quality_prob: 0.1,
+          anatomical_region: 'Поясничный отдел позвоночника', // Добавлено для успешного прохождения валидации
         })),
     ),
   };
@@ -134,6 +135,7 @@ describe('StudiesService', () => {
     expect(result.quality_class).toBe(0);
     expect(result.violation_type).toBe('');
     expect(result.studyId).toBe(created.id);
+    expect(result.anatomical_region).toBe('Поясничный отдел позвоночника');
   });
 
   it('stores a blank session id as null', async () => {
@@ -167,7 +169,11 @@ describe('StudiesService', () => {
 
     const { service } = createService(async () => {
       await gate;
-      return { quality_class: 0, violation_type: '' };
+      return { 
+        quality_class: 0, 
+        violation_type: '', 
+        anatomical_region: 'Поясничный отдел позвоночника' 
+      };
     });
 
     const created = await service.create(file);
@@ -202,5 +208,84 @@ describe('StudiesService', () => {
     await expect(service.getResult(id)).rejects.toMatchObject({
       response: { code: 'STUDY_NOT_FOUND' },
     });
+  });
+
+  // НОВЫЕ ТЕСТЫ ВАЛИДАЦИИ
+
+  it('marks study as error when ML returns missing quality_class', async () => {
+    const { service } = createService(async () => ({
+      violation_type: '',
+      anatomical_region: 'Поясничный отдел позвоночника'
+    }));
+    const created = await service.create(file);
+    const status = await waitForStatus(service, created.id, StudyStatus.Error);
+    expect(status.error).toBe('Ошибка обработки ML.');
+  });
+
+  it('marks study as error when ML returns unknown anatomical_region', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 0,
+      violation_type: '',
+      anatomical_region: 'Неизвестный регион'
+    }));
+    const created = await service.create(file);
+    const status = await waitForStatus(service, created.id, StudyStatus.Error);
+    expect(status.error).toBe('Ошибка обработки ML.');
+  });
+
+  it('marks study as error when ML returns invalid quality_prob', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 0,
+      violation_type: '',
+      anatomical_region: 'Поясничный отдел позвоночника',
+      quality_prob: 1.5 // > 1
+    }));
+    const created = await service.create(file);
+    const status = await waitForStatus(service, created.id, StudyStatus.Error);
+    expect(status.error).toBe('Ошибка обработки ML.');
+  });
+
+  it('marks study as error when violation does not match the region', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 1,
+      violation_type: 'Не выравнена ось позвоночника', // spine violation
+      anatomical_region: 'Проксимальный отдел бедра'    // hip region
+    }));
+    const created = await service.create(file);
+    const status = await waitForStatus(service, created.id, StudyStatus.Error);
+    expect(status.error).toBe('Ошибка обработки ML.');
+  });
+
+  it('marks study as error on repeated violations', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 1,
+      violation_type: 'Некорректная укладка;Некорректная укладка',
+      anatomical_region: 'Поясничный отдел позвоночника'
+    }));
+    const created = await service.create(file);
+    const status = await waitForStatus(service, created.id, StudyStatus.Error);
+    expect(status.error).toBe('Ошибка обработки ML.');
+  });
+
+  it('marks study as error for empty violation on class 1', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 1,
+      violation_type: '', // Empty but class is 1
+      anatomical_region: 'Поясничный отдел позвоночника'
+    }));
+    const created = await service.create(file);
+    const status = await waitForStatus(service, created.id, StudyStatus.Error);
+    expect(status.error).toBe('Ошибка обработки ML.');
+  });
+
+  it('marks study as error for non-empty violation on class 0', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 0,
+      violation_type: 'Некорректная укладка', // Non-empty but class is 0
+      anatomical_region: 'Поясничный отдел позвоночника'
+    }));
+    const created = await service.create(file);
+    const status = await waitForStatus(service, created.id, StudyStatus.Error);
+    expect(status.error).toBe('Ошибка обработки ML.');
   });
 });

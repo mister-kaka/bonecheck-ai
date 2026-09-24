@@ -105,6 +105,7 @@ export class StudiesController {
   @Get(':id')
   @ApiOperation({ summary: 'Получить статус исследования' })
   @ApiOkResponse({ type: StudyStatusResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
   @ApiNotFoundResponse({ type: ApiErrorResponseDto })
   getById(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
@@ -116,6 +117,7 @@ export class StudiesController {
   @ApiOperation({ summary: 'Получить результат анализа' })
   @ApiOkResponse({ type: StudyResultResponseDto })
   @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
   @ApiConflictResponse({ type: ApiErrorResponseDto })
   getResult(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,

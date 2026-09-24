@@ -252,9 +252,9 @@ return {
 
 private validateMlResult(result: unknown): void {
 
-if (!result || typeof result !== 'object' || Array.isArray(result)) {
-  throw new Error('Ответ ML не является объектом');
-}
+    if (!result || typeof result !== 'object' || Array.isArray(result)) {
+      throw new Error('Ответ ML не является объектом');
+  }
 
     const { quality_class, violation_type, anatomical_region, quality_prob } = result as any;
 
@@ -270,15 +270,16 @@ if (!result || typeof result !== 'object' || Array.isArray(result)) {
     }
     
     if (quality_prob !== undefined && quality_prob !== null) {
-      if (
-        typeof quality_prob !== 'number' ||
-        !Number.isFinite(quality_prob) ||
-        quality_prob < 0 ||
-        quality_prob > 1
-      ) {
-        throw new Error('quality_prob должен быть числом от 0 до 1');
-      }
+      
+    if (
+     typeof quality_prob !== 'number' ||
+      !Number.isFinite(quality_prob) ||
+      quality_prob < 0 ||
+      quality_prob > 1
+    ) {
+     throw new Error('quality_prob должен быть числом от 0 до 1');
     }
+  }
 
     const validRegions = ['Поясничный отдел позвоночника', 'Проксимальный отдел бедра'];
     if (!validRegions.includes(anatomical_region)) {

@@ -72,9 +72,9 @@ export class StudyResultResponseDto {
   })
   quality_prob?: number;
 
-  @ApiPropertyOptional({
-    example: 'Поясничный отдел позвоночника',
-    description: 'Поясничный отдел позвоночника или Проксимальный отдел бедра.',
+  @ApiProperty({
+  example: 'Поясничный отдел позвоночника',
+  description: 'Поясничный отдел позвоночника или Проксимальный отдел бедра.',
   })
   anatomical_region!: string;
 }

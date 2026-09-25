@@ -1,0 +1,94 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+        /*  Заголовок  */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.headIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--color-slate);
+  border-radius: var(--radius-sm);
+  color: var(--color-slate);
+  font-size: var(--fs-tiny);
+  font-weight: 700;
+}
+
+.title {
+  font-size: var(--fs-body);
+}
+
+        /*  Шаги: в ряд, разделены вертикальными линиями  */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 0 var(--space-4);
+  border-left: 1px solid var(--color-border);
+}
+
+.step:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.number {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tiny);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.stepTitle {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.caption {
+  font-size: var(--fs-tiny);
+  line-height: var(--lh-normal);
+  color: var(--color-text-secondary);
+}
+
+        /*  Адаптив: на узком экране шаги идут столбиком  */
+
+@media (max-width: 640px) {
+  .steps {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .step {
+    padding: var(--space-3) 0 0;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .step:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
+}

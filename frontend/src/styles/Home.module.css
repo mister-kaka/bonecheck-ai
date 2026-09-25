@@ -1,7 +1,3 @@
-/* ============================================
-   Home page — стили
-   ============================================ */
-
 .page {
   display: flex;
   flex-direction: column;
@@ -18,7 +14,7 @@
   max-width: 720px;
 }
 
-/* ---------- Dev-панель (удалить перед сдачей) ---------- */
+/* --- Dev-панель (удалить перед сдачей) --- */
 
 .devPanel {
   display: flex;
@@ -29,7 +25,6 @@
   border-radius: var(--radius-md);
   font-size: var(--fs-tiny);
   color: var(--color-text-secondary);
-  flex-wrap: wrap;
 }
 
 .devLabel {
@@ -42,16 +37,14 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: var(--fs-tiny);
-  color: var(--color-text-primary);
   cursor: pointer;
-  transition: background 0.15s ease;
 }
 
 .devPanel button:hover {
   background: var(--color-bg-app);
 }
 
-/* ---------- Общий контейнер для центрированных блоков ---------- */
+/* --- Общее --- */
 
 .centered {
   display: flex;
@@ -61,7 +54,7 @@
   padding-top: var(--space-4);
 }
 
-/* ---------- IDLE ---------- */
+/* --- Idle --- */
 
 .uploadBlock {
   display: flex;
@@ -76,7 +69,6 @@
 .uploadIcon {
   font-size: 40px;
   color: var(--color-text-primary);
-  line-height: 1;
 }
 
 .hint {
@@ -97,7 +89,7 @@
   margin-top: var(--space-2);
 }
 
-/* ---------- UPLOADING ---------- */
+/* --- Uploading --- */
 
 .uploadProgress {
   display: flex;
@@ -111,26 +103,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
 }
 
 .fileName {
   font-weight: 600;
-  color: var(--color-text-primary);
 }
 
 .cancel {
   font-size: var(--fs-small);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: color 0.15s ease;
 }
 
-.cancel:hover {
-  color: var(--color-text-primary);
-}
-
-/* Временная замена <Progress />. Удалить, когда Маша М. сдаст. */
+/* Временная замена Progress. Удалить, когда Маша М. сдаст <Progress /> */
 .progressPlaceholder {
   width: 100%;
   height: 8px;
@@ -144,7 +129,6 @@
   height: 100%;
   background: var(--color-progress);
   border-radius: var(--radius-pill);
-  transition: width 0.3s ease;
 }
 
 .uploadMeta {
@@ -153,16 +137,14 @@
   font-size: var(--fs-small);
   color: var(--color-text-secondary);
   justify-content: space-between;
-  flex-wrap: wrap;
 }
 
 .percent {
   color: var(--color-text-primary);
   font-weight: 600;
-  margin-left: auto;
 }
 
-/* ---------- PROCESSING ---------- */
+/* --- Processing --- */
 
 .processing {
   display: flex;
@@ -181,7 +163,7 @@
   color: var(--color-text-secondary);
 }
 
-/* ---------- RESULT ---------- */
+/* --- Result --- */
 
 .resultGrid {
   display: grid;
@@ -205,10 +187,9 @@
   font-size: var(--fs-small);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border-radius: var(--radius-lg);
 }
 
-/* Временная замена <Badge />. Удалить, когда Маша М. сдаст. */
+/* Временная замена Badge. Удалить, когда Маша М. сдаст <Badge /> */
 .badgePlaceholder {
   display: inline-flex;
   align-items: center;
@@ -244,7 +225,6 @@
 .resultSub {
   color: var(--color-text-secondary);
   font-size: var(--fs-small);
-  margin-top: 2px;
 }
 
 .resultActions {
@@ -254,7 +234,7 @@
   flex-wrap: wrap;
 }
 
-/* ---------- ERROR ---------- */
+/* --- Error --- */
 
 .errorBlock {
   display: flex;
@@ -282,21 +262,4 @@
 .errorText {
   color: var(--color-text-secondary);
   max-width: 420px;
-}
-
-/* ---------- Адаптив ---------- */
-
-@media (max-width: 640px) {
-  .uploadBlock,
-  .uploadProgress,
-  .processing,
-  .errorBlock {
-    min-width: auto;
-    width: 100%;
-  }
-
-  .centered {
-    min-height: auto;
-    padding-top: var(--space-3);
-  }
 }

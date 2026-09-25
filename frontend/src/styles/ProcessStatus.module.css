@@ -1,0 +1,110 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.title {
+  font-size: var(--fs-body);
+}
+
+        /*  Шаги столбиком, между ними тонкая линия  */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.step:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.step:last-child {
+  padding-bottom: 0;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 50%;
+  font-size: var(--fs-tiny);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.status {
+  font-size: var(--fs-tiny);
+  color: var(--color-text-secondary);
+}
+
+        /*  Состояния шагов  */
+
+/* ✓ Готово — зелёный индикатор */
+.done .icon {
+  border-color: var(--color-success);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.done .status {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+/* ● В процессе — заполненный кружок */
+.active .icon {
+  border-color: var(--color-slate);
+  background: var(--color-slate);
+  color: var(--color-text-inverse);
+  font-size: 8px;
+}
+
+.active .status {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+/* ● Ожидание — следующий шаг, кружок приглушённый */
+.next .icon {
+  border-color: var(--color-slate);
+  color: var(--color-slate);
+  font-size: 8px;
+}
+
+/* ○ Ожидание / ○ Недоступен — пустой кружок, текст приглушён */
+.waiting .label,
+.unavailable .label {
+  color: var(--color-text-secondary);
+}

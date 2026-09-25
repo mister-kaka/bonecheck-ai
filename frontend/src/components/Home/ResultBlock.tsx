@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { DicomViewer } from "./DicomViewer";
-import { LayerSwitcher, type Layers } from "./LayerSwitcher";
+import type { Layers } from "./LayerSwitcher";
 import { ResultCard } from "./ResultCard";
 import { ImageCarousel } from "./ImageCarousel";
 import styles from "../../styles/ResultBlock.module.css";
@@ -53,9 +53,11 @@ export function ResultBlock({
   return (
     <div className={styles.grid}>
       <div className={styles.viewerColumn}>
+        {/* DicomViewer внутри содержит табы сверху и контролы слева */}
         <DicomViewer
           file={activeFile}
           layers={layers}
+          onLayersChange={setLayers}
           heatmapUrl={activeHeatmap}
           contourPoints={contourPoints}
           keypoints={keypoints}
@@ -68,8 +70,6 @@ export function ResultBlock({
             onChange={setActiveIndex}
           />
         )}
-
-        <LayerSwitcher layers={layers} onChange={setLayers} />
       </div>
 
       <ResultCard

@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import styles from "../../styles/Home.module.css";
 
+import { UploadProgressBlock } from "../../components/Home/UploadProgressBlock";
+import { AnalysisBlock } from "../../components/Home/AnalysisBlock";
+
 // import { Badge } from "../../components/Badge";
-import { Progress } from "../../components/Progress";
+// import { Progress } from "../../components/Progress";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
-import { Spinner } from "../../components/Spinner";
+// import { Spinner } from "../../components/Spinner";
 import { ResultBlock } from "../../components/Home/ResultBlock";
 
 type ScreenState = "idle" | "uploading" | "processing" | "result" | "error";
@@ -152,21 +155,13 @@ function Home() {
       {state === "uploading" && (
         <div className={styles.centered}>
           <Card>
-            <div className={styles.uploadProgress}>
-              <div className={styles.uploadHead}>
-                <span className={styles.fileName}>📄 CR000000.dcm</span>
-                <button className={styles.cancel}>✕ Отмена</button>
-              </div>
-
-              {/* ⚠️ ВРЕМЕННО: Progress с value={67} — хардкод. При интеграции с API — реальный прогресс загрузки. */}
-              <Progress value={67} />
-
-              <div className={styles.uploadMeta}>
-                <span>Размер: 83 КБ</span>
-                <span>Формат: DICOM CR</span>
-                <span className={styles.percent}>67%</span>
-              </div>
-            </div>
+            <UploadProgressBlock
+              fileName="CR000000.dcm"
+              fileSize="93 KB"
+              fileFormat="DICOM CR"
+              progress={67}
+              onCancel={goIdle}
+            />
           </Card>
         </div>
       )}
@@ -175,15 +170,11 @@ function Home() {
       {state === "processing" && (
         <div className={styles.centered}>
           <Card>
-            <div className={styles.processing}>
-              <Spinner label="Анализ исследования..." size="lg" />
-
-              {/*  ВРЕМЕННО: регион и время — хардкод. При интеграции — приходит от backend. */}
-              <p className={styles.region}>
-                Определение региона: <strong>Проксимальный отдел бедра</strong>
-              </p>
-              <p className={styles.time}>Время: 12 сек</p>
-            </div>
+            <AnalysisBlock
+              region="Проксимальный отдел правого бедра"
+              progress={42}
+              onCancel={goIdle}
+            />
           </Card>
         </div>
       )}

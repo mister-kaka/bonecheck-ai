@@ -18,15 +18,17 @@ export function UploadProgressBlock({
 }: UploadProgressBlockProps) {
   return (
     <div className={styles.wrap}>
-      <h2 className={styles.title}>Загрузка файлов...</h2>
+      <div className={styles.row}>
+        <CircularProgress value={progress} size={100} strokeWidth={8} />
 
-      <CircularProgress value={progress} size={160} strokeWidth={12} />
-
-      <p className={styles.fileName}>{fileName}</p>
-
-      <p className={styles.fileMeta}>
-        Размер: {fileSize} | Формат: {fileFormat}
-      </p>
+        <div className={styles.info}>
+          <h2 className={styles.title}>Загрузка файлов...</h2>
+          <div className={styles.fileName}>{fileName}</div>
+          <div className={styles.meta}>
+            Размер: {fileSize} | Формат: {fileFormat}
+          </div>
+        </div>
+      </div>
 
       <button
         type="button"

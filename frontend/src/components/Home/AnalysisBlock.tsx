@@ -14,15 +14,18 @@ export function AnalysisBlock({
 }: AnalysisBlockProps) {
   return (
     <div className={styles.wrap}>
-      <h2 className={styles.title}>Анализ исследования...</h2>
+      <div className={styles.row}>
+        <CircularProgress value={progress} size={100} strokeWidth={8} />
 
-      <CircularProgress value={progress} size={160} strokeWidth={12} />
-
-      {region && (
-        <p className={styles.region}>
-          Определение региона: <strong>{region}</strong>
-        </p>
-      )}
+        <div className={styles.info}>
+          <h2 className={styles.title}>Анализ исследования...</h2>
+          {region && (
+            <p className={styles.region}>
+              Определение региона: <strong>{region}</strong>
+            </p>
+          )}
+        </div>
+      </div>
 
       <button
         type="button"

@@ -20,19 +20,19 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   pointer-events: none;
 }
 
 .value {
-  font-size: 28px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--color-text-primary);
   line-height: 1;
 }
 
 .label {
-  font-size: var(--fs-tiny);
+  font-size: 10px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;

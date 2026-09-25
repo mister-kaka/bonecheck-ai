@@ -3,7 +3,6 @@ import styles from "../../styles/Home.module.css";
 
 import { UploadProgressBlock } from "../../components/Home/UploadProgressBlock";
 import { AnalysisBlock } from "../../components/Home/AnalysisBlock";
-
 // import { Badge } from "../../components/Badge";
 // import { Progress } from "../../components/Progress";
 import { Card } from "../../components/Card";

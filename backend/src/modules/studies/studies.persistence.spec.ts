@@ -82,9 +82,13 @@ describe('study persistence (sqlite)', () => {
       throw new Error('DATABASE_PATH is not set');
     }
 
-    const db = new Database(databasePath, { readonly: true, fileMustExist: true });
+    const db = new Database(databasePath, {
+      readonly: true,
+      fileMustExist: true,
+    });
     try {
-      return db.prepare('SELECT * FROM studies WHERE id = ?').get(id) as StudySqlRow | undefined;
+      return db.prepare('SELECT * FROM studies WHERE id = ?').get(id) as
+        StudySqlRow | undefined;
     } finally {
       db.close();
     }
@@ -96,16 +100,25 @@ describe('study persistence (sqlite)', () => {
       throw new Error('DATABASE_PATH is not set');
     }
 
-    const db = new Database(databasePath, { readonly: true, fileMustExist: true });
+    const db = new Database(databasePath, {
+      readonly: true,
+      fileMustExist: true,
+    });
     try {
-      const rows = db.prepare('SELECT id FROM studies').all() as Array<{ id: string }>;
+      const rows = db.prepare('SELECT id FROM studies').all() as Array<{
+        id: string;
+      }>;
       return rows.map((row) => row.id);
     } finally {
       db.close();
     }
   }
 
-  async function waitForStatus(service: StudiesService, id: string, status: StudyStatus) {
+  async function waitForStatus(
+    service: StudiesService,
+    id: string,
+    status: StudyStatus,
+  ) {
     for (let attempt = 0; attempt < 30; attempt += 1) {
       const current = await service.getById(id);
       if (current.status === status) {
@@ -120,10 +133,15 @@ describe('study persistence (sqlite)', () => {
   it('creates the studies table on startup', () => {
     openService();
     const databasePath = process.env.DATABASE_PATH as string;
-    const db = new Database(databasePath, { readonly: true, fileMustExist: true });
+    const db = new Database(databasePath, {
+      readonly: true,
+      fileMustExist: true,
+    });
     try {
       const table = db
-        .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'studies'")
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'studies'",
+        )
         .get() as { name: string } | undefined;
       expect(table?.name).toBe('studies');
     } finally {
@@ -193,7 +211,9 @@ describe('study persistence (sqlite)', () => {
     expect(onlyB.items.map((item) => item.id)).not.toContain(studyA.id);
 
     const all = await service.list();
-    expect(all.items.map((item) => item.id)).toEqual(expect.arrayContaining([studyA.id, studyB.id]));
+    expect(all.items.map((item) => item.id)).toEqual(
+      expect.arrayContaining([studyA.id, studyB.id]),
+    );
     expect(all.items).toHaveLength(2);
 
     const rawA = readRow(studyA.id);
@@ -224,6 +244,73 @@ describe('study persistence (sqlite)', () => {
     expect(resultAfter).toEqual(resultBefore);
   });
 
+  it('does not reprocess a completed study after backend restart', async () => {
+    const first = openService();
+
+    const created = await first.service.create(file, 'A');
+    await waitForStatus(first.service, created.id, StudyStatus.Completed);
+
+    first.repository.onModuleDestroy();
+
+    const analyze = jest.fn().mockResolvedValue({
+      quality_class: 0,
+      violation_type: '',
+      quality_prob: 0.05,
+      anatomical_region: 'Поясничный отдел позвоночника',
+    });
+
+    const second = openService({ analyze });
+
+    await second.service.onModuleInit();
+
+    const status = await second.service.getById(created.id);
+    const result = await second.service.getResult(created.id);
+
+    expect(status.status).toBe(StudyStatus.Completed);
+    expect(status.hasResult).toBe(true);
+    expect(result.quality_class).toBe(0);
+    expect(analyze).not.toHaveBeenCalled();
+  });
+
+  it('does not reprocess an error study after backend restart', async () => {
+    const first = openService({
+      analyze: async () => {
+        throw new Error('ml down');
+      },
+    });
+
+    const created = await first.service.create(file, 'A');
+    await waitForStatus(first.service, created.id, StudyStatus.Error);
+
+    first.repository.onModuleDestroy();
+
+    const analyze = jest.fn().mockResolvedValue({
+      quality_class: 0,
+      violation_type: '',
+      quality_prob: 0.05,
+      anatomical_region: 'Поясничный отдел позвоночника',
+    });
+
+    const second = openService({ analyze });
+
+    await second.service.onModuleInit();
+
+    const status = await second.service.getById(created.id);
+
+    expect(status.status).toBe(StudyStatus.Error);
+    expect(status.hasResult).toBe(false);
+    expect(status.error).toBe('Ошибка обработки ML.');
+
+    await expect(second.service.getResult(created.id)).rejects.toMatchObject({
+      response: {
+        code: 'ANALYSIS_FAILED',
+        status: StudyStatus.Error,
+      },
+    });
+
+    expect(analyze).not.toHaveBeenCalled();
+  });
+
   it('finishes a processing study after the backend starts again', async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
@@ -242,12 +329,18 @@ describe('study persistence (sqlite)', () => {
       },
     });
     const created = await first.service.create(file, 'A');
-    expect((await first.service.getById(created.id)).status).toBe(StudyStatus.Processing);
+    expect((await first.service.getById(created.id)).status).toBe(
+      StudyStatus.Processing,
+    );
     first.repository.onModuleDestroy();
 
     const second = openService();
     await second.service.onModuleInit();
-    const status = await waitForStatus(second.service, created.id, StudyStatus.Completed);
+    const status = await waitForStatus(
+      second.service,
+      created.id,
+      StudyStatus.Completed,
+    );
     expect(status.sessionId).toBe('A');
     expect(status.hasResult).toBe(true);
 

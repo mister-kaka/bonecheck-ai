@@ -10,7 +10,7 @@ import {
 import { randomUUID } from 'crypto';
 import { FileStorageService } from './file-storage.service';
 import { isAllowedDicomUpload, MAX_FILE_SIZE_BYTES } from './file-validation';
-import { ML_CLIENT, MlClient } from '../ml/ml.types';
+import { ML_CLIENT, MlClient, MlPrediction } from '../ml/ml.types';
 import {
   STUDY_REPOSITORY,
   StudyRecord,
@@ -23,6 +23,11 @@ import {
   StudyResultResponseDto,
   StudyStatusResponseDto,
 } from './dto/study-responses.dto';
+
+type ValidMlPrediction = MlPrediction & {
+  anatomical_region:
+    'Поясничный отдел позвоночника' | 'Проксимальный отдел бедра';
+};
 
 type UploadedFile = {
   originalname: string;
@@ -59,7 +64,11 @@ export class StudiesService implements OnModuleInit {
 
     const id = randomUUID();
     const now = new Date().toISOString();
-    const storedFilePath = await this.fileStorage.save(id, file.originalname, file.buffer);
+    const storedFilePath = await this.fileStorage.save(
+      id,
+      file.originalname,
+      file.buffer,
+    );
 
     const study: StudyRecord = {
       id,
@@ -86,7 +95,9 @@ export class StudiesService implements OnModuleInit {
 
   async list(sessionId?: unknown): Promise<StudyListResponseDto> {
     const normalizedSessionId = this.normalizeSessionId(sessionId);
-    const studies = await this.studies.findAll(normalizedSessionId ?? undefined);
+    const studies = await this.studies.findAll(
+      normalizedSessionId ?? undefined,
+    );
 
     return {
       items: studies.map((study) => this.toStatus(study)),
@@ -120,20 +131,21 @@ export class StudiesService implements OnModuleInit {
       studyId: study.id,
       quality_class: study.result.quality_class,
       violation_type: study.result.violation_type,
+      anatomical_region: study.result.anatomical_region as string, // Прямо указываем, что это строка
       ...(study.result.quality_prob !== undefined
         ? { quality_prob: study.result.quality_prob }
-        : {}),
-      ...(study.result.anatomical_region
-        ? { anatomical_region: study.result.anatomical_region }
         : {}),
     };
   }
 
-  private assertFile(file: UploadedFile | undefined): asserts file is UploadedFile {
+  private assertFile(
+    file: UploadedFile | undefined,
+  ): asserts file is UploadedFile {
     if (!file) {
       throw new BadRequestException({
         code: 'FILE_REQUIRED',
-        message: 'Файл исследования не передан. Ожидается поле формы с именем file.',
+        message:
+          'Файл исследования не передан. Ожидается поле формы с именем file.',
       });
     }
 
@@ -195,7 +207,9 @@ export class StudiesService implements OnModuleInit {
       createdAt: study.createdAt,
       updatedAt: study.updatedAt,
       error: study.error,
-      hasResult: study.status === StudyStatus.Completed && study.result !== null,
+      hasResult:
+        study.status === StudyStatus.Completed &&
+        this.isReadableResult(study.result),
     };
   }
 
@@ -212,6 +226,21 @@ export class StudiesService implements OnModuleInit {
     return study;
   }
 
+  private isReadableResult(
+    result: StudyRecord['result'],
+  ): result is ValidMlPrediction {
+    if (!result) {
+      return false;
+    }
+
+    try {
+      this.validateMlResult(result);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private async processStudy(id: string): Promise<void> {
     try {
       const study = await this.studies.findById(id);
@@ -226,10 +255,19 @@ export class StudiesService implements OnModuleInit {
           originalFileName: study.originalFileName,
         });
 
+        this.validateMlResult(result);
+
         study.result = result;
         study.status = StudyStatus.Completed;
         study.error = null;
-      } catch {
+      } catch (error) {
+        this.logger.error(
+          `Ошибка обработки ML для исследования ${id}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          error instanceof Error ? error.stack : undefined,
+        );
+
         study.status = StudyStatus.Error;
         study.error = 'Ошибка обработки ML.';
         study.result = null;
@@ -247,6 +285,103 @@ export class StudiesService implements OnModuleInit {
         `Failed to process study ${id}`,
         error instanceof Error ? error.stack : undefined,
       );
+    }
+  }
+
+  private validateMlResult(
+    result: unknown,
+  ): asserts result is ValidMlPrediction {
+    if (!result || typeof result !== 'object' || Array.isArray(result)) {
+      throw new Error('Ответ ML не является объектом');
+    }
+
+    const prediction = result as Record<string, unknown>;
+
+    const { quality_class, violation_type, anatomical_region, quality_prob } =
+      prediction;
+
+    if (
+      typeof quality_class !== 'number' ||
+      !Number.isInteger(quality_class) ||
+      (quality_class !== 0 && quality_class !== 1)
+    ) {
+      throw new Error('Некорректный quality_class');
+    }
+
+    if (typeof violation_type !== 'string') {
+      throw new Error('violation_type должен быть строкой');
+    }
+
+    if (typeof anatomical_region !== 'string') {
+      throw new Error('anatomical_region обязателен');
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(prediction, 'quality_prob') &&
+      (typeof quality_prob !== 'number' ||
+        !Number.isFinite(quality_prob) ||
+        quality_prob < 0 ||
+        quality_prob > 1)
+    ) {
+      throw new Error('quality_prob должен быть числом от 0 до 1');
+    }
+
+    const validRegions = [
+      'Поясничный отдел позвоночника',
+      'Проксимальный отдел бедра',
+    ];
+
+    if (!validRegions.includes(anatomical_region)) {
+      throw new Error('Неизвестный anatomical_region');
+    }
+
+    if (quality_class === 0) {
+      if (violation_type !== '') {
+        throw new Error(
+          'При quality_class = 0 строка violation_type должна быть пустой',
+        );
+      }
+
+      return;
+    }
+
+    if (violation_type === '') {
+      throw new Error(
+        'При quality_class = 1 строка violation_type не может быть пустой',
+      );
+    }
+
+    const violations = violation_type.split(';');
+
+    const validSpine = [
+      'Некорректная укладка',
+      'Не выравнена ось позвоночника',
+      'Присутствуют посторонние предметы',
+    ];
+
+    const validHip = ['Некорректная укладка', 'Некорректная область интереса'];
+
+    const allowedViolations =
+      anatomical_region === 'Поясничный отдел позвоночника'
+        ? validSpine
+        : validHip;
+
+    const seen = new Set<string>();
+
+    for (const violation of violations) {
+      if (violation === '') {
+        throw new Error('Пустой фрагмент нарушения');
+      }
+
+      if (seen.has(violation)) {
+        throw new Error('Дублирование нарушения');
+      }
+
+      if (!allowedViolations.includes(violation)) {
+        throw new Error('Нарушение не соответствует региону');
+      }
+
+      seen.add(violation);
     }
   }
 }

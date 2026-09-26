@@ -32,7 +32,9 @@ function createService(analyze?: () => Promise<unknown>) {
     }),
     findAll: jest.fn(async (sessionId?: string) => {
       return [...store.values()]
-        .filter((study) => sessionId === undefined || study.sessionId === sessionId)
+        .filter(
+          (study) => sessionId === undefined || study.sessionId === sessionId,
+        )
         .map((study) => ({
           ...study,
           result: study.result ? { ...study.result } : null,
@@ -54,11 +56,19 @@ function createService(analyze?: () => Promise<unknown>) {
     save: jest.fn(async () => '/tmp/uploads/spine.dcm'),
   };
 
-  const service = new StudiesService(studies as never, mlClient as never, fileStorage as never);
+  const service = new StudiesService(
+    studies as never,
+    mlClient as never,
+    fileStorage as never,
+  );
   return { service, mlClient, fileStorage };
 }
 
-async function waitForStatus(service: StudiesService, id: string, status: StudyStatus) {
+async function waitForStatus(
+  service: StudiesService,
+  id: string,
+  status: StudyStatus,
+) {
   for (let i = 0; i < 30; i += 1) {
     const current = await service.getById(id);
     if (current.status === status) {
@@ -158,16 +168,18 @@ describe('StudiesService', () => {
     expect(onlyB.items.map((item) => item.id)).toEqual([second.id]);
 
     const all = await service.list();
-    expect(all.items.map((item) => item.id).sort()).toEqual([first.id, second.id].sort());
+    expect(all.items.map((item) => item.id).sort()).toEqual(
+      [first.id, second.id].sort(),
+    );
   });
 
   it('returns an empty list when there are no studies', async () => {
-  const { service } = createService();
+    const { service } = createService();
 
-  const result = await service.list();
+    const result = await service.list();
 
-  expect(result).toEqual({ items: [] });
-});
+    expect(result).toEqual({ items: [] });
+  });
 
   it('returns RESULT_NOT_READY while analysis is still running', async () => {
     let release!: () => void;
@@ -177,10 +189,10 @@ describe('StudiesService', () => {
 
     const { service } = createService(async () => {
       await gate;
-      return { 
-        quality_class: 0, 
-        violation_type: '', 
-        anatomical_region: 'Поясничный отдел позвоночника' 
+      return {
+        quality_class: 0,
+        violation_type: '',
+        anatomical_region: 'Поясничный отдел позвоночника',
       };
     });
 
@@ -218,12 +230,10 @@ describe('StudiesService', () => {
     });
   });
 
-  // НОВЫЕ ТЕСТЫ ВАЛИДАЦИИ
-
   it('marks study as error when ML returns missing quality_class', async () => {
     const { service } = createService(async () => ({
       violation_type: '',
-      anatomical_region: 'Поясничный отдел позвоночника'
+      anatomical_region: 'Поясничный отдел позвоночника',
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
@@ -234,7 +244,7 @@ describe('StudiesService', () => {
     const { service } = createService(async () => ({
       quality_class: 0,
       violation_type: '',
-      anatomical_region: 'Неизвестный регион'
+      anatomical_region: 'Неизвестный регион',
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
@@ -246,10 +256,24 @@ describe('StudiesService', () => {
       quality_class: 0,
       violation_type: '',
       anatomical_region: 'Поясничный отдел позвоночника',
-      quality_prob: 1.5 // > 1
+      quality_prob: 1.5, // > 1
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
+    expect(status.error).toBe('Ошибка обработки ML.');
+  });
+
+  it('marks study as error when ML returns null quality_prob', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 0,
+      violation_type: '',
+      anatomical_region: 'Поясничный отдел позвоночника',
+      quality_prob: null,
+    }));
+
+    const created = await service.create(file);
+    const status = await waitForStatus(service, created.id, StudyStatus.Error);
+
     expect(status.error).toBe('Ошибка обработки ML.');
   });
 
@@ -257,7 +281,7 @@ describe('StudiesService', () => {
     const { service } = createService(async () => ({
       quality_class: 1,
       violation_type: 'Не выравнена ось позвоночника', // spine violation
-      anatomical_region: 'Проксимальный отдел бедра'    // hip region
+      anatomical_region: 'Проксимальный отдел бедра', // hip region
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
@@ -268,7 +292,7 @@ describe('StudiesService', () => {
     const { service } = createService(async () => ({
       quality_class: 1,
       violation_type: 'Некорректная укладка;Некорректная укладка',
-      anatomical_region: 'Поясничный отдел позвоночника'
+      anatomical_region: 'Поясничный отдел позвоночника',
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
@@ -279,7 +303,7 @@ describe('StudiesService', () => {
     const { service } = createService(async () => ({
       quality_class: 1,
       violation_type: '', // Empty but class is 1
-      anatomical_region: 'Поясничный отдел позвоночника'
+      anatomical_region: 'Поясничный отдел позвоночника',
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
@@ -290,7 +314,7 @@ describe('StudiesService', () => {
     const { service } = createService(async () => ({
       quality_class: 0,
       violation_type: 'Некорректная укладка', // Non-empty but class is 0
-      anatomical_region: 'Поясничный отдел позвоночника'
+      anatomical_region: 'Поясничный отдел позвоночника',
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);

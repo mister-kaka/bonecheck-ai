@@ -21,7 +21,7 @@ export function HowItWorks({ steps = defaultSteps }: HowItWorksProps) {
     <section className={styles.card} aria-labelledby="how-it-works-title">
       <header className={styles.head}>
         <span className={styles.headIcon} aria-hidden="true">
-          ?
+          <img src="/icons/info.png" alt="" width={18} height={18} />
         </span>
         <h3 id="how-it-works-title" className={styles.title}>
           Как это работает

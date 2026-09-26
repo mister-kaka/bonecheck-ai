@@ -9,16 +9,15 @@ import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
 // import { Spinner } from "../../components/Spinner";
 import { ResultBlock } from "../../components/Home/ResultBlock";
+import { HowItWorks } from "../../components/Home/HowItWorks";
+import { ChecksList } from "../../components/Home/ChecksList";
+import { ProcessStatus } from "../../components/Home/ProcessStatus";
 
 type ScreenState = "idle" | "uploading" | "processing" | "result" | "error";
 
 function Home() {
   // СОСТОЯНИЕ
   const [state, setState] = useState<ScreenState>("idle");
-
- // ВРЕМЕННО: для отладки вручную
- //   УДАЛИТЬ при интеграции  с API — testFile будет приходить из реального upload'а. 
-  const [testFile, setTestFile] = useState<File | null>(null);
 
   //  ВРЕМЕННО: массив из 3 тестовых DICOM для проверки карусели. 
   // УДАЛИТЬ при интеграции — заменить на данные, пришедшие из API (массив URL/файлов одного study). 
@@ -51,7 +50,6 @@ function Home() {
             new File([b], `test${i + 1}.dcm`, { type: "application/dicom" })
         );
         setFiles(loaded);
-        setTestFile(loaded[0] ?? null);
       })
       .catch((err) => console.error("Не удалось загрузить тестовые DICOM", err));
   }, []);
@@ -65,7 +63,6 @@ function Home() {
   const handleDcmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setTestFile(file);
     setFiles([file]);
     setState("result");
     e.target.value = "";
@@ -78,6 +75,10 @@ function Home() {
     setState("uploading");
     e.target.value = "";
   };
+
+  // Показывать ли правую колонку «Статус процессов» — только на idle/uploading/processing
+  const showProcessStatus =
+    state === "uploading" || state === "processing";
 
   // RENDER
   return (
@@ -100,119 +101,133 @@ function Home() {
         <button onClick={goError}>error</button>
       </div>
 
-      {/*  IDLE — пользователь ещё ничего не загрузил */}
-      {state === "idle" && (
-        <div className={styles.centered}>
-          <Card>
-            <div className={styles.uploadBlock}>
-              <div className={styles.uploadIcon}>⬆</div>
-              <h2>Загрузите DICOM-исследование</h2>
-              <p className={styles.hint}>Перетащите файл или папку сюда</p>
+      {/* Layout: слева — основной контент, справа — «Статус процессов» */}
+      <div className={showProcessStatus ? styles.layout : styles.layoutFull}>
+        <div className={styles.mainColumn}>
 
-              <div className={styles.uploadActions}>
-                <Button
-                  variant="secondary"
-                  iconLeft={<span>📁</span>}
-                  onClick={handlePickDcm}
-                >
-                  Выбрать файл
-                </Button>
-                <Button
-                  iconLeft={<span>📦</span>}
-                  onClick={handlePickZip}
-                >
-                  Загрузить ZIP
+          {/*  IDLE — пользователь ещё ничего не загрузил */}
+          {state === "idle" && (
+            <>
+              <Card>
+                <div className={styles.uploadBlock}>
+                  <div className={styles.uploadIcon}>⬆</div>
+                  <h2>Загрузите DICOM-исследование</h2>
+                  <p className={styles.hint}>Перетащите файл или папку сюда</p>
+
+                  <div className={styles.uploadActions}>
+                    <Button
+                      variant="secondary"
+                      iconLeft={<img src="/icons/folder.png" alt="" width={18} height={18} />}
+                      onClick={handlePickDcm}
+                    >
+                      Выбрать файл
+                    </Button>
+                    <Button
+                      iconLeft={<img src="/icons/archive.png" alt="" width={18} height={18} />}
+                      onClick={handlePickZip}
+                    >
+                      Загрузить ZIP
+                    </Button>
+                  </div>
+
+                  <p className={styles.formats}>
+                    Поддерживаемые форматы: .dcm, .zip
+                  </p>
+
+                  {/*  ВРЕМЕННО: скрытые input'ы для выбора файлов. 
+                       УДАЛИТЬ при интеграции — заменю на реальный upload через API. */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".dcm,application/dicom"
+                    hidden
+                    onChange={handleDcmChange}
+                  />
+                  <input
+                    ref={zipInputRef}
+                    type="file"
+                    accept=".zip,application/zip"
+                    hidden
+                    onChange={handleZipChange}
+                  />
+                </div>
+              </Card>
+
+              {/* Информационные карточки под блоком загрузки */}
+              <div className={styles.infoRow}>
+                <HowItWorks />
+                <ChecksList />
+              </div>
+            </>
+          )}
+
+          {/*  UPLOADING — идёт загрузка файла */}
+          {state === "uploading" && (
+            <Card>
+              <UploadProgressBlock
+                fileName="CR000000.dcm"
+                fileSize="93 KB"
+                fileFormat="DICOM CR"
+                progress={67}
+                onCancel={goIdle}
+              />
+            </Card>
+          )}
+
+          {/*  PROCESSING — идёт анализ */}
+          {state === "processing" && (
+            <Card>
+              <AnalysisBlock
+                region="Проксимальный отдел правого бедра"
+                progress={42}
+                onCancel={goIdle}
+              />
+            </Card>
+          )}
+
+          {/*  RESULT — результат анализа */}
+          {state === "result" && (
+            <ResultBlock
+              // │ ВРЕМЕННО: files из тестового массива.    При интеграции — files из API-ответа                            
+              files={files}
+              // ⚠️ ВРЕМЕННО: isOk/region/confidence — хардкод. При интеграции — из ответа backend 
+              // (quality_class, anatomical_region, quality_prob).
+              // checks и summary по умолчанию — из ResultBlock (defaultChecks).
+              // При интеграции — формировать из violation_type и description.
+              isOk={true}
+              region="Поясничный отдел позвоночника"
+              confidence={0.91}
+              onExport={() => console.log("export")} // ВРЕМЕННО: заглушка
+              onNewStudy={goIdle}
+            />
+          )}
+
+          {/*  ERROR — ошибка обработки  */}
+          {state === "error" && (
+            <Card>
+              <div className={styles.errorBlock}>
+                <div className={styles.errorIcon}>✕</div>
+                <h3>Ошибка обработки</h3>
+                <p className={styles.errorText}>
+                  Не удалось обработать DICOM-файл. Причина: файл повреждён или
+                  имеет неподдерживаемый формат.
+                </p>
+                <Button variant="secondary" onClick={goIdle}>
+                  Загрузить другой файл
                 </Button>
               </div>
+            </Card>
+          )}
 
-              <p className={styles.formats}>
-                Поддерживаемые форматы: .dcm, .zip
-              </p>
-
-              {/*  ВРЕМЕННО: скрытые input'ы для выбора файлов. 
-                   УДАЛИТЬ при интеграции — заменю на реальный upload через API. */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".dcm,application/dicom"
-                hidden
-                onChange={handleDcmChange}
-              />
-              <input
-                ref={zipInputRef}
-                type="file"
-                accept=".zip,application/zip"
-                hidden
-                onChange={handleZipChange}
-              />
-            </div>
-          </Card>
         </div>
-      )}
 
-      {/*  UPLOADING — идёт загрузка файла */}
-      {state === "uploading" && (
-        <div className={styles.centered}>
-          <Card>
-            <UploadProgressBlock
-              fileName="CR000000.dcm"
-              fileSize="93 KB"
-              fileFormat="DICOM CR"
-              progress={67}
-              onCancel={goIdle}
-            />
-          </Card>
-        </div>
-      )}
-
-      {/*  PROCESSING — идёт анализ */}
-      {state === "processing" && (
-        <div className={styles.centered}>
-          <Card>
-            <AnalysisBlock
-              region="Проксимальный отдел правого бедра"
-              progress={42}
-              onCancel={goIdle}
-            />
-          </Card>
-        </div>
-      )}
-
-      {/*  RESULT — результат анализа */}
-      {state === "result" && (
-        <ResultBlock
-          // │ ВРЕМЕННО: files из тестового массива.    При интеграции — files из API-ответа                            
-          files={files}
-          // ⚠️ ВРЕМЕННО: isOk/region/confidence/violations/description — хардкод. При интеграции — из ответа backend 
-          // (quality_class, anatomical_region, quality_prob, violation_type, description).
-          isOk={true}
-          region="Поясничный отдел позвоночника"
-          confidence={0.91}
-          violations={[]}
-          description="Исследование выполнено корректно. Укладка соответствует стандарту, ось позвоночника выровнена."
-          onExport={() => console.log("export")} // ВРЕМЕННО: заглушка
-          onNewStudy={goIdle}
-        />
-      )}
-
-      {/*  ERROR — ошибка обработки  */}
-      {state === "error" && (
-        <div className={styles.centered}>
-          <Card>
-            <div className={styles.errorBlock}>
-              <div className={styles.errorIcon}>✕</div>
-              <h3>Ошибка обработки</h3>
-              <p className={styles.errorText}>
-                Не удалось обработать DICOM-файл. Причина: файл повреждён или
-                имеет неподдерживаемый формат.
-              </p>
-              <Button variant="secondary" onClick={goIdle}>
-                Загрузить другой файл
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+        {/* ПРАВАЯ КОЛОНКА — «Статус процессов» */}
+        {showProcessStatus && (
+          <aside className={styles.sideColumn}>
+            <ProcessStatus stage={state} />
+          </aside>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,0 +1,101 @@
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
+/* Несколько проверок подряд разделяются линией */
+.check + .check {
+  border-top: 1px solid var(--color-border);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border-radius: 50%;
+  font-size: var(--fs-tiny);
+  font-weight: 700;
+  color: var(--color-text-inverse);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--fs-small);
+  font-weight: 700;
+}
+
+.statusLine,
+.descLabel {
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+}
+
+.status {
+  font-weight: 700;
+}
+
+.descLabel {
+  margin-top: var(--space-1);
+}
+
+        /*  Пункты описания со стрелками, как в макете  */
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-1);
+  font-size: var(--fs-small);
+  line-height: var(--lh-normal);
+  color: var(--color-text-primary);
+}
+
+.items li {
+  position: relative;
+  padding-left: var(--space-4);
+}
+
+.items li::before {
+  content: "›";
+  position: absolute;
+  left: 0;
+  color: var(--color-text-secondary);
+}
+
+        /*  Тона  */
+
+.success .icon {
+  background: var(--color-success);
+}
+
+.success .status {
+  color: var(--color-success);
+}
+
+.warning .icon {
+  background: var(--color-warning);
+}
+
+.warning .status {
+  color: var(--color-warning);
+}
+
+.danger .icon {
+  background: var(--color-danger);
+}
+
+.danger .status {
+  color: var(--color-danger);
+}

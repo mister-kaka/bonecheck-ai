@@ -6,7 +6,7 @@
   padding: var(--space-5);
   border-radius: var(--radius-lg);
   background: var(--gradient-card);
-  box-shadow: var(--shadow-sm);
+  /* box-shadow: var(--shadow-sm); */
 }
 
 .head {

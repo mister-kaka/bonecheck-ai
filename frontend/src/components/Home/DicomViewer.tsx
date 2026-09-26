@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import dicomParser from "dicom-parser";
+import { ViewerTabs } from "./ViewerTabs";
+import { ViewerControls } from "./ViewerControls";
+import type { Layers } from "./LayerSwitcher";
 import styles from "../../styles/DicomViewer.module.css";
-
-interface Layers {
-  original: boolean;
-  heatmap: boolean;
-  contour: boolean;
-  keypoints: boolean;
-}
 
 interface Keypoint {
   x: number;
@@ -18,6 +14,7 @@ interface Keypoint {
 interface DicomViewerProps {
   file?: File | null;
   layers: Layers;
+  onLayersChange: (layers: Layers) => void;
   heatmapUrl?: string;
   contourPoints?: Array<[number, number]>;
   keypoints?: Keypoint[];
@@ -26,6 +23,7 @@ interface DicomViewerProps {
 export function DicomViewer({
   file,
   layers,
+  onLayersChange,
   heatmapUrl,
   contourPoints,
   keypoints,
@@ -36,9 +34,11 @@ export function DicomViewer({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [error, setError] = useState<string | null>(null);
-  const [imageSize, setImageSize] = useState<{ w: number; h: number } | null>(null);
+  const [imageSize, setImageSize] = useState<{ w: number; h: number } | null>(
+    null
+  );
 
-  //  Загрузка и отрисовка DICOM 
+  // ---- Парсинг DICOM и отрисовка в canvas ----
   useEffect(() => {
     if (!file) return;
 
@@ -95,7 +95,7 @@ export function DicomViewer({
     reader.readAsArrayBuffer(file);
   }, [file]);
 
-  //  Зум 
+  // ---- Зум ----
   const zoomIn = useCallback(() => setZoom((z) => Math.min(z * 1.2, 5)), []);
   const zoomOut = useCallback(() => setZoom((z) => Math.max(z / 1.2, 0.5)), []);
   const reset = useCallback(() => {
@@ -103,7 +103,7 @@ export function DicomViewer({
     setPan({ x: 0, y: 0 });
   }, []);
 
-  //  Пан 
+  // ---- Пан ----
   const onMouseDown = (e: React.MouseEvent) => {
     setIsPanning(true);
     setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
@@ -114,7 +114,7 @@ export function DicomViewer({
   };
   const onMouseUp = () => setIsPanning(false);
 
-  // Колесо мыши 
+  // ---- Колесо мыши ----
   const onWheel = (e: React.WheelEvent) => {
     if (e.deltaY < 0) zoomIn();
     else zoomOut();
@@ -122,16 +122,9 @@ export function DicomViewer({
 
   return (
     <div className={styles.viewer}>
-      <div className={styles.toolbar}>
-        <button type="button" onClick={zoomIn} aria-label="Увеличить">
-          +
-        </button>
-        <button type="button" onClick={zoomOut} aria-label="Уменьшить">
-          −
-        </button>
-        <button type="button" onClick={reset} aria-label="Сбросить масштаб">
-          ⟲
-        </button>
+      {/* Табы режимов — сверху */}
+      <div className={styles.topBar}>
+        <ViewerTabs layers={layers} onChange={onLayersChange} />
       </div>
 
       {error && <div className={styles.errorBanner}>{error}</div>}
@@ -141,72 +134,92 @@ export function DicomViewer({
           <span>DICOM-ИЗОБРАЖЕНИЕ</span>
         </div>
       ) : (
-        <div
-          className={styles.stage}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseUp}
-          onWheel={onWheel}
-          style={{ cursor: isPanning ? "grabbing" : "grab" }}
-        >
+        <div className={styles.body}>
+          {/* Вертикальные контролы — слева */}
+          <ViewerControls
+            onZoomIn={zoomIn}
+            onZoomOut={zoomOut}
+            onReset={reset}
+          />
+
+          {/* Сцена с изображением */}
           <div
-            className={styles.imageWrapper}
-            style={{
-              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-            }}
+            className={styles.stage}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+            onWheel={onWheel}
+            style={{ cursor: isPanning ? "grabbing" : "grab" }}
           >
-            <canvas
-              ref={canvasRef}
-              className={styles.canvas}
-              style={{ opacity: layers.original ? 1 : 0 }}
-            />
-
-            {layers.heatmap && heatmapUrl && (
-              <img
-                src={heatmapUrl}
-                alt="heatmap"
-                className={styles.overlay}
-                draggable={false}
+            <div
+              className={styles.imageWrapper}
+              style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              }}
+            >
+              <canvas
+                ref={canvasRef}
+                className={styles.canvas}
+                style={{ opacity: layers.original ? 1 : 0 }}
               />
-            )}
 
-            {layers.contour && contourPoints && imageSize && (
-              <svg
-                className={styles.overlay}
-                viewBox={`0 0 ${imageSize.w} ${imageSize.h}`}
-                preserveAspectRatio="none"
-              >
-                <polyline
-                  points={contourPoints.map(([x, y]) => `${x},${y}`).join(" ")}
-                  fill="none"
-                  stroke="#FFD25A"
-                  strokeWidth="2"
-                  strokeDasharray="4 4"
+              {layers.heatmap && heatmapUrl && (
+                <img
+                  src={heatmapUrl}
+                  alt="heatmap"
+                  className={styles.overlay}
+                  draggable={false}
                 />
-              </svg>
-            )}
+              )}
 
-            {layers.keypoints && keypoints && imageSize && (
-              <svg
-                className={styles.overlay}
-                viewBox={`0 0 ${imageSize.w} ${imageSize.h}`}
-                preserveAspectRatio="none"
-              >
-                {keypoints.map((p, i) => (
-                  <circle
-                    key={i}
-                    cx={p.x}
-                    cy={p.y}
-                    r="4"
-                    fill="#FFD25A"
-                    stroke="#1A2028"
-                    strokeWidth="1"
+              {layers.contour && contourPoints && imageSize && (
+                <svg
+                  className={styles.overlay}
+                  viewBox={`0 0 ${imageSize.w} ${imageSize.h}`}
+                  preserveAspectRatio="none"
+                >
+                  <polyline
+                    points={contourPoints
+                      .map(([x, y]) => `${x},${y}`)
+                      .join(" ")}
+                    fill="none"
+                    stroke="#FFD25A"
+                    strokeWidth="2"
+                    strokeDasharray="4 4"
                   />
-                ))}
-              </svg>
-            )}
+                </svg>
+              )}
+
+              {layers.keypoints && keypoints && imageSize && (
+                <svg
+                  className={styles.overlay}
+                  viewBox={`0 0 ${imageSize.w} ${imageSize.h}`}
+                  preserveAspectRatio="none"
+                >
+                  {keypoints.map((p, i) => (
+                    <circle
+                      key={i}
+                      cx={p.x}
+                      cy={p.y}
+                      r="4"
+                      fill="#FFD25A"
+                      stroke="#1A2028"
+                      strokeWidth="1"
+                    />
+                  ))}
+                </svg>
+              )}
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* Подпись файла — снизу */}
+      {file && (
+        <div className={styles.footer}>
+          <span className={styles.fileName}>{file.name}</span>
+          <span className={styles.fileFormat}>DICOM CR</span>
         </div>
       )}
     </div>

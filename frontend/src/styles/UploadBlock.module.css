@@ -65,3 +65,8 @@
     padding: var(--space-6) var(--space-4);
   }
 }
+
+.wrapActive {
+  border-color: var(--color-accent) !important;
+  background: var(--color-bg-soft);
+}

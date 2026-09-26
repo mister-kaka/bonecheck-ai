@@ -1,29 +1,39 @@
-import { Spinner } from "../Spinner";
+import { CircularProgress } from "./CircularProgress";
 import styles from "../../styles/AnalysisBlock.module.css";
 
 interface AnalysisBlockProps {
   region?: string;
-  seconds?: number;
+  progress: number;
+  onCancel?: () => void;
 }
 
 export function AnalysisBlock({
-  region = "Проксимальный отдел бедра",
-  seconds = 12,
+  region,
+  progress,
+  onCancel,
 }: AnalysisBlockProps) {
   return (
-    <section className={styles.analysisBlock} aria-live="polite" aria-busy="true">
-      <Spinner size="lg" />
+    <div className={styles.wrap}>
+      <div className={styles.row}>
+        <CircularProgress value={progress} size={100} strokeWidth={8} />
 
-      <h2 className={styles.title}>Анализ исследования...</h2>
-
-      <div className={styles.details}>
-        <p>
-          Определение региона: <span className={styles.value}>{region}</span>
-        </p>
-        <p>
-          Время: <span className={styles.value}>{seconds} сек</span>
-        </p>
+        <div className={styles.info}>
+          <h2 className={styles.title}>Анализ исследования...</h2>
+          {region && (
+            <p className={styles.region}>
+              Определение региона: <strong>{region}</strong>
+            </p>
+          )}
+        </div>
       </div>
-    </section>
+
+      <button
+        type="button"
+        className={styles.cancelBtn}
+        onClick={onCancel}
+      >
+        Отмена
+      </button>
+    </div>
   );
 }

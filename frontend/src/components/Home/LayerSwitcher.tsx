@@ -20,14 +20,31 @@ const items: Array<{ key: keyof Layers; label: string }> = [
   { key: "keypoints", label: "Ключ. точки" },
 ];
 
+const EMPTY: Layers = {
+  original: false,
+  heatmap: false,
+  contour: false,
+  keypoints: false,
+};
+
 export function LayerSwitcher({ layers, onChange }: LayerSwitcherProps) {
+  const handleChange = (key: keyof Layers, checked: boolean) => {
+    if (!checked) {
+      // сняли галочку > возвращаемся к Оригинал
+      onChange({ ...EMPTY, original: true });
+      return;
+    }
+    // клик по неактивному > активируем только его
+    onChange({ ...EMPTY, [key]: true });
+  };
+
   return (
     <div className={styles.wrap}>
       {items.map((item) => (
         <Checkbox
           key={item.key}
           checked={layers[item.key]}
-          onChange={(checked) => onChange({ ...layers, [item.key]: checked })}
+          onChange={(e) => handleChange(item.key, e.target.checked)}
           label={item.label}
         />
       ))}

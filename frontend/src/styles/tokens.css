@@ -16,7 +16,7 @@
   --color-bg-surface: #f2f4f5;
   --color-bg-soft: #e8eef2;
 
-  --gradient-card: linear-gradient(180deg, #cad4e3 0%, #f2f4f5 100%);
+  --gradient-card: linear-gradient(180deg, #E8EEF2 0%, #f2f4f5 100%);
   --gradient-button: linear-gradient(135deg, #5a6b7f 0%, #434f60 100%);
   --gradient-button-hover: linear-gradient(135deg, #434f60 0%, #384556 100%);
   --gradient-header: linear-gradient(135deg, #212b37 0%, #3e4b5a 100%);

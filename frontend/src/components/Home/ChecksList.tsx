@@ -1,3 +1,4 @@
+import { Icon } from "../Icon";
 import styles from "../../styles/ChecksList.module.css";
 
 interface ChecksListProps {
@@ -16,7 +17,7 @@ export function ChecksList({ items = defaultItems }: ChecksListProps) {
     <section className={styles.card} aria-labelledby="checks-list-title">
       <header className={styles.head}>
         <span className={styles.headIcon} aria-hidden="true">
-          <img src="/icons/check-circle.png" alt="" width={18} height={18} />
+          <Icon name="check" size={16} />
         </span>
         <h3 id="checks-list-title" className={styles.title}>
           Что проверяет BoneCheck AI
@@ -26,9 +27,7 @@ export function ChecksList({ items = defaultItems }: ChecksListProps) {
       <ul className={styles.list}>
         {items.map((item) => (
           <li key={item} className={styles.item}>
-            <span className={styles.check} aria-hidden="true">
-              ✓
-            </span>
+            <span className={styles.check} aria-hidden="true" />
             {item}
           </li>
         ))}

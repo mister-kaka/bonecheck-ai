@@ -1,3 +1,4 @@
+import { Icon } from "../Icon";
 import styles from "../../styles/ViewerControls.module.css";
 
 interface ViewerControlsProps {
@@ -12,30 +13,15 @@ export function ViewerControls({
   onReset,
 }: ViewerControlsProps) {
   return (
-    <div className={styles.controls}>
-      <button
-        type="button"
-        className={styles.btn}
-        onClick={onZoomIn}
-        aria-label="Увеличить"
-      >
-        +
+    <div className={styles.controls} role="toolbar" aria-label="Масштаб изображения">
+      <button type="button" className={styles.btn} onClick={onZoomIn} aria-label="Увеличить">
+        <Icon name="zoom-in" size={16} />
       </button>
-      <button
-        type="button"
-        className={styles.btn}
-        onClick={onZoomOut}
-        aria-label="Уменьшить"
-      >
-        −
+      <button type="button" className={styles.btn} onClick={onZoomOut} aria-label="Уменьшить">
+        <Icon name="zoom-out" size={16} />
       </button>
-      <button
-        type="button"
-        className={styles.btn}
-        onClick={onReset}
-        aria-label="Сбросить масштаб"
-      >
-        ⟲
+      <button type="button" className={styles.btn} onClick={onReset} aria-label="Сбросить масштаб">
+        <Icon name="reset" size={16} />
       </button>
     </div>
   );

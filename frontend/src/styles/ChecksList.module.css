@@ -1,12 +1,9 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-5);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-surface);
-  box-shadow: var(--shadow-sm);
+  gap: var(--space-3);
+  padding: 8px 20px 20px;
+  border-top: 1px solid var(--color-border);
 }
 
 .head {
@@ -17,44 +14,33 @@
 
 .headIcon {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  color: var(--color-slate);
-  font-size: var(--fs-tiny);
-  font-weight: 700;
+  color: var(--color-accent);
 }
 
 .title {
-  font-size: var(--fs-body);
+  font-size: var(--fs-small);
+  letter-spacing: 0.02em;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 8px;
 }
 
 .item {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
+  gap: 10px;
   font-size: var(--fs-small);
-  color: var(--color-text-primary);
   overflow-wrap: anywhere;
 }
 
 .check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
   border-radius: 50%;
-  background: var(--color-slate);
-  color: var(--color-text-inverse);
-  font-size: var(--fs-tiny);
-  font-weight: 700;
+  background: var(--color-accent);
 }

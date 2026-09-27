@@ -1,4 +1,5 @@
 import { Button } from "../Button";
+import { Icon } from "../Icon";
 import styles from "../../styles/ErrorBlock.module.css";
 
 interface ErrorBlockProps {
@@ -17,14 +18,15 @@ export function ErrorBlock({
   return (
     <section className={styles.errorBlock} role="alert">
       <span className={styles.icon} aria-hidden="true">
-        ✕
+        <Icon name="error" size={20} />
       </span>
 
-      <h2 className={styles.title}>{title}</h2>
-
-      <p className={styles.text}>
-        {message ?? `Не удалось обработать DICOM-файл. Причина: ${reason}`}
-      </p>
+      <div className={styles.copy}>
+        <h2 className={styles.title}>{title}</h2>
+        <p className={styles.text}>
+          {message ?? `Не удалось обработать DICOM-файл. Причина: ${reason}`}
+        </p>
+      </div>
 
       <Button variant="secondary" onClick={onRetry}>
         Загрузить другой файл

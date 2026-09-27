@@ -12,7 +12,7 @@ interface Keypoint {
 }
 
 interface ResultBlockProps {
-  files: File[];
+  files?: File[];
   isOk: boolean;
   region: string;
   qualityProb?: number;
@@ -21,12 +21,13 @@ interface ResultBlockProps {
   heatmapUrls?: string[];
   contourPoints?: Array<[number, number]>;
   keypoints?: Keypoint[];
+  emptyLabel?: string;
   onExport?: () => void;
   onNewStudy?: () => void;
 }
 
 export function ResultBlock({
-  files,
+  files = [],
   isOk,
   region,
   qualityProb,
@@ -35,6 +36,7 @@ export function ResultBlock({
   heatmapUrls,
   contourPoints,
   keypoints,
+  emptyLabel,
   onExport,
   onNewStudy,
 }: ResultBlockProps) {
@@ -60,6 +62,7 @@ export function ResultBlock({
           heatmapUrl={activeHeatmap}
           contourPoints={contourPoints}
           keypoints={keypoints}
+          emptyLabel={emptyLabel}
         />
 
         {files.length > 1 && (
@@ -71,15 +74,17 @@ export function ResultBlock({
         )}
       </div>
 
-      <ResultCard
-        isOk={isOk}
-        region={region}
-        qualityProb={qualityProb}
-        violations={violations}
-        description={description}
-        onExport={onExport}
-        onNewStudy={onNewStudy}
-      />
+      <div className={styles.reportColumn}>
+        <ResultCard
+          isOk={isOk}
+          region={region}
+          qualityProb={qualityProb}
+          violations={violations}
+          description={description}
+          onExport={onExport}
+          onNewStudy={onNewStudy}
+        />
+      </div>
     </div>
   );
 }

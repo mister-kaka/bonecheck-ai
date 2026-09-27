@@ -1,3 +1,4 @@
+import { Icon } from "../Icon";
 import styles from "../../styles/ImageCarousel.module.css";
 
 interface ImageCarouselProps {
@@ -24,23 +25,24 @@ export function ImageCarousel({
   return (
     <div className={styles.wrap}>
       <button
+        type="button"
         className={styles.arrow}
         onClick={prev}
         disabled={activeIndex === 0}
         aria-label="Предыдущий снимок"
       >
-        ‹
+        <Icon name="chevron-left" size={16} />
       </button>
 
       <div className={styles.dots}>
         {Array.from({ length: total }).map((_, i) => (
           <button
             key={i}
-            className={`${styles.dot} ${
-              i === activeIndex ? styles.dotActive : ""
-            }`}
+            type="button"
+            className={`${styles.dot} ${i === activeIndex ? styles.dotActive : ""}`}
             onClick={() => onChange(i)}
             aria-label={`Снимок ${i + 1}`}
+            aria-current={i === activeIndex ? "true" : undefined}
           />
         ))}
       </div>
@@ -50,12 +52,13 @@ export function ImageCarousel({
       </span>
 
       <button
+        type="button"
         className={styles.arrow}
         onClick={next}
         disabled={activeIndex === total - 1}
         aria-label="Следующий снимок"
       >
-        ›
+        <Icon name="chevron-right" size={16} />
       </button>
     </div>
   );

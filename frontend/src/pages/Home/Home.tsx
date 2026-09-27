@@ -1,280 +1,218 @@
-import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import styles from "../../styles/Home.module.css";
-
 import { UploadProgressBlock } from "../../components/Home/UploadProgressBlock";
+import { SelectedFileBlock } from "../../components/Home/SelectedFileBlock";
 import { AnalysisBlock } from "../../components/Home/AnalysisBlock";
-import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
 import { ResultBlock } from "../../components/Home/ResultBlock";
 import { HowItWorks } from "../../components/Home/HowItWorks";
 import { ChecksList } from "../../components/Home/ChecksList";
 import { ProcessStatus } from "../../components/Home/ProcessStatus";
 import { ErrorBlock } from "../../components/Home/ErrorBlock";
-import { mapStudyResult, type ApiStudyResult } from "../../api/mapStudyResult";
-
-type ScreenState = "idle" | "uploading" | "processing" | "result" | "error";
-
-type SelectedFile = {
-  file: File;
-  sizeLabel: string;
-};
-
-/** Лимит Multer, docs/api.md: 50 МБ. */
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
-const UPLOAD_MS = 900;
-const ANALYSIS_MS = 1400;
-
-const MOCK_COMPLETED_RESULT: ApiStudyResult = {
-  studyId: "mock",
-  quality_class: 0,
-  violation_type: "",
-  quality_prob: 0.05,
-  anatomical_region: "Поясничный отдел позвоночника",
-};
-
-function isDicomFile(file: File): boolean {
-  const name = file.name.toLowerCase();
-  if (name.endsWith(".dcm") || name.endsWith(".dicom")) return true;
-  return file.type === "application/dicom" || file.type === "application/x-dicom";
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} Б`;
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} КБ`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
-}
+import { Icon } from "../../components/Icon";
+import { mapStudyResult } from "../../api/mapStudyResult";
+import { DevStateSwitcher } from "../../dev/DevStateSwitcher";
+import { previewHome, type DemoMode } from "../../dev/homePreview";
+import { useStudyFlow, type HomeView } from "./useStudyFlow";
 
 function Home() {
-  const [state, setState] = useState<ScreenState>("idle");
-  const [selected, setSelected] = useState<SelectedFile | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [demo, setDemo] = useState<DemoMode>("live");
   const [dragOver, setDragOver] = useState(false);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const generation = useRef(0);
-  const timerRef = useRef<number | null>(null);
-
-  const clearTimer = () => {
-    if (timerRef.current !== null) {
-      window.clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-
-  useEffect(() => clearTimer, []);
+  const flow = useStudyFlow();
+  const view: HomeView = demo === "live" ? flow.view : previewHome(demo);
 
   const resetInput = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const resetToIdle = () => {
-    generation.current += 1;
-    clearTimer();
+  const returnToUpload = () => {
+    flow.reset();
     resetInput();
-    setSelected(null);
-    setProgress(0);
-    setErrorMessage("");
     setDragOver(false);
-    setState("idle");
+    setDemo("live");
   };
 
-  const showError = (message: string) => {
-    generation.current += 1;
-    clearTimer();
-    resetInput();
-    setSelected(null);
-    setProgress(0);
+  const acceptList = (list: FileList) => {
+    const files = Array.from(list);
+    setDemo("live");
     setDragOver(false);
-    setErrorMessage(message);
-    setState("error");
-  };
-
-  const beginMockRun = (file: File) => {
-    const runId = generation.current + 1;
-    generation.current = runId;
-    clearTimer();
     resetInput();
-    setSelected({ file, sizeLabel: formatFileSize(file.size) });
-    setErrorMessage("");
-    setDragOver(false);
-    setProgress(0);
-    setState("uploading");
-
-    const started = performance.now();
-    timerRef.current = window.setInterval(() => {
-      if (generation.current !== runId) return;
-      const elapsed = performance.now() - started;
-      if (elapsed < UPLOAD_MS) {
-        setState("uploading");
-        setProgress(Math.min(100, Math.round((elapsed / UPLOAD_MS) * 100)));
-        return;
-      }
-      const analysisElapsed = elapsed - UPLOAD_MS;
-      if (analysisElapsed < ANALYSIS_MS) {
-        setState("processing");
-        setProgress(Math.min(100, Math.round((analysisElapsed / ANALYSIS_MS) * 100)));
-        return;
-      }
-      clearTimer();
-      setProgress(100);
-      setState("result");
-    }, 50);
-  };
-
-  const acceptFile = (file: File | undefined) => {
-    if (!file) return;
-    if (file.size === 0) {
-      showError("Файл пустой. Выберите DICOM-исследование.");
-      return;
-    }
-    if (file.size > MAX_FILE_BYTES) {
-      showError("Файл больше 50 МБ. Можно загрузить один DICOM не больше этого размера.");
-      return;
-    }
-    if (!isDicomFile(file)) {
-      showError("Нужен один файл DICOM с расширением .dcm или .dicom.");
-      return;
-    }
-    beginMockRun(file);
+    flow.acceptFileList(files);
   };
 
   const handleDcmChange = (event: ChangeEvent<HTMLInputElement>) => {
-    acceptFile(event.target.files?.[0]);
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    acceptList(files);
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setDragOver(false);
-    const list = event.dataTransfer.files;
-    if (list.length === 0) {
-      showError("Папка не поддерживается. Выберите один DICOM-файл.");
-      return;
-    }
-    if (list.length > 1) {
-      showError("Можно загрузить только один DICOM-файл.");
-      return;
-    }
-    acceptFile(list[0]);
+    acceptList(event.dataTransfer.files);
   };
 
-  const showProcessStatus = state === "uploading" || state === "processing";
-  const resultView = mapStudyResult(MOCK_COMPLETED_RESULT);
+  const startCheck = () => {
+    if (demo === "live") {
+      flow.start();
+      return;
+    }
+    if (demo === "selected") setDemo("uploading");
+  };
+
+  const showProcessStatus = view.kind === "uploading" || view.kind === "processing";
+  const resultView = view.kind === "result" ? mapStudyResult(view.result) : null;
 
   return (
-    <div className={styles.page}>
-      <header className={styles.pageHead}>
-        <h1>Анализ исследования</h1>
-        <p className={styles.subtitle}>
-          Загрузите один DICOM-файл. Сервис оценит качество укладки, а не поставит диагноз
-          и не измерит минеральную плотность кости.
-        </p>
-      </header>
+    <div className={styles.page} data-home-state={view.kind}>
+      {view.kind !== "result" && (
+        <header className={styles.pageHead}>
+          <p className={styles.kicker}>Одно исследование</p>
+          <h1>Анализ исследования</h1>
+          <p className={styles.subtitle}>
+            Загрузите один DICOM-файл. Сервис оценит качество укладки, а не поставит диагноз
+            и не измерит минеральную плотность кости.
+          </p>
+        </header>
+      )}
 
       <div className={showProcessStatus ? styles.layout : styles.layoutFull}>
         <div className={styles.mainColumn}>
-          {state === "idle" && (
-            <>
-              <Card highlighted={dragOver}>
-                <div
-                  className={styles.uploadBlock}
-                  onDragEnter={(event) => {
-                    event.preventDefault();
-                    setDragOver(true);
-                  }}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    setDragOver(true);
-                  }}
-                  onDragLeave={(event) => {
-                    event.preventDefault();
-                    const next = event.relatedTarget;
-                    if (next instanceof Node && event.currentTarget.contains(next)) return;
-                    setDragOver(false);
-                  }}
-                  onDrop={handleDrop}
-                >
-                  <div className={styles.uploadIcon} aria-hidden="true">
-                    ⬆
-                  </div>
-                  <h2 id="upload-title">Загрузите DICOM-исследование</h2>
-                  <p className={styles.hint}>Перетащите один файл сюда или выберите его на компьютере</p>
-
-                  <div className={styles.uploadActions}>
-                    <Button
-                      variant="secondary"
-                      iconLeft={<img src="/icons/folder.png" alt="" width={18} height={18} />}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Выбрать файл
-                    </Button>
-                  </div>
-
-                  <p className={styles.formats}>Поддерживается один файл: .dcm, .dicom. До 50 МБ.</p>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".dcm,.dicom,application/dicom,application/x-dicom"
-                    hidden
-                    aria-label="Выбрать DICOM-файл"
-                    onChange={handleDcmChange}
-                  />
+          {view.kind === "idle" && (
+            <section className={styles.intake} aria-labelledby="upload-title">
+              <div
+                className={`${styles.drop} ${dragOver ? styles.dropActive : ""}`}
+                onDragEnter={(event) => {
+                  event.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={(event) => {
+                  event.preventDefault();
+                  const next = event.relatedTarget;
+                  if (next instanceof Node && event.currentTarget.contains(next)) return;
+                  setDragOver(false);
+                }}
+                onDrop={handleDrop}
+              >
+                <div className={styles.dropMark} aria-hidden="true">
+                  <Icon name="file" size={22} />
                 </div>
-              </Card>
+                <h2 id="upload-title">DICOM-исследование</h2>
+                <p className={styles.hint}>Перетащите один файл сюда или выберите его на компьютере</p>
 
-              <div className={styles.infoRow}>
+                <div className={styles.uploadActions}>
+                  <Button
+                    variant="primary"
+                    iconLeft={<Icon name="upload" size={16} />}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Выбрать файл
+                  </Button>
+                </div>
+
+                <ul className={styles.specs}>
+                  <li>.dcm, .dicom</li>
+                  <li>один файл</li>
+                  <li>до 50 МБ</li>
+                </ul>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".dcm,.dicom,application/dicom,application/x-dicom"
+                  hidden
+                  aria-label="Выбрать DICOM-файл"
+                  onChange={handleDcmChange}
+                />
+              </div>
+
+              <div className={styles.intakeAside}>
                 <HowItWorks />
                 <ChecksList />
               </div>
-            </>
+            </section>
           )}
 
-          {state === "uploading" && selected && (
-            <Card>
-              <UploadProgressBlock
-                fileName={selected.file.name}
-                fileSize={selected.sizeLabel}
-                fileFormat="DICOM"
-                progress={progress}
-                onCancel={resetToIdle}
+          {view.kind === "selected" && (
+            <section className={styles.workPanel}>
+              <SelectedFileBlock
+                fileName={view.fileName}
+                fileSize={view.sizeLabel}
+                fileFormat={view.format}
+                onStart={startCheck}
+                onCancel={returnToUpload}
               />
-            </Card>
+            </section>
           )}
 
-          {state === "processing" && (
-            <Card>
-              <AnalysisBlock progress={progress} onCancel={resetToIdle} />
-            </Card>
+          {view.kind === "uploading" && (
+            <section className={styles.workPanel}>
+              <UploadProgressBlock
+                fileName={view.fileName}
+                fileSize={view.sizeLabel}
+                fileFormat={view.format}
+                progress={view.progress}
+                onCancel={returnToUpload}
+              />
+            </section>
           )}
 
-          {state === "result" && selected && (
-            <ResultBlock
-              files={[selected.file]}
-              isOk={resultView.isOk}
-              region={resultView.region}
-              qualityProb={resultView.qualityProb}
-              violations={resultView.violations}
-              description={resultView.summary}
-              onNewStudy={resetToIdle}
+          {view.kind === "processing" && (
+            <section className={styles.workPanel}>
+              <AnalysisBlock
+                progress={view.progress}
+                fileName={view.fileName}
+                onCancel={returnToUpload}
+              />
+            </section>
+          )}
+
+          {view.kind === "result" && resultView && (
+            <div className={styles.resultStack}>
+              <p className={styles.demoNote}>{view.notice}</p>
+              <ResultBlock
+                files={view.file ? [view.file] : []}
+                isOk={resultView.isOk}
+                region={resultView.region}
+                qualityProb={resultView.qualityProb}
+                violations={resultView.violations}
+                description={resultView.summary}
+                emptyLabel="Снимок не приложен к демонстрационному результату."
+                onNewStudy={returnToUpload}
+              />
+            </div>
+          )}
+
+          {view.kind === "file-error" && (
+            <ErrorBlock
+              title="Файл не принят"
+              message={view.message}
+              onRetry={returnToUpload}
             />
           )}
 
-          {state === "error" && (
+          {view.kind === "analysis-error" && (
             <ErrorBlock
-              title="Файл не принят"
-              message={errorMessage}
-              onRetry={resetToIdle}
+              title="Анализ не выполнен"
+              message={view.message}
+              onRetry={returnToUpload}
             />
           )}
         </div>
 
         {showProcessStatus && (
           <div className={styles.sideColumn}>
-            <ProcessStatus stage={state} />
+            <ProcessStatus stage={view.kind} />
           </div>
         )}
       </div>
+
+      <DevStateSwitcher value={demo} onChange={setDemo} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Badge } from "../Badge";
 import { Button } from "../Button";
+import { Icon } from "../Icon";
 import styles from "../../styles/ResultHeader.module.css";
 
 interface ResultHeaderProps {
@@ -30,9 +31,15 @@ export function ResultHeader({
         <div className={styles.titleRow}>
           <h1 className={styles.title}>{title}</h1>
           {isOk ? (
-            <Badge tone="success">✓ Укладка корректна</Badge>
+            <Badge tone="success">
+              <Icon name="check" size={12} />
+              Укладка корректна
+            </Badge>
           ) : (
-            <Badge tone="warning">⚠ Нарушение укладки</Badge>
+            <Badge tone="warning">
+              <Icon name="alert" size={12} />
+              Нарушение укладки
+            </Badge>
           )}
         </div>
 
@@ -52,7 +59,7 @@ export function ResultHeader({
 
       <div className={styles.actions}>
         {onExport && (
-          <Button variant="primary" iconLeft="⭳" onClick={onExport}>
+          <Button variant="primary" onClick={onExport}>
             Экспорт XLSX
           </Button>
         )}

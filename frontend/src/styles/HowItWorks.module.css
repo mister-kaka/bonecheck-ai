@@ -1,12 +1,8 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-5);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-surface);
-  box-shadow: var(--shadow-sm);
+  gap: var(--space-3);
+  padding: 20px 20px 8px;
 }
 
 .head {
@@ -17,70 +13,43 @@
 
 .headIcon {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  color: var(--color-slate);
-  font-size: var(--fs-tiny);
-  font-weight: 700;
+  color: var(--color-accent);
 }
 
 .title {
-  font-size: var(--fs-body);
+  font-size: var(--fs-small);
+  letter-spacing: 0.02em;
 }
 
 .steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
 }
 
 .step {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: 0 var(--space-4);
-  border-left: 1px solid var(--color-border);
-}
-
-.step:first-child {
-  padding-left: 0;
-  border-left: none;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-border);
 }
 
 .number {
+  grid-row: 1 / span 2;
   font-family: var(--font-mono);
-  font-size: var(--fs-tiny);
-  font-weight: 700;
-  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-accent);
+  padding-top: 2px;
 }
 
 .stepTitle {
   font-size: var(--fs-small);
-  font-weight: 700;
-  color: var(--color-text-primary);
+  font-weight: 600;
 }
 
 .caption {
   font-size: var(--fs-tiny);
-  line-height: var(--lh-normal);
   color: var(--color-text-secondary);
-}
-
-@media (max-width: 640px) {
-  .steps {
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
-  }
-
-  .step {
-    padding: var(--space-3) 0 0;
-    border-left: none;
-    border-top: 1px solid var(--color-border);
-  }
-
-  .step:first-child {
-    padding-top: 0;
-    border-top: none;
-  }
 }

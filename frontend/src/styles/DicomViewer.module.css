@@ -1,26 +1,25 @@
 .viewer {
   position: relative;
   background: var(--color-viewer-bg);
+  border: 1px solid #0b0e0c;
   border-radius: var(--radius-lg);
   overflow: hidden;
   min-height: 520px;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .topBar {
-  padding: 10px 12px;
-  background: #13181E;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  display: flex;
-  justify-content: stretch;
-  width: 100%;
+  background: var(--color-viewer-rail);
+  border-bottom: 1px solid var(--color-viewer-line);
 }
 
 .body {
   position: relative;
   flex: 1;
   display: flex;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -31,7 +30,8 @@
   justify-content: center;
   overflow: hidden;
   position: relative;
-  padding: 24px;
+  padding: 56px 24px 24px;
+  container-type: size;
 }
 
 .imageWrapper {
@@ -42,15 +42,18 @@
   will-change: transform;
 }
 
+.framed {
+  box-shadow: 0 0 0 1px rgba(246, 243, 236, 0.16);
+}
+
 .canvas {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
+  max-width: 100cqw;
+  max-height: 100cqh;
   width: auto;
   height: auto;
   user-select: none;
   pointer-events: none;
-  transition: opacity 0.15s ease;
 }
 
 .overlay {
@@ -66,21 +69,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(246, 243, 236, 0.72);
   font-size: var(--fs-small);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  padding: 24px;
+  text-align: center;
+}
+
+.placeholder span {
+  max-width: 320px;
+  line-height: var(--lh-normal);
 }
 
 .errorBanner {
-  position: absolute;
-  top: 64px;
-  right: 12px;
-  z-index: 10;
+  margin: 8px 12px 0;
   background: var(--color-danger-bg);
   color: var(--color-danger);
-  padding: 6px 12px;
-  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
   font-size: var(--fs-tiny);
   font-weight: 600;
 }
@@ -90,11 +95,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 16px;
-  background: rgba(0, 0, 0, 0.25);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.65);
-  font-size: var(--fs-small);
+  min-height: 36px;
+  padding: 8px 12px;
+  background: var(--color-viewer-rail);
+  border-top: 1px solid var(--color-viewer-line);
+  color: rgba(246, 243, 236, 0.62);
+  font-size: var(--fs-tiny);
 }
 
 .fileName {
@@ -103,25 +109,35 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: var(--fs-tiny);
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  color: rgba(246, 243, 236, 0.88);
 }
 
-.fileFormat {
-  font-size: var(--fs-tiny);
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.fileFormat,
+.zoom {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 @media (max-width: 640px) {
   .viewer {
-    min-height: 360px;
+    min-height: 320px;
   }
 
-  .topBar {
-    padding: 8px 12px;
+  .stage {
+    padding: 52px 12px 12px;
   }
+
   .footer {
-    padding: 8px 12px;
+    flex-wrap: wrap;
   }
 }

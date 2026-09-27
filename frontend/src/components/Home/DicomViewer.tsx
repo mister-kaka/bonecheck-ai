@@ -121,6 +121,7 @@ interface DicomViewerProps {
   heatmapUrl?: string;
   contourPoints?: Array<[number, number]>;
   keypoints?: Keypoint[];
+  emptyLabel?: string;
 }
 
 export function DicomViewer({
@@ -130,6 +131,7 @@ export function DicomViewer({
   heatmapUrl,
   contourPoints,
   keypoints,
+  emptyLabel = "Нет изображения",
 }: DicomViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [zoom, setZoom] = useState(1);
@@ -247,7 +249,7 @@ export function DicomViewer({
 
       {!file ? (
         <div className={styles.placeholder}>
-          <span>DICOM-ИЗОБРАЖЕНИЕ</span>
+          <span>{emptyLabel}</span>
         </div>
       ) : (
         <div className={styles.body}>
@@ -267,7 +269,7 @@ export function DicomViewer({
             style={{ cursor: isPanning ? "grabbing" : "grab" }}
           >
             <div
-              className={styles.imageWrapper}
+              className={`${styles.imageWrapper} ${imageSize ? styles.framed : ""}`}
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
               }}
@@ -298,7 +300,7 @@ export function DicomViewer({
                       .map(([x, y]) => `${x},${y}`)
                       .join(" ")}
                     fill="none"
-                    stroke="#FFD25A"
+                    stroke="#e2c16a"
                     strokeWidth="2"
                     strokeDasharray="4 4"
                   />
@@ -317,8 +319,8 @@ export function DicomViewer({
                       cx={p.x}
                       cy={p.y}
                       r="4"
-                      fill="#FFD25A"
-                      stroke="#1A2028"
+                      fill="#e2c16a"
+                      stroke="#0b1220"
                       strokeWidth="1"
                     />
                   ))}
@@ -332,7 +334,10 @@ export function DicomViewer({
       {file && (
         <div className={styles.footer}>
           <span className={styles.fileName}>{file.name}</span>
-          <span className={styles.fileFormat}>{modality}</span>
+          <span className={styles.meta}>
+            <span className={styles.zoom}>{Math.round(zoom * 100)}%</span>
+            <span className={styles.fileFormat}>{modality}</span>
+          </span>
         </div>
       )}
     </div>

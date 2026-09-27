@@ -1,3 +1,4 @@
+import { Icon, type IconName } from "../Icon";
 import styles from "../../styles/CheckDetail.module.css";
 
 export type CheckTone = "success" | "warning" | "danger";
@@ -10,10 +11,10 @@ interface CheckDetailProps {
   items?: string[];
 }
 
-const ICON: Record<CheckTone, string> = {
-  success: "✓",
-  warning: "!",
-  danger: "✕",
+const ICON: Record<CheckTone, IconName> = {
+  success: "check",
+  warning: "alert",
+  danger: "error",
 };
 
 export function CheckDetail({
@@ -26,7 +27,7 @@ export function CheckDetail({
   return (
     <article className={`${styles.check} ${styles[tone]}`}>
       <span className={styles.icon} aria-hidden="true">
-        {ICON[tone]}
+        <Icon name={ICON[tone]} size={12} />
       </span>
 
       <div className={styles.body}>

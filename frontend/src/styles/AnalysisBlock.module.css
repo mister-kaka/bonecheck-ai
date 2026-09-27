@@ -1,36 +1,67 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
   width: 100%;
   min-width: 0;
-  padding: var(--space-5) var(--space-6);
+  padding: var(--space-5);
 }
 
 .row {
   display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.mark {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-5);
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  color: var(--color-processing);
+  background: var(--color-processing-bg);
+  border-radius: var(--radius-sm);
+}
+
+.mark svg {
+  animation: pulse 1.6s ease-in-out infinite;
 }
 
 .info {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
   flex: 1;
+}
+
+.stage {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-processing);
 }
 
 .title {
   font-size: var(--fs-h3);
   font-weight: 600;
+}
+
+.fileName {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tiny);
   color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .region {
   font-size: var(--fs-small);
   color: var(--color-text-secondary);
-  line-height: 1.4;
 }
 
 .region strong {
@@ -38,26 +69,61 @@
   font-weight: 600;
 }
 
+.meter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.track {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-progress-track);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--color-processing);
+  border-radius: inherit;
+}
+
+.value {
+  min-width: 36px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-tiny);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
 .cancelBtn {
-  align-self: center;
-  padding: 8px 24px;
-  border-radius: var(--radius-md);
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
   background: transparent;
   color: var(--color-text-secondary);
-  font-size: var(--fs-body);
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  font-size: var(--fs-small);
+  font-weight: 500;
 }
 
 .cancelBtn:hover {
   color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 35%, var(--color-border));
   background: var(--color-danger-bg);
 }
 
 .cancelBtn:focus-visible {
-  outline: 2px solid var(--color-slate);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+@keyframes pulse {
+  0%,
+  100% { opacity: 1; }
+  50% { opacity: 0.45; }
 }
 
 @media (max-width: 640px) {
@@ -65,7 +131,14 @@
     padding: var(--space-4);
   }
 
-  .row {
-    gap: var(--space-4);
+  .fileName {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark svg {
+    animation: none;
   }
 }

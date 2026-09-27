@@ -146,7 +146,9 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
 
   async findAll(sessionId?: string): Promise<StudyRecord[]> {
     const rows =
-      sessionId === undefined ? this.selectAll.all() : this.selectBySession.all(sessionId);
+      sessionId === undefined
+        ? this.selectAll.all()
+        : this.selectBySession.all(sessionId);
     return rows.map((row) => this.toRecord(row));
   }
 
@@ -162,7 +164,9 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
       error: study.error,
       quality_class: study.result ? study.result.quality_class : null,
       quality_prob:
-        study.result && study.result.quality_prob !== undefined ? study.result.quality_prob : null,
+        study.result && study.result.quality_prob !== undefined
+          ? study.result.quality_prob
+          : null,
       violation_type: study.result ? study.result.violation_type : null,
       anatomical_region: study.result?.anatomical_region ?? null,
     };
@@ -187,17 +191,18 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
       return null;
     }
 
+    if (row.violation_type === null || !row.anatomical_region) {
+      return null;
+    }
+
     const result: MlPrediction = {
       quality_class: row.quality_class,
-      violation_type: row.violation_type ?? '',
+      violation_type: row.violation_type,
+      anatomical_region: row.anatomical_region,
     };
 
     if (row.quality_prob !== null) {
       result.quality_prob = row.quality_prob;
-    }
-
-    if (row.anatomical_region) {
-      result.anatomical_region = row.anatomical_region;
     }
 
     return result;

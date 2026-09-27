@@ -4,7 +4,7 @@ export type MlPrediction = {
   quality_class: QualityClass;
   violation_type: string;
   quality_prob?: number;
-  anatomical_region?: string;
+  anatomical_region: string;
 };
 
 export type MlAnalyzeInput = {

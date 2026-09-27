@@ -18,10 +18,12 @@ import {
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
@@ -70,6 +72,11 @@ export class StudiesController {
   })
   @ApiCreatedResponse({ type: CreateStudyResponseDto })
   @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiResponse({
+    status: HttpStatus.PAYLOAD_TOO_LARGE,
+    type: ApiErrorResponseDto,
+  })
+  @ApiInternalServerErrorResponse({ type: ApiErrorResponseDto })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -105,6 +112,7 @@ export class StudiesController {
   @Get(':id')
   @ApiOperation({ summary: 'Получить статус исследования' })
   @ApiOkResponse({ type: StudyStatusResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
   @ApiNotFoundResponse({ type: ApiErrorResponseDto })
   getById(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
@@ -116,6 +124,7 @@ export class StudiesController {
   @ApiOperation({ summary: 'Получить результат анализа' })
   @ApiOkResponse({ type: StudyResultResponseDto })
   @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
   @ApiConflictResponse({ type: ApiErrorResponseDto })
   getResult(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,

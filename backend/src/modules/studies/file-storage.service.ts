@@ -20,6 +20,10 @@ export class FileStorageService {
 
   private safeFileName(originalFileName: string): string {
     const base = path.basename(originalFileName).replace(/[<>:"/\\|?*\u0000]/g, '_');
-    return base.length > 0 ? base : 'study.dcm';
+    if (base.length === 0 || base === '.' || base === '..') {
+      return 'study.dcm';
+    }
+
+    return base;
   }
 }

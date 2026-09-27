@@ -87,9 +87,23 @@ describe('Исследования (сквозные тесты)', () => {
       .get(`/api/studies/${created.body.id}/result`)
       .expect(200);
 
-    expect(result.body.studyId).toBe(created.body.id);
-    expect([0, 1]).toContain(result.body.quality_class);
-    expect(typeof result.body.violation_type).toBe('string');
+    expect(result.body).toEqual({
+      studyId: created.body.id,
+      quality_class: 0,
+      violation_type: '',
+      quality_prob: 0.05,
+      anatomical_region: 'Поясничный отдел позвоночника',
+    });
+
+    const status = await request(app.getHttpServer())
+      .get(`/api/studies/${created.body.id}`)
+      .expect(200);
+    expect(status.body).toMatchObject({
+      status: 'completed',
+      hasResult: true,
+      error: null,
+    });
+    expect(status.body.quality_class).toBeUndefined();
   });
 
   it('фильтрует историю по session_id и отдаёт все исследования без фильтра', async () => {
@@ -118,6 +132,42 @@ describe('Исследования (сквозные тесты)', () => {
     const all = await request(app.getHttpServer()).get('/api/studies').expect(200);
     const allIds = all.body.items.map((item: { id: string }) => item.id);
     expect(allIds).toEqual(expect.arrayContaining([studyA.body.id, studyB.body.id]));
+  });
+
+  it('пустой файл -> 400', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/studies')
+      .attach('file', Buffer.alloc(0), 'empty.dcm')
+      .expect(400);
+    expect(response.body.code).toBe('FILE_REQUIRED');
+  });
+
+  it('id не UUID v4 -> 400', async () => {
+    const status = await request(app.getHttpServer())
+      .get('/api/studies/not-a-uuid')
+      .expect(400);
+    expect(status.body.code).toBe('BAD_REQUEST');
+
+    const result = await request(app.getHttpServer())
+      .get('/api/studies/not-a-uuid/result')
+      .expect(400);
+    expect(result.body.code).toBe('BAD_REQUEST');
+  });
+
+  it('пустая история -> 200 и items: []', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/studies')
+      .query({ session_id: 'session-without-studies' })
+      .expect(200);
+    expect(response.body).toEqual({ items: [] });
+  });
+
+  it('session_id не строка -> 400 INVALID_SESSION_ID', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/studies')
+      .query({ session_id: ['a', 'b'] })
+      .expect(400);
+    expect(response.body.code).toBe('INVALID_SESSION_ID');
   });
 
   it('отклоняет слишком длинный session_id', async () => {

@@ -1,12 +1,7 @@
 export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
 const ALLOWED_EXTENSIONS = new Set(['.dcm', '.dicom']);
-const ALLOWED_MIME_TYPES = new Set([
-  'application/dicom',
-  'application/x-dicom',
-  'application/dicom+json',
-  'application/octet-stream',
-]);
+const ALLOWED_MIME_TYPES = new Set(['application/dicom', 'application/x-dicom']);
 
 export function isAllowedDicomUpload(originalName: string, mimeType: string): boolean {
   const lowerName = originalName.toLowerCase();
@@ -17,9 +12,5 @@ export function isAllowedDicomUpload(originalName: string, mimeType: string): bo
     return true;
   }
 
-  if (ALLOWED_MIME_TYPES.has(mime) && extension === '') {
-    return true;
-  }
-
-  return mime === 'application/dicom' || mime === 'application/x-dicom';
+  return ALLOWED_MIME_TYPES.has(mime);
 }

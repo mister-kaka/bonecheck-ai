@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { MlAnalyzeInput, MlClient, MlPrediction } from './ml.types';
 
+// Временная заглушка, пока Python ML не подключён. Ответ уже проходит validation.
 @Injectable()
 export class MockMlClient implements MlClient {
   async analyze(_input: MlAnalyzeInput): Promise<MlPrediction> {

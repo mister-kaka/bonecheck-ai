@@ -75,14 +75,17 @@ export class StudyResultResponseDto {
   violation_type!: string;
 
   @ApiPropertyOptional({
-    description: 'Вероятность нарушения [0; 1].',
+    description: 'Вероятность нарушения [0; 1]. Ключ отсутствует, если ML его не вернул.',
     example: 0.05,
+    minimum: 0,
+    maximum: 1,
   })
   quality_prob?: number;
 
   @ApiProperty({
     example: 'Поясничный отдел позвоночника',
-    description: 'Поясничный отдел позвоночника или Проксимальный отдел бедра.',
+    enum: ['Поясничный отдел позвоночника', 'Проксимальный отдел бедра'],
+    description: 'Обязательный регион успешного результата.',
   })
   anatomical_region!: string;
 }

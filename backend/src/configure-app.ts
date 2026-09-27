@@ -18,7 +18,20 @@ export function configureApp(app: INestApplication): void {
           });
         }
 
-        return new BadRequestException(errors);
+        const unknownParameter = errors.find(
+          (error) => error.constraints && 'whitelistValidation' in error.constraints,
+        );
+        if (unknownParameter) {
+          return new BadRequestException({
+            code: 'BAD_REQUEST',
+            message: 'Неизвестный параметр запроса.',
+          });
+        }
+
+        return new BadRequestException({
+          code: 'BAD_REQUEST',
+          message: 'Некорректный запрос.',
+        });
       },
     }),
   );

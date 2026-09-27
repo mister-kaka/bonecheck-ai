@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -37,6 +38,15 @@ import {
 } from './dto/study-responses.dto';
 import { MAX_FILE_SIZE_BYTES } from './file-validation';
 import { StudiesService } from './studies.service';
+
+const studyIdPipe = new ParseUUIDPipe({
+  version: '4',
+  exceptionFactory: () =>
+    new BadRequestException({
+      code: 'BAD_REQUEST',
+      message: 'Идентификатор исследования должен быть UUID v4.',
+    }),
+});
 
 @ApiTags('studies')
 @Controller('api/studies')
@@ -115,7 +125,7 @@ export class StudiesController {
   @ApiBadRequestResponse({ type: ApiErrorResponseDto })
   @ApiNotFoundResponse({ type: ApiErrorResponseDto })
   getById(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('id', studyIdPipe) id: string,
   ): Promise<StudyStatusResponseDto> {
     return this.studiesService.getById(id);
   }
@@ -127,7 +137,7 @@ export class StudiesController {
   @ApiBadRequestResponse({ type: ApiErrorResponseDto })
   @ApiConflictResponse({ type: ApiErrorResponseDto })
   getResult(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('id', studyIdPipe) id: string,
   ): Promise<StudyResultResponseDto> {
     return this.studiesService.getResult(id);
   }

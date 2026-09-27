@@ -296,7 +296,7 @@ export class StudiesService implements OnModuleInit {
       await this.studies.save(study);
     } catch (error) {
       this.logger.error(
-        `Failed to process study ${id}`,
+        `Не удалось сохранить итог исследования ${id}`,
         error instanceof Error ? error.stack : undefined,
       );
     }

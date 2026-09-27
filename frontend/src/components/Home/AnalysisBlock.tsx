@@ -18,7 +18,7 @@ export function AnalysisBlock({
         <CircularProgress value={progress} size={100} strokeWidth={8} />
 
         <div className={styles.info}>
-          <h2 className={styles.title}>Анализ исследования...</h2>
+          <h2 className={styles.title}>Проверка качества укладки</h2>
           {region && (
             <p className={styles.region}>
               Определение региона: <strong>{region}</strong>

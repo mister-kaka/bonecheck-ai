@@ -2,11 +2,15 @@ import { Button } from "../Button";
 import styles from "../../styles/ErrorBlock.module.css";
 
 interface ErrorBlockProps {
+  title?: string;
+  message?: string;
   reason?: string;
   onRetry?: () => void;
 }
 
 export function ErrorBlock({
+  title = "Ошибка обработки",
+  message,
   reason = "файл повреждён или имеет неподдерживаемый формат.",
   onRetry,
 }: ErrorBlockProps) {
@@ -16,10 +20,10 @@ export function ErrorBlock({
         ✕
       </span>
 
-      <h2 className={styles.title}>Ошибка обработки</h2>
+      <h2 className={styles.title}>{title}</h2>
 
       <p className={styles.text}>
-        Не удалось обработать DICOM-файл. Причина: {reason}
+        {message ?? `Не удалось обработать DICOM-файл. Причина: ${reason}`}
       </p>
 
       <Button variant="secondary" onClick={onRetry}>

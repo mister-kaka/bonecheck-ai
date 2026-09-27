@@ -5,8 +5,8 @@ import styles from "../../styles/ResultHeader.module.css";
 interface ResultHeaderProps {
   isOk: boolean;
   region: string;
-  /** Уверенность модели 0–1, выводится в процентах */
-  confidence: number;
+  /** Вероятность нарушения quality_prob, 0–1. В процентах. */
+  qualityProb?: number;
   title?: string;
   onExport?: () => void;
   onNewStudy?: () => void;
@@ -15,12 +15,15 @@ interface ResultHeaderProps {
 export function ResultHeader({
   isOk,
   region,
-  confidence,
+  qualityProb,
   title = "Результат исследования",
   onExport,
   onNewStudy,
 }: ResultHeaderProps) {
-  const percent = Math.round(Math.min(1, Math.max(0, confidence)) * 100);
+  const percent =
+    qualityProb === undefined
+      ? undefined
+      : Math.round(Math.min(1, Math.max(0, qualityProb)) * 100);
 
   return (
     <header className={styles.header}>
@@ -28,9 +31,9 @@ export function ResultHeader({
         <div className={styles.titleRow}>
           <h1 className={styles.title}>{title}</h1>
           {isOk ? (
-            <Badge tone="success">✓ Исследование корректно</Badge>
+            <Badge tone="success">✓ Укладка корректна</Badge>
           ) : (
-            <Badge tone="warning">⚠ Обнаружено нарушение</Badge>
+            <Badge tone="warning">⚠ Нарушение укладки</Badge>
           )}
         </div>
 
@@ -39,17 +42,21 @@ export function ResultHeader({
             <dt>Регион:</dt>
             <dd>{region}</dd>
           </div>
-          <div className={styles.chip}>
-            <dt>Уверенность:</dt>
-            <dd>{percent}%</dd>
-          </div>
+          {percent !== undefined && (
+            <div className={styles.chip}>
+              <dt>Вероятность нарушения:</dt>
+              <dd>{percent}%</dd>
+            </div>
+          )}
         </dl>
       </div>
 
       <div className={styles.actions}>
-        <Button variant="primary" iconLeft="⭳" onClick={onExport}>
-          Экспорт XLSX
-        </Button>
+        {onExport && (
+          <Button variant="primary" iconLeft="⭳" onClick={onExport}>
+            Экспорт XLSX
+          </Button>
+        )}
         <Button variant="secondary" onClick={onNewStudy}>
           Новое исследование
         </Button>

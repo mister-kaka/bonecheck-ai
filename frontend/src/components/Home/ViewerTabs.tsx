@@ -4,12 +4,14 @@ import styles from "../../styles/ViewerTabs.module.css";
 interface ViewerTabsProps {
   layers: Layers;
   onChange: (layers: Layers) => void;
+  /** Слои, для которых есть данные. Без данных таб не показывается. */
+  available?: Array<keyof Layers>;
 }
 
 const items: Array<{ key: keyof Layers; label: string }> = [
   { key: "original", label: "Оригинал" },
   { key: "contour", label: "Контур" },
-  { key: "heatmap", label: "Heatmap" },
+  { key: "heatmap", label: "Тепловая карта" },
   { key: "keypoints", label: "Ключевые точки" },
 ];
 
@@ -20,24 +22,28 @@ const EMPTY: Layers = {
   keypoints: false,
 };
 
-export function ViewerTabs({ layers, onChange }: ViewerTabsProps) {
+export function ViewerTabs({ layers, onChange, available }: ViewerTabsProps) {
+  const visibleItems = available
+    ? items.filter((item) => available.includes(item.key))
+    : items;
+
+  if (visibleItems.length <= 1) return null;
+
   const activeKey = (Object.keys(layers) as Array<keyof Layers>).find(
     (k) => layers[k]
   );
 
   const handleClick = (key: keyof Layers) => {
-    // Клик по уже активному табу → возврат к Оригинал
     if (activeKey === key && key !== "original") {
       onChange({ ...EMPTY, original: true });
       return;
     }
-    // Клик по неактивному → активируем только его
     onChange({ ...EMPTY, [key]: true });
   };
 
   return (
-    <div className={styles.tabs} role="tablist">
-      {items.map((item) => {
+    <div className={styles.tabs} role="tablist" aria-label="Слои изображения">
+      {visibleItems.map((item) => {
         const isActive = activeKey === item.key;
         return (
           <button

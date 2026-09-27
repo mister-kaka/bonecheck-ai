@@ -23,7 +23,14 @@ export function CircularProgress({
   const offset = circumference - (safe / 100) * circumference;
 
   return (
-    <div className={styles.wrap}>
+    <div
+      className={styles.wrap}
+      role="progressbar"
+      aria-valuenow={Math.round(safe)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label ?? "Прогресс"}
+    >
       <svg
         width={size}
         height={size}

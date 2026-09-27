@@ -1,218 +1,284 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import styles from "../../styles/Home.module.css";
 
 import { UploadProgressBlock } from "../../components/Home/UploadProgressBlock";
 import { AnalysisBlock } from "../../components/Home/AnalysisBlock";
-// import { Badge } from "../../components/Badge";
-// import { Progress } from "../../components/Progress";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
-// import { Spinner } from "../../components/Spinner";
 import { ResultBlock } from "../../components/Home/ResultBlock";
+import { HowItWorks } from "../../components/Home/HowItWorks";
+import { ChecksList } from "../../components/Home/ChecksList";
+import { ProcessStatus } from "../../components/Home/ProcessStatus";
+import { ErrorBlock } from "../../components/Home/ErrorBlock";
+import { mapStudyResult, type ApiStudyResult } from "../../api/mapStudyResult";
 
 type ScreenState = "idle" | "uploading" | "processing" | "result" | "error";
 
+type SelectedFile = {
+  file: File;
+  sizeLabel: string;
+};
+
+/** Лимит Multer, docs/api.md: 50 МБ. */
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
+const UPLOAD_MS = 900;
+const ANALYSIS_MS = 1400;
+
+/**
+ * Типичный ответ MockMlClient (docs/api.md).
+ * При интеграции заменить на GET /api/studies/:id/result после polling статуса.
+ */
+const MOCK_COMPLETED_RESULT: ApiStudyResult = {
+  studyId: "mock",
+  quality_class: 0,
+  violation_type: "",
+  quality_prob: 0.05,
+  anatomical_region: "Поясничный отдел позвоночника",
+};
+
+function isDicomFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".dcm") || name.endsWith(".dicom")) return true;
+  return file.type === "application/dicom" || file.type === "application/x-dicom";
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} Б`;
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} КБ`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
 function Home() {
-  // СОСТОЯНИЕ
   const [state, setState] = useState<ScreenState>("idle");
-
- // ВРЕМЕННО: для отладки вручную
- //   УДАЛИТЬ при интеграции  с API — testFile будет приходить из реального upload'а. 
-  const [testFile, setTestFile] = useState<File | null>(null);
-
-  //  ВРЕМЕННО: массив из 3 тестовых DICOM для проверки карусели. 
-  // УДАЛИТЬ при интеграции — заменить на данные, пришедшие из API (массив URL/файлов одного study). 
-  const [files, setFiles] = useState<File[]>([]);
+  const [selected, setSelected] = useState<SelectedFile | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [dragOver, setDragOver] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const zipInputRef = useRef<HTMLInputElement>(null);
+  const generation = useRef(0);
+  const timerRef = useRef<number | null>(null);
 
-  // ВРЕМЕННО: кнопки для ручного переключения состояний во время разработки. 
-  //  УДАЛИТЬ перед сдачей — состояния будут переключаться автоматически после ответов API.   
-  const goIdle = () => setState("idle");
-  const goUploading = () => setState("uploading");
-  const goProcessing = () => setState("processing");
-  const goResult = () => setState("result");
-  const goError = () => setState("error");
-
-
-  // ВРЕМЕННО: подгрузка 3 тестовых DICOM из /public.  
-  // УДАЛИТЬ при интеграции с бэком. В реальном приложении файлы приходят через <input type="file"> или из API. 
-  useEffect(() => {
-    Promise.all([
-      fetch("/test1.dcm").then((r) => r.blob()),
-      fetch("/test2.dcm").then((r) => r.blob()),
-      fetch("/test3.dcm").then((r) => r.blob()),
-    ])
-      .then((blobs) => {
-        console.log("Загружено blob-ов:", blobs.length);
-        const loaded = blobs.map(
-          (b, i) =>
-            new File([b], `test${i + 1}.dcm`, { type: "application/dicom" })
-        );
-        setFiles(loaded);
-        setTestFile(loaded[0] ?? null);
-      })
-      .catch((err) => console.error("Не удалось загрузить тестовые DICOM", err));
-  }, []);
-
-
-    // ВРЕМЕННО: скрытые input'ы для выбора файлов вручную
-        // УДАЛИТЬ при интеграции — замени на реальный upload.
-  const handlePickDcm = () => fileInputRef.current?.click();
-  const handlePickZip = () => zipInputRef.current?.click();
-
-  const handleDcmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setTestFile(file);
-    setFiles([file]);
-    setState("result");
-    e.target.value = "";
+  const clearTimer = () => {
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
-  const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    console.log("ZIP выбран:", file.name, file.size, "байт");
+  useEffect(() => clearTimer, []);
+
+  const resetInput = () => {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const resetToIdle = () => {
+    generation.current += 1;
+    clearTimer();
+    resetInput();
+    setSelected(null);
+    setProgress(0);
+    setErrorMessage("");
+    setDragOver(false);
+    setState("idle");
+  };
+
+  const showError = (message: string) => {
+    generation.current += 1;
+    clearTimer();
+    resetInput();
+    setSelected(null);
+    setProgress(0);
+    setDragOver(false);
+    setErrorMessage(message);
+    setState("error");
+  };
+
+  const beginMockRun = (file: File) => {
+    const runId = generation.current + 1;
+    generation.current = runId;
+    clearTimer();
+    resetInput();
+    setSelected({ file, sizeLabel: formatFileSize(file.size) });
+    setErrorMessage("");
+    setDragOver(false);
+    setProgress(0);
     setState("uploading");
-    e.target.value = "";
+
+    const started = performance.now();
+    timerRef.current = window.setInterval(() => {
+      if (generation.current !== runId) return;
+      const elapsed = performance.now() - started;
+      if (elapsed < UPLOAD_MS) {
+        setState("uploading");
+        setProgress(Math.min(100, Math.round((elapsed / UPLOAD_MS) * 100)));
+        return;
+      }
+      const analysisElapsed = elapsed - UPLOAD_MS;
+      if (analysisElapsed < ANALYSIS_MS) {
+        setState("processing");
+        setProgress(Math.min(100, Math.round((analysisElapsed / ANALYSIS_MS) * 100)));
+        return;
+      }
+      clearTimer();
+      setProgress(100);
+      setState("result");
+    }, 50);
   };
 
-  // RENDER
+  const acceptFile = (file: File | undefined) => {
+    if (!file) return;
+    if (file.size === 0) {
+      showError("Файл пустой. Выберите DICOM-исследование.");
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      showError("Файл больше 50 МБ. Можно загрузить один DICOM не больше этого размера.");
+      return;
+    }
+    if (!isDicomFile(file)) {
+      showError("Нужен один файл DICOM с расширением .dcm или .dicom.");
+      return;
+    }
+    beginMockRun(file);
+  };
+
+  const handleDcmChange = (event: ChangeEvent<HTMLInputElement>) => {
+    acceptFile(event.target.files?.[0]);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragOver(false);
+    const list = event.dataTransfer.files;
+    if (list.length === 0) {
+      showError("Папка не поддерживается. Выберите один DICOM-файл.");
+      return;
+    }
+    if (list.length > 1) {
+      showError("Можно загрузить только один DICOM-файл.");
+      return;
+    }
+    acceptFile(list[0]);
+  };
+
+  const showProcessStatus = state === "uploading" || state === "processing";
+  const resultView = mapStudyResult(MOCK_COMPLETED_RESULT);
+
   return (
     <div className={styles.page}>
       <header className={styles.pageHead}>
         <h1>Анализ исследования</h1>
         <p className={styles.subtitle}>
-          Загрузите DICOM-исследование — сервис проверит качество укладки
+          Загрузите один DICOM-файл. Сервис оценит качество укладки, а не поставит диагноз
+          и не измерит минеральную плотность кости.
         </p>
       </header>
 
-      {/* ВРЕМЕННО: dev-панель для переключения состояний вручную.
-            УДАЛИТЬ перед сдачей.  */}
-      <div className={styles.devPanel}>
-        <span className={styles.devLabel}>Dev:</span>
-        <button onClick={goIdle}>idle</button>
-        <button onClick={goUploading}>uploading</button>
-        <button onClick={goProcessing}>processing</button>
-        <button onClick={goResult}>result</button>
-        <button onClick={goError}>error</button>
-      </div>
-
-      {/*  IDLE — пользователь ещё ничего не загрузил */}
-      {state === "idle" && (
-        <div className={styles.centered}>
-          <Card>
-            <div className={styles.uploadBlock}>
-              <div className={styles.uploadIcon}>⬆</div>
-              <h2>Загрузите DICOM-исследование</h2>
-              <p className={styles.hint}>Перетащите файл или папку сюда</p>
-
-              <div className={styles.uploadActions}>
-                <Button
-                  variant="secondary"
-                  iconLeft={<span>📁</span>}
-                  onClick={handlePickDcm}
+      <div className={showProcessStatus ? styles.layout : styles.layoutFull}>
+        <div className={styles.mainColumn}>
+          {state === "idle" && (
+            <>
+              <Card highlighted={dragOver}>
+                <div
+                  className={styles.uploadBlock}
+                  onDragEnter={(event) => {
+                    event.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={(event) => {
+                    event.preventDefault();
+                    const next = event.relatedTarget;
+                    if (next instanceof Node && event.currentTarget.contains(next)) return;
+                    setDragOver(false);
+                  }}
+                  onDrop={handleDrop}
                 >
-                  Выбрать файл
-                </Button>
-                <Button
-                  iconLeft={<span>📦</span>}
-                  onClick={handlePickZip}
-                >
-                  Загрузить ZIP
-                </Button>
+                  <div className={styles.uploadIcon} aria-hidden="true">
+                    ⬆
+                  </div>
+                  <h2 id="upload-title">Загрузите DICOM-исследование</h2>
+                  <p className={styles.hint}>Перетащите один файл сюда или выберите его на компьютере</p>
+
+                  <div className={styles.uploadActions}>
+                    <Button
+                      variant="secondary"
+                      iconLeft={<img src="/icons/folder.png" alt="" width={18} height={18} />}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Выбрать файл
+                    </Button>
+                  </div>
+
+                  <p className={styles.formats}>Поддерживается один файл: .dcm, .dicom. До 50 МБ.</p>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".dcm,.dicom,application/dicom,application/x-dicom"
+                    hidden
+                    aria-label="Выбрать DICOM-файл"
+                    onChange={handleDcmChange}
+                  />
+                </div>
+              </Card>
+
+              <div className={styles.infoRow}>
+                <HowItWorks />
+                <ChecksList />
               </div>
+            </>
+          )}
 
-              <p className={styles.formats}>
-                Поддерживаемые форматы: .dcm, .zip
-              </p>
-
-              {/*  ВРЕМЕННО: скрытые input'ы для выбора файлов. 
-                   УДАЛИТЬ при интеграции — заменю на реальный upload через API. */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".dcm,application/dicom"
-                hidden
-                onChange={handleDcmChange}
+          {state === "uploading" && selected && (
+            <Card>
+              <UploadProgressBlock
+                fileName={selected.file.name}
+                fileSize={selected.sizeLabel}
+                fileFormat="DICOM"
+                progress={progress}
+                onCancel={resetToIdle}
               />
-              <input
-                ref={zipInputRef}
-                type="file"
-                accept=".zip,application/zip"
-                hidden
-                onChange={handleZipChange}
-              />
-            </div>
-          </Card>
-        </div>
-      )}
+            </Card>
+          )}
 
-      {/*  UPLOADING — идёт загрузка файла */}
-      {state === "uploading" && (
-        <div className={styles.centered}>
-          <Card>
-            <UploadProgressBlock
-              fileName="CR000000.dcm"
-              fileSize="93 KB"
-              fileFormat="DICOM CR"
-              progress={67}
-              onCancel={goIdle}
+          {state === "processing" && (
+            <Card>
+              <AnalysisBlock progress={progress} onCancel={resetToIdle} />
+            </Card>
+          )}
+
+          {state === "result" && selected && (
+            <ResultBlock
+              files={[selected.file]}
+              isOk={resultView.isOk}
+              region={resultView.region}
+              qualityProb={resultView.qualityProb}
+              violations={resultView.violations}
+              description={resultView.summary}
+              onNewStudy={resetToIdle}
             />
-          </Card>
-        </div>
-      )}
+          )}
 
-      {/*  PROCESSING — идёт анализ */}
-      {state === "processing" && (
-        <div className={styles.centered}>
-          <Card>
-            <AnalysisBlock
-              region="Проксимальный отдел правого бедра"
-              progress={42}
-              onCancel={goIdle}
+          {state === "error" && (
+            <ErrorBlock
+              title="Файл не принят"
+              message={errorMessage}
+              onRetry={resetToIdle}
             />
-          </Card>
+          )}
         </div>
-      )}
 
-      {/*  RESULT — результат анализа */}
-      {state === "result" && (
-        <ResultBlock
-          // │ ВРЕМЕННО: files из тестового массива.    При интеграции — files из API-ответа                            
-          files={files}
-          // ⚠️ ВРЕМЕННО: isOk/region/confidence/violations/description — хардкод. При интеграции — из ответа backend 
-          // (quality_class, anatomical_region, quality_prob, violation_type, description).
-          isOk={true}
-          region="Поясничный отдел позвоночника"
-          confidence={0.91}
-          violations={[]}
-          description="Исследование выполнено корректно. Укладка соответствует стандарту, ось позвоночника выровнена."
-          onExport={() => console.log("export")} // ВРЕМЕННО: заглушка
-          onNewStudy={goIdle}
-        />
-      )}
-
-      {/*  ERROR — ошибка обработки  */}
-      {state === "error" && (
-        <div className={styles.centered}>
-          <Card>
-            <div className={styles.errorBlock}>
-              <div className={styles.errorIcon}>✕</div>
-              <h3>Ошибка обработки</h3>
-              <p className={styles.errorText}>
-                Не удалось обработать DICOM-файл. Причина: файл повреждён или
-                имеет неподдерживаемый формат.
-              </p>
-              <Button variant="secondary" onClick={goIdle}>
-                Загрузить другой файл
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+        {showProcessStatus && (
+          <div className={styles.sideColumn}>
+            <ProcessStatus stage={state} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

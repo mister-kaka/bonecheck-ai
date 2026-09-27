@@ -6,7 +6,7 @@ import styles from "../../styles/ResultCard.module.css";
 interface ResultCardProps {
   isOk: boolean;
   region: string;
-  confidence: number;
+  qualityProb?: number;
   violations?: string[];
   description?: string;
   onExport?: () => void;
@@ -16,16 +16,19 @@ interface ResultCardProps {
 export function ResultCard({
   isOk,
   region,
-  confidence,
+  qualityProb,
   violations = [],
   description,
   onExport,
   onNewStudy,
 }: ResultCardProps) {
-  const percent = Math.round(Math.min(1, Math.max(0, confidence)) * 100);
+  const percent =
+    qualityProb === undefined
+      ? undefined
+      : Math.round(Math.min(1, Math.max(0, qualityProb)) * 100);
 
   return (
-    <section className={styles.resultCard}>
+    <section className={styles.resultCard} aria-label="Результат проверки укладки">
       <header className={styles.head}>
         <span
           className={`${styles.icon} ${isOk ? styles.iconOk : styles.iconWarn}`}
@@ -35,7 +38,7 @@ export function ResultCard({
         </span>
         <div className={styles.headText}>
           <h2 className={styles.title}>
-            {isOk ? "Исследование корректно" : "Обнаружено нарушение качества"}
+            {isOk ? "Укладка корректна" : "Нарушение качества укладки"}
           </h2>
           {isOk ? (
             <Badge tone="success">✓ Качественно</Badge>
@@ -50,10 +53,12 @@ export function ResultCard({
           <dt>Регион</dt>
           <dd>{region}</dd>
         </div>
-        <div className={styles.metaRow}>
-          <dt>Уверенность</dt>
-          <dd>{percent}%</dd>
-        </div>
+        {percent !== undefined && (
+          <div className={styles.metaRow}>
+            <dt>Вероятность нарушения</dt>
+            <dd>{percent}%</dd>
+          </div>
+        )}
       </dl>
 
       {violations.length > 0 && (
@@ -77,9 +82,11 @@ export function ResultCard({
       )}
 
       <div className={styles.actions}>
-        <Button variant="secondary" onClick={onExport}>
-          Экспорт XLSX
-        </Button>
+        {onExport && (
+          <Button variant="secondary" onClick={onExport}>
+            Экспорт XLSX
+          </Button>
+        )}
         <Button variant="primary" onClick={onNewStudy}>
           Новое исследование
         </Button>

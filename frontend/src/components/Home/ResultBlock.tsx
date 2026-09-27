@@ -15,7 +15,7 @@ interface ResultBlockProps {
   files: File[];
   isOk: boolean;
   region: string;
-  confidence: number;
+  qualityProb?: number;
   violations?: string[];
   description?: string;
   heatmapUrls?: string[];
@@ -29,7 +29,7 @@ export function ResultBlock({
   files,
   isOk,
   region,
-  confidence,
+  qualityProb,
   violations,
   description,
   heatmapUrls,
@@ -75,7 +75,7 @@ export function ResultBlock({
       <ResultCard
         isOk={isOk}
         region={region}
-        confidence={confidence}
+        qualityProb={qualityProb}
         violations={violations}
         description={description}
         onExport={onExport}

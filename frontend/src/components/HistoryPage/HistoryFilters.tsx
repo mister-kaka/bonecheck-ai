@@ -1,7 +1,7 @@
-import { Input } from './Input';
-import { Select } from './Select';
-import type { SelectOption } from '../types/study';
-import styles from '../styles/HistoryFilters.module.css';
+import { Input } from '../Input';
+import { Select } from '../Select';
+import type { SelectOption } from '../../types/study';
+import styles from "../../styles/HistoryFilters.module.css";
 
 interface HistoryFiltersProps {
   search: string;
@@ -40,6 +40,7 @@ export function HistoryFilters({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Поиск по UID"
+          aria-label="Поиск по UID"
           icon={
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
@@ -51,6 +52,7 @@ export function HistoryFilters({
 
       <div className={styles.selectField}>
         <Select
+          aria-label="Анатомическая область"
           options={regionOptions}
           value={region}
           onChange={(e) => onRegionChange(e.target.value)}
@@ -59,6 +61,7 @@ export function HistoryFilters({
 
       <div className={styles.selectField}>
         <Select
+          aria-label="Статус проверки"
           options={statusOptions}
           value={status}
           onChange={(e) => onStatusChange(e.target.value)}
@@ -67,6 +70,7 @@ export function HistoryFilters({
 
       <div className={styles.selectField}>
         <Select
+          aria-label="Сортировка"
           options={sortOptions}
           value={sort}
           onChange={(e) => onSortChange(e.target.value)}

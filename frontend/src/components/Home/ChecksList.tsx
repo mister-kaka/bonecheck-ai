@@ -8,7 +8,8 @@ interface ChecksListProps {
 const defaultItems = [
   "Корректность укладки",
   "Ось позвоночника",
-  "Посторонние предметы и артефакты",
+  "Посторонние предметы",
+  "Область интереса проксимального отдела бедра",
 ];
 
 export function ChecksList({ items = defaultItems }: ChecksListProps) {
@@ -16,7 +17,7 @@ export function ChecksList({ items = defaultItems }: ChecksListProps) {
     <section className={styles.card} aria-labelledby="checks-list-title">
       <header className={styles.head}>
         <span className={styles.headIcon} aria-hidden="true">
-          ✓
+          <img src="/icons/check-circle.png" alt="" width={18} height={18} />
         </span>
         <h3 id="checks-list-title" className={styles.title}>
           Что проверяет BoneCheck AI

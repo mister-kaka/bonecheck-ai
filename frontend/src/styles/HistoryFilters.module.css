@@ -1,0 +1,33 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+}
+
+.searchField {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.selectField {
+  flex: 0 0 auto;
+  min-width: 160px;
+}
+
+/* адаптив: на узких экранах переносим на строки */
+@media (max-width: 900px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchField,
+  .selectField {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+}

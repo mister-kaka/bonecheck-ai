@@ -23,8 +23,6 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  border: 1.5px solid var(--color-slate);
-  border-radius: var(--radius-sm);
   color: var(--color-slate);
   font-size: var(--fs-tiny);
   font-weight: 700;

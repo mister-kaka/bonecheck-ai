@@ -163,26 +163,30 @@ function Home() {
 
           {/*  UPLOADING — идёт загрузка файла */}
           {state === "uploading" && (
-            <Card>
-              <UploadProgressBlock
-                fileName="CR000000.dcm"
-                fileSize="93 KB"
-                fileFormat="DICOM CR"
-                progress={67}
-                onCancel={goIdle}
-              />
-            </Card>
+            <div className={styles.centeredState}>
+              <Card>
+                <UploadProgressBlock
+                  fileName="CR000000.dcm"
+                  fileSize="93 KB"
+                  fileFormat="DICOM CR"
+                  progress={67}
+                  onCancel={goIdle}
+                />
+              </Card>
+            </div>
           )}
 
           {/*  PROCESSING — идёт анализ */}
           {state === "processing" && (
-            <Card>
-              <AnalysisBlock
-                region="Проксимальный отдел правого бедра"
-                progress={42}
-                onCancel={goIdle}
-              />
-            </Card>
+            <div className={styles.centeredState}>
+              <Card>
+                <AnalysisBlock
+                  region="Проксимальный отдел правого бедра"
+                  progress={42}
+                  onCancel={goIdle}
+                />
+              </Card>
+            </div>
           )}
 
           {/*  RESULT — результат анализа */}
@@ -204,6 +208,7 @@ function Home() {
 
           {/*  ERROR — ошибка обработки  */}
           {state === "error" && (
+            <div className={styles.centeredState}>
             <Card>
               <div className={styles.errorBlock}>
                 <div className={styles.errorIcon}>✕</div>
@@ -217,6 +222,7 @@ function Home() {
                 </Button>
               </div>
             </Card>
+            </div>
           )}
 
         </div>

@@ -301,6 +301,14 @@
   align-items: stretch;
 }
 
+.centeredState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: var(--space-4);
+}
+
 @media (max-width: 1080px) {
   .layout {
     grid-template-columns: 1fr;

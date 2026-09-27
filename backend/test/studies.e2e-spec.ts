@@ -146,12 +146,32 @@ describe('Исследования (сквозные тесты)', () => {
     const status = await request(app.getHttpServer())
       .get('/api/studies/not-a-uuid')
       .expect(400);
-    expect(status.body.code).toBe('BAD_REQUEST');
+    expect(status.body).toMatchObject({
+      statusCode: 400,
+      code: 'BAD_REQUEST',
+      message: 'Идентификатор исследования должен быть UUID v4.',
+    });
 
     const result = await request(app.getHttpServer())
       .get('/api/studies/not-a-uuid/result')
       .expect(400);
-    expect(result.body.code).toBe('BAD_REQUEST');
+    expect(result.body).toMatchObject({
+      statusCode: 400,
+      code: 'BAD_REQUEST',
+      message: 'Идентификатор исследования должен быть UUID v4.',
+    });
+  });
+
+  it('неизвестный query-параметр списка -> 400', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/studies')
+      .query({ region: 'Поясничный отдел позвоночника' })
+      .expect(400);
+    expect(response.body).toMatchObject({
+      statusCode: 400,
+      code: 'BAD_REQUEST',
+      message: 'Неизвестный параметр запроса.',
+    });
   });
 
   it('пустая история -> 200 и items: []', async () => {

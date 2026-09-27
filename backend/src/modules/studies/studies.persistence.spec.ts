@@ -494,6 +494,39 @@ describe('study persistence (sqlite)', () => {
     });
   });
 
+  it('omits quality_prob in the API when the column is null', async () => {
+    const { service } = openService({
+      analyze: async () => ({
+        quality_class: 0,
+        violation_type: '',
+        anatomical_region: 'Поясничный отдел позвоночника',
+      }),
+    });
+    const created = await service.create(file, 'A');
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    expect(readRow(created.id)?.quality_prob).toBeNull();
+    const result = await service.getResult(created.id);
+    expect(result.anatomical_region).toBe('Поясничный отдел позвоночника');
+    expect(result).not.toHaveProperty('quality_prob');
+  });
+
+  it('keeps quality_prob 0', async () => {
+    const { service } = openService({
+      analyze: async () => ({
+        quality_class: 0,
+        violation_type: '',
+        anatomical_region: 'Проксимальный отдел бедра',
+        quality_prob: 0,
+      }),
+    });
+    const created = await service.create(file, 'A');
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    expect(readRow(created.id)?.quality_prob).toBe(0);
+    expect((await service.getResult(created.id)).quality_prob).toBe(0);
+  });
+
   it('orders history by created_at desc and then id desc', async () => {
     const { repository, service } = openService();
     const sameTime = '2026-09-18T11:00:00.000Z';

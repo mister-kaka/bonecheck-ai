@@ -38,7 +38,13 @@ export function Select({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [menuBox, setMenuBox] = useState({ top: 0, left: 0, width: 0, maxHeight: 240 });
+  const [menuBox, setMenuBox] = useState({
+    top: undefined as number | undefined,
+    bottom: undefined as number | undefined,
+    left: 0,
+    width: 0,
+    maxHeight: 240,
+  });
 
   const selectedIndex = options.findIndex((option) => option.value === value);
   const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined;
@@ -48,12 +54,14 @@ export function Select({
     const button = buttonRef.current;
     if (!button) return;
     const rect = button.getBoundingClientRect();
+    const gap = 4;
     const spaceBelow = window.innerHeight - rect.bottom - 8;
     const spaceAbove = rect.top - 8;
     const openUp = spaceBelow < 180 && spaceAbove > spaceBelow;
     const maxHeight = Math.max(120, Math.min(280, openUp ? spaceAbove : spaceBelow));
     setMenuBox({
-      top: openUp ? Math.max(8, rect.top - maxHeight - 4) : rect.bottom + 4,
+      top: openUp ? undefined : rect.bottom + gap,
+      bottom: openUp ? window.innerHeight - rect.top + gap : undefined,
       left: rect.left,
       width: rect.width,
       maxHeight,
@@ -99,6 +107,7 @@ export function Select({
   const openList = () => {
     if (disabled) return;
     setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    placeMenu();
     setOpen(true);
   };
 
@@ -180,7 +189,8 @@ export function Select({
             role="listbox"
             aria-label={ariaLabel}
             style={{
-              top: menuBox.top,
+              top: menuBox.top ?? "auto",
+              bottom: menuBox.bottom ?? "auto",
               left: menuBox.left,
               width: menuBox.width,
               maxHeight: menuBox.maxHeight,

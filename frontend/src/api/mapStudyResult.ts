@@ -10,7 +10,7 @@ export type StudyResultView = {
   summary: string;
 };
 
-/** Splits violation_type on ";" without trimming. A valid class-0 value is "". */
+/** Делим violation_type по ";" без обрезки пробелов. У класса 0 строка пустая. */
 export function splitViolationTypes(violationType: string): string[] {
   if (violationType.length === 0) return [];
   return violationType.split(";").filter((item) => item.length > 0);

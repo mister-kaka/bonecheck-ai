@@ -7,10 +7,7 @@ import type {
 
 export type { StudyListItem, StudyResultPayload, StudyStatus };
 
-/**
- * HTTP client for docs/api.md.
- * Screens do not call these functions while the backend is disconnected.
- */
+/** Экраны эти функции пока не вызывают: backend не подключён. */
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
@@ -62,7 +59,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
       if (typeof body.code === "string") code = body.code;
       if (typeof body.status === "string") studyStatus = body.status;
     } catch {
-      // Response body is not JSON.
+      // не JSON
     }
     throw new ApiRequestError(response.status, message, code, studyStatus);
   }

@@ -6,7 +6,6 @@ export type AnatomicalRegion =
 
 export type QualityClass = 0 | 1;
 
-/** Body of GET /api/studies items and GET /api/studies/:id. */
 export interface StudyListItem {
   id: string;
   sessionId: string | null;
@@ -18,7 +17,6 @@ export interface StudyListItem {
   hasResult: boolean;
 }
 
-/** Body of a successful GET /api/studies/:id/result. */
 export interface StudyResultPayload {
   studyId: string;
   quality_class: QualityClass;

@@ -7,7 +7,7 @@ import { MockMlClient } from '../ml/mock-ml.client';
 import { MlClient } from '../ml/ml.types';
 import { SqliteStudyRepository } from './sqlite-study.repository';
 import { StudiesService } from './studies.service';
-import { StudyStatus } from './study.types';
+import { StudyRecord, StudyStatus } from './study.types';
 
 const file = {
   originalname: 'spine.dcm',
@@ -191,7 +191,9 @@ describe('study persistence (sqlite)', () => {
     expect(row?.status).toBe('error');
     expect(row?.error).toBe('Ошибка обработки ML.');
     expect(row?.quality_class).toBeNull();
+    expect(row?.quality_prob).toBeNull();
     expect(row?.violation_type).toBeNull();
+    expect(row?.anatomical_region).toBeNull();
 
     await expect(service.getResult(created.id)).rejects.toMatchObject({
       response: { code: 'ANALYSIS_FAILED', status: StudyStatus.Error },
@@ -348,5 +350,188 @@ describe('study persistence (sqlite)', () => {
     const result = await second.service.getResult(created.id);
     expect(result.quality_class).toBe(0);
     expect(result.violation_type).toBe('');
+  });
+
+  function insertRow(values: Record<string, string | number | null>): void {
+    const databasePath = process.env.DATABASE_PATH;
+    if (!databasePath) {
+      throw new Error('DATABASE_PATH is not set');
+    }
+
+    const db = new Database(databasePath);
+    try {
+      db.prepare(
+        `INSERT INTO studies (
+          id, session_id, status, original_file_name, stored_file_path,
+          created_at, updated_at, error, quality_class, quality_prob,
+          violation_type, anatomical_region
+        ) VALUES (
+          @id, @session_id, @status, @original_file_name, @stored_file_path,
+          @created_at, @updated_at, @error, @quality_class, @quality_prob,
+          @violation_type, @anatomical_region
+        )`,
+      ).run(values);
+    } finally {
+      db.close();
+    }
+  }
+
+  it('stores an invalid ML response as error and does not retry it after restart', async () => {
+    const first = openService({
+      analyze: async () => ({
+        quality_class: 0,
+        violation_type: '',
+        anatomical_region: 'Другой регион',
+      }),
+    });
+    const created = await first.service.create(file, 'A');
+    await waitForStatus(first.service, created.id, StudyStatus.Error);
+
+    expect(readRow(created.id)).toMatchObject({
+      status: 'error',
+      error: 'Ошибка обработки ML.',
+      quality_class: null,
+      quality_prob: null,
+      violation_type: null,
+      anatomical_region: null,
+    });
+
+    first.repository.onModuleDestroy();
+
+    const analyze = jest.fn().mockResolvedValue({
+      quality_class: 0,
+      violation_type: '',
+      quality_prob: 0.05,
+      anatomical_region: 'Поясничный отдел позвоночника',
+    });
+    const second = openService({ analyze });
+    await second.service.onModuleInit();
+
+    const status = await second.service.getById(created.id);
+    expect(status.status).toBe(StudyStatus.Error);
+    expect(status.hasResult).toBe(false);
+    expect(analyze).not.toHaveBeenCalled();
+  });
+
+  it('does not expose a completed row whose result fails business validation', async () => {
+    const { repository, service } = openService();
+    const id = '3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b21';
+    const record: StudyRecord = {
+      id,
+      sessionId: 'A',
+      status: StudyStatus.Completed,
+      originalFileName: 'spine.dcm',
+      storedFilePath: path.join(directory, 'spine.dcm'),
+      createdAt: '2026-09-18T11:21:00.000Z',
+      updatedAt: '2026-09-18T11:21:01.000Z',
+      error: null,
+      result: {
+        quality_class: 0,
+        violation_type: 'Некорректная укладка',
+        anatomical_region: 'Поясничный отдел позвоночника',
+      },
+    };
+
+    await repository.save(record);
+
+    const status = await service.getById(id);
+    expect(status.status).toBe(StudyStatus.Completed);
+    expect(status.hasResult).toBe(false);
+    await expect(service.getResult(id)).rejects.toMatchObject({
+      response: { code: 'RESULT_NOT_READY', status: StudyStatus.Completed },
+    });
+  });
+
+  it('does not invent a result when violation_type is null', async () => {
+    const { service } = openService();
+    const id = '3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b22';
+    insertRow({
+      id,
+      session_id: null,
+      status: 'completed',
+      original_file_name: 'spine.dcm',
+      stored_file_path: path.join(directory, 'spine.dcm'),
+      created_at: '2026-09-18T11:21:00.000Z',
+      updated_at: '2026-09-18T11:21:01.000Z',
+      error: null,
+      quality_class: 0,
+      quality_prob: null,
+      violation_type: null,
+      anatomical_region: 'Поясничный отдел позвоночника',
+    });
+
+    const status = await service.getById(id);
+    expect(status.hasResult).toBe(false);
+    await expect(service.getResult(id)).rejects.toMatchObject({
+      response: { code: 'RESULT_NOT_READY' },
+    });
+  });
+
+  it('does not return stored result columns when status is error', async () => {
+    const { service } = openService();
+    const id = '3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b23';
+    insertRow({
+      id,
+      session_id: 'A',
+      status: 'error',
+      original_file_name: 'spine.dcm',
+      stored_file_path: path.join(directory, 'spine.dcm'),
+      created_at: '2026-09-18T11:21:00.000Z',
+      updated_at: '2026-09-18T11:21:01.000Z',
+      error: 'Ошибка обработки ML.',
+      quality_class: 0,
+      quality_prob: 0.05,
+      violation_type: '',
+      anatomical_region: 'Поясничный отдел позвоночника',
+    });
+
+    const status = await service.getById(id);
+    expect(status.status).toBe(StudyStatus.Error);
+    expect(status.hasResult).toBe(false);
+    expect(status.error).toBe('Ошибка обработки ML.');
+    await expect(service.getResult(id)).rejects.toMatchObject({
+      response: { code: 'ANALYSIS_FAILED', status: StudyStatus.Error },
+    });
+  });
+
+  it('orders history by created_at desc and then id desc', async () => {
+    const { repository, service } = openService();
+    const sameTime = '2026-09-18T11:00:00.000Z';
+    const later = '2026-09-18T12:00:00.000Z';
+    const base = {
+      sessionId: null,
+      status: StudyStatus.Completed,
+      originalFileName: 'spine.dcm',
+      storedFilePath: path.join(directory, 'spine.dcm'),
+      error: null,
+      result: {
+        quality_class: 0 as const,
+        violation_type: '',
+        anatomical_region: 'Поясничный отдел позвоночника',
+      },
+    };
+
+    await repository.save({
+      ...base,
+      id: 'id-a',
+      createdAt: sameTime,
+      updatedAt: sameTime,
+    });
+    await repository.save({
+      ...base,
+      id: 'id-c',
+      createdAt: later,
+      updatedAt: later,
+    });
+    await repository.save({
+      ...base,
+      id: 'id-b',
+      createdAt: sameTime,
+      updatedAt: sameTime,
+    });
+
+    const items = await service.list();
+    expect(items.items.map((item) => item.id)).toEqual(['id-c', 'id-b', 'id-a']);
+    expect(items.items[0]).not.toHaveProperty('quality_class');
   });
 });

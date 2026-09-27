@@ -1,4 +1,6 @@
 /// <reference types="jest" />
+import { PayloadTooLargeException } from '@nestjs/common';
+import { MAX_FILE_SIZE_BYTES } from './file-validation';
 import { StudyRecord, StudyRepository, StudyStatus } from './study.types';
 import { StudiesService } from './studies.service';
 
@@ -9,7 +11,13 @@ const file = {
   buffer: Buffer.from('dicomimg'),
 };
 
-function createService(analyze?: () => Promise<unknown>) {
+const validSpine = {
+  quality_class: 0,
+  violation_type: '',
+  anatomical_region: 'Поясничный отдел позвоночника',
+};
+
+function createService(analyze?: (input: unknown) => Promise<unknown>) {
   const store = new Map<string, StudyRecord>();
   const studies: StudyRepository = {
     save: jest.fn(async (study: StudyRecord) => {
@@ -45,10 +53,8 @@ function createService(analyze?: () => Promise<unknown>) {
     analyze: jest.fn(
       analyze ??
         (async () => ({
-          quality_class: 0,
-          violation_type: '',
+          ...validSpine,
           quality_prob: 0.1,
-          anatomical_region: 'Поясничный отдел позвоночника', // Добавлено для успешного прохождения валидации
         })),
     ),
   };
@@ -256,7 +262,7 @@ describe('StudiesService', () => {
       quality_class: 0,
       violation_type: '',
       anatomical_region: 'Поясничный отдел позвоночника',
-      quality_prob: 1.5, // > 1
+      quality_prob: 1.5,
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
@@ -280,8 +286,8 @@ describe('StudiesService', () => {
   it('marks study as error when violation does not match the region', async () => {
     const { service } = createService(async () => ({
       quality_class: 1,
-      violation_type: 'Не выравнена ось позвоночника', // spine violation
-      anatomical_region: 'Проксимальный отдел бедра', // hip region
+      violation_type: 'Не выравнена ось позвоночника',
+      anatomical_region: 'Проксимальный отдел бедра',
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
@@ -302,7 +308,7 @@ describe('StudiesService', () => {
   it('marks study as error for empty violation on class 1', async () => {
     const { service } = createService(async () => ({
       quality_class: 1,
-      violation_type: '', // Empty but class is 1
+      violation_type: '',
       anatomical_region: 'Поясничный отдел позвоночника',
     }));
     const created = await service.create(file);
@@ -313,11 +319,238 @@ describe('StudiesService', () => {
   it('marks study as error for non-empty violation on class 0', async () => {
     const { service } = createService(async () => ({
       quality_class: 0,
-      violation_type: 'Некорректная укладка', // Non-empty but class is 0
+      violation_type: 'Некорректная укладка',
       anatomical_region: 'Поясничный отдел позвоночника',
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
     expect(status.error).toBe('Ошибка обработки ML.');
+  });
+
+  it.each([
+    ['response is null', null],
+    ['response is an array', []],
+    [
+      'quality_class is a string',
+      {
+        quality_class: '0',
+        violation_type: '',
+        anatomical_region: 'Поясничный отдел позвоночника',
+      },
+    ],
+    [
+      'quality_class is fractional',
+      {
+        quality_class: 0.5,
+        violation_type: '',
+        anatomical_region: 'Поясничный отдел позвоночника',
+      },
+    ],
+    [
+      'quality_prob is below 0',
+      {
+        ...validSpine,
+        quality_prob: -0.01,
+      },
+    ],
+    [
+      'quality_prob is not finite',
+      {
+        ...validSpine,
+        quality_prob: Number.POSITIVE_INFINITY,
+      },
+    ],
+    [
+      'anatomical_region is missing',
+      {
+        quality_class: 0,
+        violation_type: '',
+      },
+    ],
+    [
+      'violation has a space after the separator',
+      {
+        quality_class: 1,
+        violation_type: 'Некорректная укладка; Не выравнена ось позвоночника',
+        anatomical_region: 'Поясничный отдел позвоночника',
+      },
+    ],
+    [
+      'violation has an empty fragment',
+      {
+        quality_class: 1,
+        violation_type: ';Некорректная укладка',
+        anatomical_region: 'Поясничный отдел позвоночника',
+      },
+    ],
+  ])('marks study as error when %s', async (_label, payload) => {
+    const { service } = createService(async () => payload);
+    const created = await service.create(file);
+    const status = await waitForStatus(service, created.id, StudyStatus.Error);
+
+    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.hasResult).toBe(false);
+    await expect(service.getResult(created.id)).rejects.toMatchObject({
+      response: { code: 'ANALYSIS_FAILED', status: StudyStatus.Error },
+    });
+  });
+
+  it('accepts a class 1 result and keeps the original violation string', async () => {
+    const violationType =
+      'Некорректная укладка;Не выравнена ось позвоночника';
+    const { service } = createService(async () => ({
+      quality_class: 1,
+      violation_type: violationType,
+      anatomical_region: 'Поясничный отдел позвоночника',
+      quality_prob: 1,
+    }));
+    const created = await service.create(file);
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    await expect(service.getResult(created.id)).resolves.toEqual({
+      studyId: created.id,
+      quality_class: 1,
+      violation_type: violationType,
+      anatomical_region: 'Поясничный отдел позвоночника',
+      quality_prob: 1,
+    });
+  });
+
+  it('accepts a hip result and omits quality_prob when ML does not send it', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 1,
+      violation_type: 'Некорректная укладка;Некорректная область интереса',
+      anatomical_region: 'Проксимальный отдел бедра',
+    }));
+    const created = await service.create(file);
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    const result = await service.getResult(created.id);
+    expect(result).toEqual({
+      studyId: created.id,
+      quality_class: 1,
+      violation_type: 'Некорректная укладка;Некорректная область интереса',
+      anatomical_region: 'Проксимальный отдел бедра',
+    });
+    expect(result.quality_prob).toBeUndefined();
+  });
+
+  it('accepts quality_prob at the lower bound', async () => {
+    const { service } = createService(async () => ({
+      ...validSpine,
+      quality_prob: 0,
+    }));
+    const created = await service.create(file);
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+    expect((await service.getResult(created.id)).quality_prob).toBe(0);
+  });
+
+  it('does not fail the other study when one ML call fails', async () => {
+    const { service } = createService(async (input) => {
+      if (
+        typeof input === 'object' &&
+        input !== null &&
+        'originalFileName' in input &&
+        input.originalFileName === 'bad.dcm'
+      ) {
+        throw new Error('ml down');
+      }
+
+      return validSpine;
+    });
+
+    const failed = await service.create({ ...file, originalname: 'bad.dcm' });
+    const succeeded = await service.create(file);
+
+    expect((await waitForStatus(service, failed.id, StudyStatus.Error)).error).toBe(
+      'Ошибка обработки ML.',
+    );
+    expect(
+      (await waitForStatus(service, succeeded.id, StudyStatus.Completed)).hasResult,
+    ).toBe(true);
+  });
+
+  it('rejects an oversized file before storing it', async () => {
+    const { service, fileStorage } = createService();
+    await expect(
+      service.create({
+        ...file,
+        size: MAX_FILE_SIZE_BYTES + 1,
+      }),
+    ).rejects.toBeInstanceOf(PayloadTooLargeException);
+    expect(fileStorage.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects an empty buffer before storing the file', async () => {
+    const { service, fileStorage } = createService();
+    await expect(
+      service.create({
+        ...file,
+        size: 8,
+        buffer: Buffer.alloc(0),
+      }),
+    ).rejects.toMatchObject({ response: { code: 'FILE_REQUIRED' } });
+    expect(fileStorage.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects an empty file before checking its type', async () => {
+    const { service } = createService();
+    await expect(
+      service.create({
+        originalname: 'photo.png',
+        mimetype: 'image/png',
+        size: 0,
+        buffer: Buffer.alloc(0),
+      }),
+    ).rejects.toMatchObject({ response: { code: 'FILE_REQUIRED' } });
+  });
+
+  it('rejects octet-stream without a dicom extension', async () => {
+    const { service, fileStorage } = createService();
+    await expect(
+      service.create({
+        ...file,
+        originalname: 'study',
+        mimetype: 'application/octet-stream',
+      }),
+    ).rejects.toMatchObject({ response: { code: 'INVALID_FILE_TYPE' } });
+    expect(fileStorage.save).not.toHaveBeenCalled();
+  });
+
+  it('trims session id and accepts exactly 128 characters', async () => {
+    const { service } = createService();
+    const sessionId = 'a'.repeat(128);
+    const created = await service.create(file, `  ${sessionId}  `);
+    expect(created.sessionId).toBe(sessionId);
+
+    const listed = await service.list(`  ${sessionId}  `);
+    expect(listed.items.map((item) => item.id)).toEqual([created.id]);
+  });
+
+  it('treats a whitespace session filter as the full history', async () => {
+    const { service } = createService();
+    const created = await service.create(file, 'A');
+    const listed = await service.list('   ');
+    expect(listed.items.map((item) => item.id)).toEqual([created.id]);
+  });
+
+  it('rejects a non-string session id before storing the file', async () => {
+    const { service, fileStorage } = createService();
+    await expect(service.create(file, 12)).rejects.toMatchObject({
+      response: { code: 'INVALID_SESSION_ID' },
+    });
+    expect(fileStorage.save).not.toHaveBeenCalled();
+    await expect(service.list({ id: 'A' })).rejects.toMatchObject({
+      response: { code: 'INVALID_SESSION_ID' },
+    });
+  });
+
+  it('creates a new study id on every upload', async () => {
+    const { service } = createService();
+    const first = await service.create(file);
+    const second = await service.create(file);
+    expect(first.id).not.toBe(second.id);
+    expect(first.status).toBe(StudyStatus.Processing);
+    expect(second.status).toBe(StudyStatus.Processing);
   });
 });

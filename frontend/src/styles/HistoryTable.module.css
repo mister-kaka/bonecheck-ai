@@ -52,10 +52,10 @@
   white-space: nowrap;
 }
 
-.thDate { width: 180px; }
-.thUid { width: auto; }
-.thRegion { width: 240px; }
-.thStatus { width: 140px; }
+.thDate { width: 200px; }
+.thUid { width: 280px; }
+.thRegion { width: 280px; }
+.thStatus { width: 250px; }
 
 @media (max-width: 768px) {
   .table thead th,

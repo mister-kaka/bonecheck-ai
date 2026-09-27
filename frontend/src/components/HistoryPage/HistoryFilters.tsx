@@ -1,7 +1,7 @@
-import { Input } from './Input';
-import { Select } from './Select';
-import type { SelectOption } from '../types/study';
-import styles from '../styles/HistoryFilters.module.css';
+import { Input } from '../Input';
+import { Select } from '../Select';
+import type { SelectOption } from '../../types/study';
+import styles from "../../styles/HistoryFilters.module.css";
 
 interface HistoryFiltersProps {
   search: string;

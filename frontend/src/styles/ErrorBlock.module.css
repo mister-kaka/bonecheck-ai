@@ -31,7 +31,8 @@
 }
 
 .text {
-  max-width: 480px;
+  max-width: min(480px, 100%);
   margin-bottom: var(--space-3);
   color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
 }

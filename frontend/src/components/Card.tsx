@@ -7,6 +7,7 @@ interface CardProps {
   right?: ReactNode;
   children: ReactNode;
   padded?: boolean;
+  highlighted?: boolean;
 }
 
 export function Card({
@@ -15,9 +16,14 @@ export function Card({
   right,
   children,
   padded = true,
+  highlighted = false,
 }: CardProps) {
   return (
-    <section className={styles.card}>
+    <section
+      className={[styles.card, highlighted ? styles.cardHighlighted : ""]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {(title || right) && (
         <header className={styles.head}>
           <div>

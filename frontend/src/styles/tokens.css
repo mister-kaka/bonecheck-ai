@@ -1,11 +1,11 @@
 :root {
   --color-bg: #f2f4f5;
   --color-text-primary: #252d38;
-  --color-text-secondary: #6e839f;
+  --color-text-secondary: #4a5c70;
   --color-text-inverse: #ffffff;
 
   --color-ink: #252d38;
-  --color-muted: #6e839f;
+  --color-muted: #4a5c70;
   --color-slate: #5a6b7f;
   --color-deep: #212b37;
   --color-accent: #6e839f;
@@ -24,13 +24,13 @@
   --color-border: #d6dee5;
   --color-border-strong: #b9c4ce;
 
-  --color-success: #2e7d5b;
+  --color-success: #246b4e;
   --color-success-bg: #e3f3eb;
-  --color-warning: #b5731a;
+  --color-warning: #8a5410;
   --color-warning-bg: #fbeedb;
   --color-danger: #b23a3a;
   --color-danger-bg: #f8e3e3;
-  --color-info: #6e839f;
+  --color-info: #4a5c70;
   --color-info-bg: #e8eef2;
 
   /* Кнопка (наведение): чуть темнее */
@@ -46,11 +46,11 @@
   /*  Статусы  */
 
   /* Успех - «Качественно», «Корректно» */
-  --color-success: #2E7D5B;
+  --color-success: #246b4e;
   --color-success-bg: #E3F3EB;
 
   /* Предупреждение - «Нарушение» */
-  --color-warning: #B5731A;
+  --color-warning: #8a5410;
   --color-warning-bg: #FBEEDB;
 
   /* Ошибка - «Ошибка», «Не удалось обработать» */
@@ -58,7 +58,7 @@
   --color-danger-bg: #F8E3E3;
 
   /* Информация / акцент */
-  --color-info: #6E839F;
+  --color-info: #4A5C70;
   --color-info-bg: #E8EEF2;
 
    /*  Радиусы  */

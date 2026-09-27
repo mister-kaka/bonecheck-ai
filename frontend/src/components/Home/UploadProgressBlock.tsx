@@ -22,7 +22,7 @@ export function UploadProgressBlock({
         <CircularProgress value={progress} size={100} strokeWidth={8} />
 
         <div className={styles.info}>
-          <h2 className={styles.title}>Загрузка файлов...</h2>
+          <h2 className={styles.title}>Загрузка файла</h2>
           <div className={styles.fileName}>{fileName}</div>
           <div className={styles.meta}>
             Размер: {fileSize} | Формат: {fileFormat}

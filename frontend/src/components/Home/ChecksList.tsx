@@ -8,7 +8,8 @@ interface ChecksListProps {
 const defaultItems = [
   "Корректность укладки",
   "Ось позвоночника",
-  "Посторонние предметы и артефакты",
+  "Посторонние предметы",
+  "Область интереса проксимального отдела бедра",
 ];
 
 export function ChecksList({ items = defaultItems }: ChecksListProps) {

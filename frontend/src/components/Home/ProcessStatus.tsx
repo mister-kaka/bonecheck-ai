@@ -22,12 +22,12 @@ interface ProcessStatusProps {
   steps?: ProcessStep[];
 }
 
-const LABELS = ["Загрузка файлов", "Подготовка данных", "Анализ", "Результат"];
+const LABELS = ["Загрузка файла", "Подготовка данных", "Анализ", "Результат"];
 
 const STAGE_STATES: Record<ProcessStage, StepState[]> = {
-  idle: ["done", "next", "waiting", "unavailable"],
-  uploading: ["done", "active", "waiting", "unavailable"],
-  processing: ["done", "done", "active", "unavailable"],
+  idle: ["waiting", "waiting", "waiting", "unavailable"],
+  uploading: ["active", "waiting", "waiting", "waiting"],
+  processing: ["done", "done", "active", "waiting"],
 };
 
 const STATUS_TEXT: Record<StepState, string> = {
@@ -51,7 +51,7 @@ export function ProcessStatus({ stage = "idle", steps }: ProcessStatusProps) {
     steps ?? LABELS.map((label, i) => ({ label, state: STAGE_STATES[stage][i] }));
 
   return (
-    <aside className={styles.card} aria-labelledby="process-status-title">
+    <aside className={styles.card} aria-labelledby="process-status-title" aria-live="polite">
       <h3 id="process-status-title" className={styles.title}>
         Статус процессов
       </h3>

@@ -11,9 +11,9 @@ interface HowItWorksProps {
 }
 
 const defaultSteps: HowItWorksStep[] = [
-  { title: "Загрузите исследование", caption: "DICOM-файл или ZIP-архив" },
-  { title: "Дождитесь анализа", caption: "Система проверит качество укладки и снимков" },
-  { title: "Получите результат", caption: "С подробной информацией и визуализацией" },
+  { title: "Загрузите исследование", caption: "Один файл DICOM (.dcm или .dicom)" },
+  { title: "Дождитесь анализа", caption: "Сервис проверит качество укладки" },
+  { title: "Получите результат", caption: "Класс качества, нарушения и просмотр снимка" },
 ];
 
 export function HowItWorks({ steps = defaultSteps }: HowItWorksProps) {

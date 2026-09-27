@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '../../components/Button';
-import { HistoryFilters } from '../../components/HistoryFilters';
-import { HistoryTable } from '../../components/HistoryTable';
+import { HistoryFilters } from '../../components/HistoryPage/HistoryFilters';
+import { HistoryTable } from '../../components/HistoryPage/HistoryTable';
 import { mockHistory } from '../../mocks/history';
 import { mockRegions, mockStatuses, mockSorts } from '../../mocks/regions';
 import type { HistoryItem } from '../../types/study';

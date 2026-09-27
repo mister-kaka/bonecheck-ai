@@ -1,8 +1,6 @@
 .tableWrapper {
   width: 100%;
   overflow-x: auto;
-  border-radius: var(--radius-lg);
-  background: var(--gradient-card);
 }
 
 .table {
@@ -13,15 +11,19 @@
 
 .table thead th {
   text-align: left;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--color-text-secondary);
-  padding: var(--space-3) var(--space-4);
+  padding: 10px 16px;
   border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-soft);
   white-space: nowrap;
 }
 
 .table tbody td {
-  padding: var(--space-3) var(--space-4);
+  padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text-primary);
   vertical-align: middle;
@@ -31,50 +33,82 @@
   border-bottom: none;
 }
 
-.row {
-  transition: background-color 0.15s ease;
-}
-
 .rowInteractive {
   cursor: pointer;
 }
 
 .rowInteractive:hover,
 .row:hover {
-  background-color: var(--color-bg-soft);
+  background-color: color-mix(in srgb, var(--color-bg-soft) 70%, white);
 }
 
-.uid {
+.rowInteractive:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.fileName {
   font-family: var(--font-mono);
-  font-size: var(--fs-tiny);
+  font-size: 11px;
   color: var(--color-text-secondary);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.thDate { width: 200px; }
-.thUid { width: 280px; }
-.thRegion { width: 280px; }
-.thStatus { width: 160px; }
-.thQuality { width: 180px; }
-
-@media (max-width: 768px) {
-  .table thead th,
-  .table tbody td {
-    padding: var(--space-2) var(--space-3);
-  }
-
-  .thDate { width: 140px; }
-  .thRegion { width: 180px; }
-  .thStatus { width: 120px; }
+.loadingLabel {
+  margin: 0;
+  padding: 12px 16px 0;
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
 }
 
-@media (max-width: 480px) {
-  .table {
-    font-size: var(--fs-tiny);
+.thDate { width: 168px; }
+.thFile { width: 36%; }
+.thStatus { width: 180px; }
+
+@media (max-width: 768px) {
+  .table thead {
+    display: none;
   }
 
-  .table thead th,
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table tr {
+    padding: 8px 0 12px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
   .table tbody td {
-    padding: var(--space-2);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 16px;
+    border-bottom: none;
+    text-align: right;
+  }
+
+  .table tbody td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    text-align: left;
+  }
+
+  .fileName {
+    max-width: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: right;
   }
 }

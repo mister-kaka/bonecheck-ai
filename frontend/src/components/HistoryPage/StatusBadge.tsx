@@ -1,23 +1,52 @@
 import { Badge } from "../Badge";
-import type { HistoryItem } from "../../types/study";
+import { Icon } from "../Icon";
+import type { QualityClass, StudyStatus } from "../../types/study";
 
 interface StatusBadgeProps {
-  status: HistoryItem["status"];
-  qualityClass: HistoryItem["quality_class"];
+  status: StudyStatus;
+  qualityClass: QualityClass | null;
 }
 
 export function StatusBadge({ status, qualityClass }: StatusBadgeProps) {
-  if (status === "Failure") {
-    return <Badge tone="danger">✕ Ошибка</Badge>;
+  if (status === "error") {
+    return (
+      <Badge tone="muted">
+        <Icon name="error" size={12} />
+        Ошибка анализа
+      </Badge>
+    );
+  }
+
+  if (status === "processing") {
+    return (
+      <Badge tone="info">
+        <Icon name="study" size={12} />
+        Идёт анализ
+      </Badge>
+    );
+  }
+
+  if (status === "uploaded") {
+    return <Badge tone="muted">Файл принят</Badge>;
   }
 
   if (qualityClass === 1) {
-    return <Badge tone="warning">⚠ Нарушение</Badge>;
+    return (
+      <Badge tone="warning">
+        <Icon name="alert" size={12} />
+        Нарушение
+      </Badge>
+    );
   }
 
   if (qualityClass === 0) {
-    return <Badge tone="success">✓ Качественно</Badge>;
+    return (
+      <Badge tone="success">
+        <Icon name="check" size={12} />
+        Качественно
+      </Badge>
+    );
   }
 
-  return <Badge>-</Badge>;
+  return <Badge tone="neutral">Готово</Badge>;
 }

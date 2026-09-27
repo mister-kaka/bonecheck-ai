@@ -11,7 +11,15 @@ describe('isAllowedDicomUpload', () => {
     expect(isAllowedDicomUpload('study', 'application/dicom')).toBe(true);
   });
 
-  it('отклоняет изображения', () => {
+  it('принимает DICOM MIME при другом расширении и без расширения', () => {
+    expect(isAllowedDicomUpload('notes.txt', 'application/dicom')).toBe(true);
+    expect(isAllowedDicomUpload('study', 'application/x-dicom')).toBe(true);
+  });
+
+  it('отклоняет изображения и прочие MIME без расширения DICOM', () => {
     expect(isAllowedDicomUpload('x.png', 'image/png')).toBe(false);
+    expect(isAllowedDicomUpload('study', 'application/octet-stream')).toBe(false);
+    expect(isAllowedDicomUpload('study', 'application/dicom+json')).toBe(false);
+    expect(isAllowedDicomUpload('photo.png', 'application/octet-stream')).toBe(false);
   });
 });

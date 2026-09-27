@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Button } from '../../components/Button';
 import { HistoryFilters } from '../../components/HistoryPage/HistoryFilters';
 import { HistoryTable } from '../../components/HistoryPage/HistoryTable';
 import { mockHistory } from '../../mocks/history';
 import { mockRegions, mockStatuses, mockSorts } from '../../mocks/regions';
-import type { HistoryItem } from '../../types/study';
 import styles from '../../styles/HistoryPage.module.css';
 
 const PAGE_SIZE = 10;
@@ -22,19 +20,6 @@ export function HistoryPage() {
     setStatus('all');
     setSort('date_desc');
     setPage(1);
-  };
-
-  const handleRowClick = (item: HistoryItem) => {
-    void item;
-    // TODO: перейти к деталям исследования
-  };
-
-  const handleClearHistory = () => {
-    const confirmed = window.confirm(
-      'Вы действительно хотите очистить всю историю исследований? Действие необратимо.'
-    );
-    if (!confirmed) return;
-    // TODO: вызов API очистки истории
   };
 
   const filtered = useMemo(() => {
@@ -83,13 +68,8 @@ export function HistoryPage() {
         <div className={styles.headerText}>
           <h1 className={styles.title}>История исследований</h1>
           <p className={styles.subtitle}>
-            Просмотр, фильтрация и экспорт результатов обработки
+            Просмотр и фильтрация результатов проверки укладки
           </p>
-        </div>
-
-        <div className={styles.actions}>
-          <Button variant="secondary">Загрузить пакет</Button>
-          <Button variant="primary">Экспорт всех в XLSX</Button>
         </div>
       </header>
 
@@ -112,7 +92,6 @@ export function HistoryPage() {
       <section className={styles.block} aria-label="Таблица исследований">
         <HistoryTable
           items={pageItems}
-          onRowClick={handleRowClick}
           onResetFilters={handleResetFilters}
         />
       </section>
@@ -159,14 +138,6 @@ export function HistoryPage() {
             ›
           </button>
         </div>
-
-        <button
-          type="button"
-          className={styles.clearBtn}
-          onClick={handleClearHistory}
-        >
-          Очистить историю
-        </button>
       </footer>
     </div>
   );

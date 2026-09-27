@@ -40,19 +40,30 @@ export function HistoryTable({
       <table className={styles.table}>
         <thead>
           <tr>
-            <th className={styles.thDate}>Дата</th>
-            <th className={styles.thUid}>UID</th>
-            <th className={styles.thRegion}>Регион</th>
-            <th className={styles.thStatus}>Статус</th>
-            <th className={styles.thQuality}>Качество</th>
+            <th scope="col" className={styles.thDate}>Дата</th>
+            <th scope="col" className={styles.thUid}>UID</th>
+            <th scope="col" className={styles.thRegion}>Регион</th>
+            <th scope="col" className={styles.thStatus}>Статус</th>
+            <th scope="col" className={styles.thQuality}>Качество</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item) => (
             <tr
               key={item.id}
-              className={styles.row}
-              onClick={() => onRowClick?.(item)}
+              className={onRowClick ? `${styles.row} ${styles.rowInteractive}` : styles.row}
+              onClick={onRowClick ? () => onRowClick(item) : undefined}
+              tabIndex={onRowClick ? 0 : undefined}
+              onKeyDown={
+                onRowClick
+                  ? (event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onRowClick(item);
+                      }
+                    }
+                  : undefined
+              }
             >
               <td>{formatDate(item.date)}</td>
               <td className={styles.uid}>{item.uid}</td>

@@ -15,5 +15,9 @@ export function StatusBadge({ status, qualityClass }: StatusBadgeProps) {
     return <Badge tone="warning">⚠ Нарушение</Badge>;
   }
 
-  return <Badge tone="success">✓ Качественно</Badge>;
+  if (qualityClass === 0) {
+    return <Badge tone="success">✓ Качественно</Badge>;
+  }
+
+  return <Badge>—</Badge>;
 }

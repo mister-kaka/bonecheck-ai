@@ -4,11 +4,6 @@
   border-radius: var(--radius-lg);
   background: var(--gradient-card);
 }
-.thDate { width: 160px; }
-.thUid { width: auto; }
-.thRegion { width: 220px; }
-.thStatus { width: 140px; }
-.thQuality { width: 220px; }
 
 .table {
   width: 100%;
@@ -37,10 +32,14 @@
 }
 
 .row {
-  cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
+.rowInteractive {
+  cursor: pointer;
+}
+
+.rowInteractive:hover,
 .row:hover {
   background-color: var(--color-bg-soft);
 }
@@ -55,7 +54,8 @@
 .thDate { width: 200px; }
 .thUid { width: 280px; }
 .thRegion { width: 280px; }
-.thStatus { width: 250px; }
+.thStatus { width: 160px; }
+.thQuality { width: 180px; }
 
 @media (max-width: 768px) {
   .table thead th,

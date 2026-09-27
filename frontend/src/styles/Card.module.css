@@ -3,13 +3,13 @@
   min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: var(--color-bg-surface);
-  box-shadow: var(--shadow-sm);
+  background: #ffffff;
+  box-shadow: var(--shadow-md);
 }
 
 .cardHighlighted {
-  border-color: var(--color-slate);
-  background: var(--color-bg-soft);
+  border-color: var(--color-accent);
+  background: #f4fbfd;
 }
 
 .head {
@@ -17,7 +17,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-5) var(--space-5) 0;
+  padding: var(--space-4) var(--space-5) 0;
 }
 
 .title {

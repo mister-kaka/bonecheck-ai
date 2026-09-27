@@ -3,48 +3,40 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  border-radius: var(--radius-md);
-  font-weight: 600;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
   font-family: inherit;
   white-space: nowrap;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.05s ease;
-}
-
-.base:active {
-  transform: translateY(1px);
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .base:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .base:focus-visible {
-  outline: 2px solid var(--color-slate);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
 .sm {
-  padding: 6px 12px;
+  padding: 0 10px;
   font-size: var(--fs-small);
   height: 32px;
 }
 
 .md {
-  padding: 9px 18px;
+  padding: 0 14px;
   font-size: var(--fs-body);
-  height: 40px;
+  height: 36px;
 }
 
 .lg {
-  padding: 12px 24px;
+  padding: 0 16px;
   font-size: var(--fs-body);
-  height: 48px;
+  height: 40px;
 }
 
 .fullWidth {
@@ -52,24 +44,24 @@
 }
 
 .primary {
-  background: var(--gradient-button);
+  background: var(--color-accent);
   color: var(--color-text-inverse);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--color-accent);
 }
 
 .primary:hover:not(:disabled) {
-  background: var(--gradient-button-hover);
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
 }
 
 .secondary {
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
+  border-color: var(--color-border-strong);
 }
 
 .secondary:hover:not(:disabled) {
   background: var(--color-bg-soft);
-  border-color: var(--color-border-strong);
 }
 
 .ghost {
@@ -85,10 +77,11 @@
 .danger {
   background: var(--color-danger);
   color: var(--color-text-inverse);
+  border-color: var(--color-danger);
 }
 
 .danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-danger) 82%, black);
+  background: color-mix(in srgb, var(--color-danger) 88%, black);
 }
 
 .icon {
@@ -96,5 +89,4 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: var(--fs-small);
 }

@@ -42,12 +42,12 @@
 }
 
 .wrapper:hover:not(.disabled) .box {
-  border-color: var(--color-info);
+  border-color: var(--color-accent);
 }
 
 .input:focus-visible + .box {
-  border-color: var(--color-info);
-  box-shadow: 0 0 0 3px var(--color-info-bg);
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
 }
 
 .check {
@@ -57,8 +57,8 @@
 }
 
 .input:checked + .box {
-  background-color: var(--color-info);
-  border-color: var(--color-info);
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .input:checked + .box .check {

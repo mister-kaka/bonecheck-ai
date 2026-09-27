@@ -1,13 +1,14 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-pill);
-  border: 1px solid transparent;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: none;
   font-size: var(--fs-tiny);
   font-weight: 600;
-  line-height: var(--lh-tight);
+  line-height: 1.3;
+  letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
@@ -31,8 +32,8 @@
   background: var(--color-info-bg);
 }
 
-.neutral {
-  color: var(--color-slate);
-  background: var(--color-bg-surface);
-  border-color: var(--color-border);
+.neutral,
+.muted {
+  color: var(--color-muted-status);
+  background: var(--color-muted-status-bg);
 }

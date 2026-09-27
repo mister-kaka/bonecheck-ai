@@ -108,6 +108,10 @@
 }
 
 .fileName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: var(--fs-tiny);
   color: rgba(255, 255, 255, 0.85);
@@ -122,6 +126,10 @@
 /* Адаптив */
 
 @media (max-width: 640px) {
+  .viewer {
+    min-height: 360px;
+  }
+
   .topBar {
     padding: 8px 12px;
   }

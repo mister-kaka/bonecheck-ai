@@ -5,7 +5,10 @@ export class CreateStudyResponseDto {
   @ApiProperty({ example: '3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b21' })
   id!: string;
 
-  @ApiProperty({ enum: StudyStatus, example: StudyStatus.Processing })
+  @ApiProperty({
+    enum: [StudyStatus.Processing],
+    example: StudyStatus.Processing,
+  })
   status!: StudyStatus;
 
   @ApiProperty({ example: '2026-09-18T11:21:00.000Z' })
@@ -29,7 +32,9 @@ export class StudyStatusResponseDto {
   })
   sessionId!: string | null;
 
-  @ApiProperty({ enum: StudyStatus })
+  @ApiProperty({
+    enum: [StudyStatus.Processing, StudyStatus.Completed, StudyStatus.Error],
+  })
   status!: StudyStatus;
 
   @ApiProperty({ example: 'spine.dcm' })
@@ -41,7 +46,10 @@ export class StudyStatusResponseDto {
   @ApiProperty()
   updatedAt!: string;
 
-  @ApiPropertyOptional({ nullable: true, description: 'Заполнено, если статус равен «error»' })
+  @ApiProperty({
+    nullable: true,
+    description: 'Заполнено, если статус равен «error»',
+  })
   error!: string | null;
 
   @ApiProperty({ description: 'Истина, если анализ завершён и результат можно запросить' })
@@ -73,8 +81,8 @@ export class StudyResultResponseDto {
   quality_prob?: number;
 
   @ApiProperty({
-  example: 'Поясничный отдел позвоночника',
-  description: 'Поясничный отдел позвоночника или Проксимальный отдел бедра.',
+    example: 'Поясничный отдел позвоночника',
+    description: 'Поясничный отдел позвоночника или Проксимальный отдел бедра.',
   })
   anatomical_region!: string;
 }
@@ -83,7 +91,7 @@ export class ApiErrorResponseDto {
   @ApiProperty({ example: 400 })
   statusCode!: number;
 
-  @ApiProperty({ example: 'Bad Request' })
+  @ApiProperty({ example: 'BAD REQUEST' })
   error!: string;
 
   @ApiProperty({ example: 'FILE_REQUIRED' })

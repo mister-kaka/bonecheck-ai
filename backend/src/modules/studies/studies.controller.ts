@@ -18,10 +18,12 @@ import {
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
@@ -70,6 +72,11 @@ export class StudiesController {
   })
   @ApiCreatedResponse({ type: CreateStudyResponseDto })
   @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiResponse({
+    status: HttpStatus.PAYLOAD_TOO_LARGE,
+    type: ApiErrorResponseDto,
+  })
+  @ApiInternalServerErrorResponse({ type: ApiErrorResponseDto })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),

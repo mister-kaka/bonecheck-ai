@@ -185,18 +185,19 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
       result: this.toResult(row),
     };
   }
+
   private toResult(row: StudyRow): MlPrediction | null {
     if (row.quality_class !== 0 && row.quality_class !== 1) {
       return null;
     }
 
-    if (!row.anatomical_region) {
+    if (row.violation_type === null || !row.anatomical_region) {
       return null;
     }
 
     const result: MlPrediction = {
       quality_class: row.quality_class,
-      violation_type: row.violation_type ?? '',
+      violation_type: row.violation_type,
       anatomical_region: row.anatomical_region,
     };
 

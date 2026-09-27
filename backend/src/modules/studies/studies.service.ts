@@ -6,6 +6,7 @@ import {
   Logger,
   NotFoundException,
   OnModuleInit,
+  PayloadTooLargeException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { FileStorageService } from './file-storage.service';
@@ -119,7 +120,10 @@ export class StudiesService implements OnModuleInit {
       });
     }
 
-    if (study.status !== StudyStatus.Completed || !study.result) {
+    if (
+      study.status !== StudyStatus.Completed ||
+      !this.isReadableResult(study.result)
+    ) {
       throw new ConflictException({
         code: 'RESULT_NOT_READY',
         message: 'Результат анализа ещё не готов.',
@@ -131,7 +135,7 @@ export class StudiesService implements OnModuleInit {
       studyId: study.id,
       quality_class: study.result.quality_class,
       violation_type: study.result.violation_type,
-      anatomical_region: study.result.anatomical_region as string, // Прямо указываем, что это строка
+      anatomical_region: study.result.anatomical_region,
       ...(study.result.quality_prob !== undefined
         ? { quality_prob: study.result.quality_prob }
         : {}),
@@ -149,14 +153,24 @@ export class StudiesService implements OnModuleInit {
       });
     }
 
-    if (file.size > MAX_FILE_SIZE_BYTES) {
+    if (!file.buffer) {
       throw new BadRequestException({
+        code: 'FILE_REQUIRED',
+        message: 'Файл исследования пустой.',
+      });
+    }
+
+    if (
+      file.size > MAX_FILE_SIZE_BYTES ||
+      file.buffer.length > MAX_FILE_SIZE_BYTES
+    ) {
+      throw new PayloadTooLargeException({
         code: 'FILE_TOO_LARGE',
         message: 'Файл слишком большой. Максимальный размер - 50 МБ.',
       });
     }
 
-    if (!file.buffer || file.size === 0) {
+    if (file.size === 0 || file.buffer.length === 0) {
       throw new BadRequestException({
         code: 'FILE_REQUIRED',
         message: 'Файл исследования пустой.',

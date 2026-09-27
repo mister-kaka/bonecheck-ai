@@ -28,7 +28,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       if (exception.code === 'LIMIT_FILE_SIZE') {
         return {
           statusCode: HttpStatus.PAYLOAD_TOO_LARGE,
-          error: 'Payload Too Large',
+          error: this.statusName(HttpStatus.PAYLOAD_TOO_LARGE),
           code: 'FILE_TOO_LARGE',
           message: 'Файл слишком большой. Максимальный размер - 50 МБ.',
         };
@@ -36,7 +36,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       return {
         statusCode: HttpStatus.BAD_REQUEST,
-        error: 'Bad Request',
+        error: this.statusName(HttpStatus.BAD_REQUEST),
         code: 'INVALID_FILE',
         message: 'Не удалось принять файл исследования.',
       };
@@ -60,7 +60,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      error: 'Internal Server Error',
+      error: this.statusName(HttpStatus.INTERNAL_SERVER_ERROR),
       code: 'INTERNAL_ERROR',
       message: 'Внутренняя ошибка сервера.',
     };

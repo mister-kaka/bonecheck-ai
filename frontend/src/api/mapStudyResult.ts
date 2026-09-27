@@ -1,14 +1,6 @@
-/**
- * Поля успешного GET /api/studies/:id/result.
- * Источник: docs/api.md. Мок истории и StudyResult в types/study.ts шире этого контракта.
- */
-export type ApiStudyResult = {
-  studyId: string;
-  quality_class: 0 | 1;
-  violation_type: string;
-  quality_prob?: number;
-  anatomical_region?: string;
-};
+import type { StudyResultPayload } from "../types/study";
+
+export type { StudyResultPayload as ApiStudyResult };
 
 export type StudyResultView = {
   isOk: boolean;
@@ -18,19 +10,15 @@ export type StudyResultView = {
   summary: string;
 };
 
-const REGION_FALLBACK = "Область не определена";
-
+/** Splits violation_type on ";" without trimming. A valid class-0 value is "". */
 export function splitViolationTypes(violationType: string): string[] {
-  return violationType
-    .split(";")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
+  if (violationType.length === 0) return [];
+  return violationType.split(";").filter((item) => item.length > 0);
 }
 
-export function mapStudyResult(result: ApiStudyResult): StudyResultView {
-  const violations = splitViolationTypes(result.violation_type);
+export function mapStudyResult(result: StudyResultPayload): StudyResultView {
   const isOk = result.quality_class === 0;
-  const region = result.anatomical_region?.trim() || REGION_FALLBACK;
+  const violations = isOk ? [] : splitViolationTypes(result.violation_type);
 
   let summary: string;
   if (!isOk && violations.length > 1) {
@@ -46,7 +34,7 @@ export function mapStudyResult(result: ApiStudyResult): StudyResultView {
 
   return {
     isOk,
-    region,
+    region: result.anatomical_region,
     qualityProb: result.quality_prob,
     violations,
     summary,

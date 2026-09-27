@@ -1,5 +1,5 @@
-import { EmptyState } from "./EmptyState.tsx";
-import { StatusBadge } from "./StatusBadge.tsx";
+import { EmptyState } from "./EmptyState";
+import { StatusBadge } from "./StatusBadge";
 import type { HistoryItem } from "../../types/study";
 import styles from "../../styles/HistoryTable.module.css";
 
@@ -17,6 +17,13 @@ function formatDate(iso: string): string {
   const hh = String(d.getHours()).padStart(2, "0");
   const min = String(d.getMinutes()).padStart(2, "0");
   return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
+}
+
+function getQualityLabel(item: HistoryItem): string {
+  if (item.status === "Failure") return "Ошибка обработки";
+  if (item.quality_class === 1) return "Некорректно";
+  if (item.quality_class === 0) return "Корректно";
+  return "—";
 }
 
 export function HistoryTable({
@@ -37,6 +44,7 @@ export function HistoryTable({
             <th className={styles.thUid}>UID</th>
             <th className={styles.thRegion}>Регион</th>
             <th className={styles.thStatus}>Статус</th>
+            <th className={styles.thQuality}>Качество</th>
           </tr>
         </thead>
         <tbody>
@@ -55,6 +63,7 @@ export function HistoryTable({
                   qualityClass={item.quality_class}
                 />
               </td>
+              <td>{getQualityLabel(item)}</td>
             </tr>
           ))}
         </tbody>

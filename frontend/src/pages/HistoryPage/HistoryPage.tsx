@@ -7,7 +7,7 @@ import { mockRegions, mockStatuses, mockSorts } from '../../mocks/regions';
 import type { HistoryItem } from '../../types/study';
 import styles from '../../styles/HistoryPage.module.css';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 export function HistoryPage() {
   const [search, setSearch] = useState('');

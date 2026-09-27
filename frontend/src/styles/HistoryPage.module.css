@@ -45,7 +45,7 @@
 .block {
   background: var(--gradient-card);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
+  padding: var(--space-1);
 }
 
 .footer {

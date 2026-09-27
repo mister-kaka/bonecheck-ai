@@ -11,7 +11,7 @@ export function ImageCarousel({
   activeIndex,
   onChange,
 }: ImageCarouselProps) {
-  if (total <= 1) return null; // карусель не нужна, если снимок один
+  if (total <= 1) return null;
 
   const prev = () => {
     if (activeIndex > 0) onChange(activeIndex - 1);

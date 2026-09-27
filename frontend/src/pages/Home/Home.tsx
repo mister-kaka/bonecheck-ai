@@ -24,10 +24,6 @@ const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const UPLOAD_MS = 900;
 const ANALYSIS_MS = 1400;
 
-/**
- * Типичный ответ MockMlClient (docs/api.md).
- * При интеграции заменить на GET /api/studies/:id/result после polling статуса.
- */
 const MOCK_COMPLETED_RESULT: ApiStudyResult = {
   studyId: "mock",
   quality_class: 0,

@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import styles from "../../styles/SummaryBlock.module.css";
 
 interface SummaryBlockProps {
-  /** Текст заключения. Можно передать строку или разметку */
   children: ReactNode;
   title?: string;
 }

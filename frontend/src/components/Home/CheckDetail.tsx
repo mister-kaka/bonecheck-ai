@@ -3,15 +3,10 @@ import styles from "../../styles/CheckDetail.module.css";
 export type CheckTone = "success" | "warning" | "danger";
 
 interface CheckDetailProps {
-  /** Номер проверки: 1, 2, 3 */
   index: number;
-  /** Название, например «Корректная укладка» */
   title: string;
-  /** Текст статуса, например «Корректно» или «Выровнена корректно» */
   status: string;
-  /** Цвет статуса: success — зелёный, warning — жёлтый, danger — красный */
   tone?: CheckTone;
-  /** Пункты описания */
   items?: string[];
 }
 

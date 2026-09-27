@@ -204,7 +204,6 @@ export function DicomViewer({
     };
   }, [file]);
 
-  // ---- Зум ----
   const zoomIn = useCallback(() => setZoom((z) => Math.min(z * 1.2, 5)), []);
   const zoomOut = useCallback(() => setZoom((z) => Math.max(z / 1.2, 0.5)), []);
   const reset = useCallback(() => {
@@ -212,7 +211,6 @@ export function DicomViewer({
     setPan({ x: 0, y: 0 });
   }, []);
 
-  // ---- Пан ----
   const onMouseDown = (e: React.MouseEvent) => {
     setIsPanning(true);
     setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
@@ -223,7 +221,6 @@ export function DicomViewer({
   };
   const onMouseUp = () => setIsPanning(false);
 
-  // ---- Колесо мыши ----
   const onWheel = (e: React.WheelEvent) => {
     if (e.deltaY < 0) zoomIn();
     else zoomOut();
@@ -254,14 +251,12 @@ export function DicomViewer({
         </div>
       ) : (
         <div className={styles.body}>
-          {/* Вертикальные контролы — слева */}
           <ViewerControls
             onZoomIn={zoomIn}
             onZoomOut={zoomOut}
             onReset={reset}
           />
 
-          {/* Сцена с изображением */}
           <div
             className={styles.stage}
             onMouseDown={onMouseDown}
@@ -334,7 +329,6 @@ export function DicomViewer({
         </div>
       )}
 
-      {/* Подпись файла — снизу */}
       {file && (
         <div className={styles.footer}>
           <span className={styles.fileName}>{file.name}</span>

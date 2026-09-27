@@ -4,7 +4,6 @@ import styles from "../../styles/ViewerTabs.module.css";
 interface ViewerTabsProps {
   layers: Layers;
   onChange: (layers: Layers) => void;
-  /** Слои, для которых есть данные. Без данных таб не показывается. */
   available?: Array<keyof Layers>;
 }
 

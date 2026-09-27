@@ -9,8 +9,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-        /*  Заголовок  */
-
 .head {
   display: flex;
   align-items: center;
@@ -31,8 +29,6 @@
 .title {
   font-size: var(--fs-body);
 }
-
-        /*  Список проверок  */
 
 .list {
   display: flex;

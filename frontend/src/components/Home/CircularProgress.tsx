@@ -14,12 +14,8 @@ export function CircularProgress({
   label,
 }: CircularProgressProps) {
   const safe = Math.max(0, Math.min(100, value));
-
-  // Радиус окружности (по центру линии)
   const radius = (size - strokeWidth) / 2;
-  // Длина окружности
   const circumference = 2 * Math.PI * radius;
-  // Сколько «закрашено»
   const offset = circumference - (safe / 100) * circumference;
 
   return (
@@ -37,7 +33,6 @@ export function CircularProgress({
         viewBox={`0 0 ${size} ${size}`}
         className={styles.svg}
       >
-        {/* Фоновый круг (полный) */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -46,7 +41,6 @@ export function CircularProgress({
           stroke="var(--color-progress-track)"
           strokeWidth={strokeWidth}
         />
-        {/* Активная дуга */}
         <circle
           cx={size / 2}
           cy={size / 2}

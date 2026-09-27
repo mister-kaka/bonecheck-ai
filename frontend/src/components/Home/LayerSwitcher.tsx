@@ -30,11 +30,11 @@ const EMPTY: Layers = {
 export function LayerSwitcher({ layers, onChange }: LayerSwitcherProps) {
   const handleChange = (key: keyof Layers, checked: boolean) => {
     if (!checked) {
-      // сняли галочку > возвращаемся к Оригинал
+      // Снятие любой галочки возвращает слой «Оригинал».
       onChange({ ...EMPTY, original: true });
       return;
     }
-    // клик по неактивному > активируем только его
+    // Включённым остаётся только выбранный слой.
     onChange({ ...EMPTY, [key]: true });
   };
 

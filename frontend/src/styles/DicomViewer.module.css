@@ -8,8 +8,6 @@
   flex-direction: column;
 }
 
-/* Верхняя панель с табами */
-
 .topBar {
   padding: 10px 12px;
   background: #13181E;
@@ -18,8 +16,6 @@
   justify-content: stretch;
   width: 100%;
 }
-
-/* Тело: контролы + сцена */
 
 .body {
   position: relative;
@@ -65,8 +61,6 @@
   pointer-events: none;
 }
 
-/* Плейсхолдер (когда файла нет) */
-
 .placeholder {
   flex: 1;
   display: flex;
@@ -77,8 +71,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-
-/* Ошибка */
 
 .errorBanner {
   position: absolute;
@@ -92,8 +84,6 @@
   font-size: var(--fs-tiny);
   font-weight: 600;
 }
-
-/* Подпись файла снизу */
 
 .footer {
   display: flex;
@@ -122,8 +112,6 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-
-/* Адаптив */
 
 @media (max-width: 640px) {
   .viewer {

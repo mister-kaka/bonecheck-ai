@@ -5,7 +5,6 @@ import styles from "../../styles/ResultHeader.module.css";
 interface ResultHeaderProps {
   isOk: boolean;
   region: string;
-  /** Вероятность нарушения quality_prob, 0–1. В процентах. */
   qualityProb?: number;
   title?: string;
   onExport?: () => void;

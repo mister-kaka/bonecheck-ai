@@ -4,7 +4,7 @@ Implementer: Karina
 
 # Backend Business Logic Spec v1
 
-Этот документ — источник истины для backend business logic BoneCheck AI. Продуктовые решения принимает Maria. Реализует Karina.
+Этот документ - источник истины для backend business logic BoneCheck AI. Продуктовые решения принимает Maria. Реализует Karina.
 
 Код в этом этапе не менялся. Расхождения с текущим backend перечислены в разделе «Расхождения с текущим кодом» и остаются TODO реализации. Новые продуктовые сценарии не входят в работу: нет пользователей, ролей, JWT, PostgreSQL, Redis, Kafka, очереди задач, пагинации, политики повторов, автоматического удаления файлов, heatmap, contour и keypoints.
 
@@ -28,10 +28,10 @@ Backend принимает один DICOM-файл, сохраняет иссл�
 
 История:
 
-- «Мои» — исследования с тем же `session_id`;
-- «Все» — все исследования.
+- «Мои» - исследования с тем же `session_id`;
+- «Все» - все исследования.
 
-`session_id` — UUID браузерной сессии из `localStorage`, не пользователь и не право доступа. `GET /api/studies/:id` и `GET /api/studies/:id/result` по сессии не фильтруются.
+`session_id` - UUID браузерной сессии из `localStorage`, не пользователь и не право доступа. `GET /api/studies/:id` и `GET /api/studies/:id/result` по сессии не фильтруются.
 
 Клиент ходит только в NestJS. Python ML из браузера не вызывается.
 
@@ -39,7 +39,7 @@ Backend принимает один DICOM-файл, сохраняет иссл�
 
 ## 2. Current architecture
 
-Три каталога монорепозитория: `frontend/`, `backend/`, `ml/`. Для этой спецификации рабочая система — backend.
+Три каталога монорепозитория: `frontend/`, `backend/`, `ml/`. Для этой спецификации рабочая система - backend.
 
 ```text
 Frontend
@@ -71,9 +71,9 @@ ml/                              контейнер-заглушка, backend е
 
 Глобального префикса `api` нет. Префикс есть только у контроллера studies. Health остаётся `GET /health`.
 
-Метаданные — один файл SQLite (`DATABASE_PATH`). ORM нет. Отдельной таблицы результата нет: поля результата лежат в той же строке `studies`. Это связь «одно исследование — не больше одного результата». Вторую таблицу не создавать.
+Метаданные - один файл SQLite (`DATABASE_PATH`). ORM нет. Отдельной таблицы результата нет: поля результата лежат в той же строке `studies`. Это связь «одно исследование - не больше одного результата». Вторую таблицу не создавать.
 
-Сейчас `ML_CLIENT` — `MockMlClient`. Он не ходит в сеть. Замена клиента не меняет контроллеры и имена полей JSON.
+Сейчас `ML_CLIENT` - `MockMlClient`. Он не ходит в сеть. Замена клиента не меняет контроллеры и имена полей JSON.
 
 После успешного `INSERT` сервис не ждёт ML. `POST` отвечает сразу. Анализ идёт в том же процессе, отдельно по каждому `id`. Общего объекта «текущее исследование» в памяти нет.
 
@@ -83,7 +83,7 @@ ml/                              контейнер-заглушка, backend е
 
 ### 3.1. Study
 
-Логическая сущность — строка таблицы `studies`. Отдельной сущности History нет.
+Логическая сущность - строка таблицы `studies`. Отдельной сущности History нет.
 
 Фактические колонки, их и сохранять:
 
@@ -112,7 +112,7 @@ ml/                              контейнер-заглушка, backend е
 
 Не хранить и не добавлять колонки: пользователь, пароль, роль, `PixelSpacing`, `pixel_x_mm`, `pixel_y_mm`, heatmap, contour, keypoints, диагноз.
 
-`hasResult` в ответах статуса — вычисляемое поле, не колонка:
+`hasResult` в ответах статуса - вычисляемое поле, не колонка:
 
 ```text
 hasResult = (status == completed) AND (результат читается)
@@ -121,8 +121,8 @@ hasResult = (status == completed) AND (результат читается)
 Результат читается, только если в строке одновременно:
 
 - `quality_class` равен `0` или `1`;
-- `violation_type` — строка, согласованная с этим классом по разделу 7;
-- `anatomical_region` — одно из двух допустимых значений.
+- `violation_type` - строка, согласованная с этим классом по разделу 7;
+- `anatomical_region` - одно из двух допустимых значений.
 
 Пока validation не записывает иной итог, чтение не должно объявлять `hasResult = true` для строки без этих полей.
 
@@ -150,7 +150,7 @@ hasResult = (status == completed) AND (результат читается)
 
 ## 4. Study lifecycle
 
-`processing` — начальный статус записи, не отдельный апдейт после создания.
+`processing` - начальный статус записи, не отдельный апдейт после создания.
 
 ```text
 1. Проверить файл и session_id
@@ -215,7 +215,7 @@ error
 
 | From | To | Причина |
 | --- | --- | --- |
-| — | `processing` | создана новая строка после успешной загрузки файла |
+| - | `processing` | создана новая строка после успешной загрузки файла |
 | `processing` | `completed` | ответ ML прошёл structural и business validation, поля результата записаны |
 | `processing` | `error` | исключение ML-клиента либо ответ не прошёл validation |
 
@@ -266,9 +266,9 @@ Content-Type: multipart/form-data
 - без расширения достаточно MIME `application/dicom` или `application/x-dicom`;
 - MIME `application/dicom` и `application/x-dicom` принимаются и при другом расширении;
 - последовательность `DICM` не проверяется;
-- лимит — константа `50 * 1024 * 1024`. Переменная `MAX_FILE_SIZE_BYTES` из `.env.example` кодом не читается. Источник лимита не менять.
+- лимит - константа `50 * 1024 * 1024`. Переменная `MAX_FILE_SIZE_BYTES` из `.env.example` кодом не читается. Источник лимита не менять.
 
-Один запрос — один файл. Пакет, zip и папка исследования в API не входят.
+Один запрос - один файл. Пакет, zip и папка исследования в API не входят.
 
 ---
 
@@ -320,7 +320,7 @@ pixel_y_mm = 1.05
 
 На текущем MVP отдельный бизнес-требуемый timeout ML не определён. Backend использует фактическое завершение или ошибку ML-клиента. Числовой timeout не назначается.
 
-`MockMlClient` в сеть не ходит. Своего лимита ожидания у вызова нет. `busy_timeout` SQLite — это ожидание блокировки файла базы, не timeout ML.
+`MockMlClient` в сеть не ходит. Своего лимита ожидания у вызова нет. `busy_timeout` SQLite - это ожидание блокировки файла базы, не timeout ML.
 
 Если позже у HTTP-клиента появится технический timeout библиотеки, он не становится бизнес-правилом этой спецификации. Исключение такого клиента обрабатывается как любая другая ошибка ML: `status = error`.
 
@@ -333,10 +333,10 @@ pixel_y_mm = 1.05
 | Поле | Правило |
 | --- | --- |
 | тело ответа | объект, не `null` |
-| `quality_class` | тип `number`, `Number.isInteger`, значение ровно `0` или `1`. Строка `"0"`, boolean, `null`, отсутствие поля, `2`, `-1`, дробное число — невалидны |
+| `quality_class` | тип `number`, `Number.isInteger`, значение ровно `0` или `1`. Строка `"0"`, boolean, `null`, отсутствие поля, `2`, `-1`, дробное число - невалидны |
 | `violation_type` | тип `string`. `null` и отсутствие поля невалидны. `""` на этом шаге допустима |
 | `anatomical_region` | тип `string` и ключ присутствует. Отсутствие, `null` и не-строка невалидны |
-| `quality_prob` | ключ отсутствует — допустимо. Если ключ есть: конечное число и `0 <= quality_prob <= 1`. Строка, `null`, `NaN`, бесконечность, значение меньше 0 или больше 1 — невалидны |
+| `quality_prob` | ключ отсутствует - допустимо. Если ключ есть: конечное число и `0 <= quality_prob <= 1`. Строка, `null`, `NaN`, бесконечность, значение меньше 0 или больше 1 - невалидны |
 
 `quality_prob` не становится обязательным, если ML его не вернул.
 
@@ -449,7 +449,7 @@ violation_type = "Некорректная область интереса"
 | --- | --- | --- |
 | `processing` | 200 | `status = processing`, `error = null`, `hasResult = false` |
 | `completed` и результат читается | 200 | `status = completed`, `error = null`, `hasResult = true` |
-| `error` | 200 | `status = error`, `error` — текст колонки, `hasResult = false` |
+| `error` | 200 | `status = error`, `error` - текст колонки, `hasResult = false` |
 | id не UUID v4 | 400 | `BAD_REQUEST` |
 | строки нет | 404 | `STUDY_NOT_FOUND` |
 
@@ -501,7 +501,7 @@ GET /api/studies?session_id=<значение>
 | без `session_id`, пустая строка или строка из пробелов | все исследования, «Все» |
 | непустой `session_id` после trim | только эта сессия, «Мои» |
 
-Сортировка: `created_at` по убыванию, при равном времени — `id` по убыванию.
+Сортировка: `created_at` по убыванию, при равном времени - `id` по убыванию.
 
 Ответ **200**:
 
@@ -511,7 +511,7 @@ GET /api/studies?session_id=<значение>
 }
 ```
 
-Элемент `items` — тот же объект, что у `GET /api/studies/:id`. Полей ML внутри списка нет. Пустая выборка — 200 и `items: []`, не 404.
+Элемент `items` - тот же объект, что у `GET /api/studies/:id`. Полей ML внутри списка нет. Пустая выборка - 200 и `items: []`, не 404.
 
 Фильтра по статусу, региону, дате и имени файла нет.
 
@@ -523,7 +523,7 @@ GET /api/studies?session_id=<значение>
 
 ## 10. session_id
 
-`session_id` — UUID браузерной сессии, не пользователь. Frontend создаёт его один раз и хранит в `localStorage` под ключом `bonecheck_session_id`.
+`session_id` - UUID браузерной сессии, не пользователь. Frontend создаёт его один раз и хранит в `localStorage` под ключом `bonecheck_session_id`.
 
 Backend:
 
@@ -577,7 +577,7 @@ Backend:
 | 413 | `FILE_TOO_LARGE` | файл больше 50 МБ |
 | 500 | `INTERNAL_ERROR` | необработанная ошибка, в том числе сбой записи файла или `INSERT` |
 
-Ошибка анализа — это `Study.status = error`, не HTTP 500 на последующих опросах. `GET /api/studies/:id` при этом возвращает 200. `GET /api/studies/:id/result` возвращает 409 `ANALYSIS_FAILED`.
+Ошибка анализа - это `Study.status = error`, не HTTP 500 на последующих опросах. `GET /api/studies/:id` при этом возвращает 200. `GET /api/studies/:id/result` возвращает 409 `ANALYSIS_FAILED`.
 
 Внутренности SQLite, путь к файлу, адрес ML и stack trace в этот JSON не входят.
 
@@ -644,7 +644,7 @@ completed  → restart → остаётся completed
 
 Новые endpoint'ы не создавать. Имена полей не менять.
 
-Метаданные Study в JSON — camelCase: `sessionId`, `createdAt`, `updatedAt`, `originalFileName`, `hasResult`. Поля ML — snake_case: `quality_class`, `violation_type`, `quality_prob`, `anatomical_region`. В результате id называется `studyId`.
+Метаданные Study в JSON - camelCase: `sessionId`, `createdAt`, `updatedAt`, `originalFileName`, `hasResult`. Поля ML - snake_case: `quality_class`, `violation_type`, `quality_prob`, `anatomical_region`. В результате id называется `studyId`.
 
 | Method | Endpoint | Назначение | Вход | Успех | Ошибки |
 | --- | --- | --- | --- | --- | --- |
@@ -653,10 +653,10 @@ completed  → restart → остаётся completed
 | GET | `/api/studies/:id` | статус Study | path UUID v4 | 200, объект статуса без полей ML | 400, 404 |
 | GET | `/api/studies/:id/result` | результат | path UUID v4 | 200, валидный StudyResult, только при читаемом `completed` | 400, 404, 409 |
 | GET | `/health` | процесс жив | нет | 200, `{ "status": "ok" }` | процесс недоступен, если сервер не запущен |
-| GET | `/api/docs` | Swagger UI | нет | HTML | — |
-| GET | `/api/docs-json` | OpenAPI JSON | нет | документ Swagger | — |
+| GET | `/api/docs` | Swagger UI | нет | HTML | - |
+| GET | `/api/docs-json` | OpenAPI JSON | нет | документ Swagger | - |
 
-`GET /api/docs-json` уже появляется из `SwaggerModule.setup('api/docs', ...)`: свой `jsonDocumentUrl` не задан, путь по умолчанию — `api/docs-json`. Рядом тот же setup отдаёт `GET /api/docs-yaml`. Это не новый бизнес-endpoint. Удалять его и заводить отдельный контроллер не нужно.
+`GET /api/docs-json` уже появляется из `SwaggerModule.setup('api/docs', ...)`: свой `jsonDocumentUrl` не задан, путь по умолчанию - `api/docs-json`. Рядом тот же setup отдаёт `GET /api/docs-yaml`. Это не новый бизнес-endpoint. Удалять его и заводить отдельный контроллер не нужно.
 
 Состояния для result:
 
@@ -687,7 +687,7 @@ Response `CreateStudyResponseDto`: `id`, `status`, `createdAt`, `sessionId`.
 
 Request: `ListStudiesQueryDto`, необязательная строка `session_id`. Пустое значение и лимит 128 проверяет сервис.
 
-Response `StudyListResponseDto`: `items` — массив `StudyStatusResponseDto`.
+Response `StudyListResponseDto`: `items` - массив `StudyStatusResponseDto`.
 
 ### GET `/api/studies/:id`
 
@@ -720,9 +720,9 @@ Path `id`, UUID версии 4.
 | `quality_class` | да, `0` или `1` | целое `0` или `1` |
 | `violation_type` | да, string | `""` при классе `0`; допустимые фрагменты региона при классе `1` |
 | `anatomical_region` | да | ровно один из двух регионов |
-| `quality_prob` | нет | если пришёл от ML — число в `[0; 1]` |
+| `quality_prob` | нет | если пришёл от ML - число в `[0; 1]` |
 
-Ошибки — `ApiErrorResponseDto`: `statusCode`, `error`, `code`, `message`, необязательный `status`.
+Ошибки - `ApiErrorResponseDto`: `statusCode`, `error`, `code`, `message`, необязательный `status`.
 
 Текущий `StudyResultResponseDto` и `MlPrediction` помечают `anatomical_region` необязательным. Для успешного результата спецификация считает его обязательным. Реализация обновляет описание Swagger и тип валидного результата. Колонку и имя поля не переименовывать.
 
@@ -740,7 +740,7 @@ processing -------------------------------------------> error
 
 | From | To | Одна запись SQLite |
 | --- | --- | --- |
-| — | `processing` | вставка: id, session, имя, путь, timestamps, `error = NULL`, колонки результата = `NULL` |
+| - | `processing` | вставка: id, session, имя, путь, timestamps, `error = NULL`, колонки результата = `NULL` |
 | `processing` | `completed` | статус, `updated_at`, `error = NULL`, все поля результата |
 | `processing` | `error` | статус, `updated_at`, текст «Ошибка обработки ML.», колонки результата = `NULL` |
 
@@ -803,7 +803,7 @@ status = error      <=>  колонки результата пустые
 
 ```text
 [ ] POST /api/studies с одним DICOM создаёт строку и возвращает 201 processing, не дожидаясь ML
-[ ] id — UUID v4
+[ ] id - UUID v4
 [ ] session_id сохраняется и возвращается как sessionId; пустое значение сохраняется как null
 [ ] session_id длиннее 128 символов даёт 400 и не создаёт строку
 [ ] Формат UUID у session_id backend не требует; пользователей и JWT нет
@@ -816,7 +816,7 @@ status = error      <=>  колонки результата пустые
 [ ] quality_prob можно не передавать; переданное значение только число в [0; 1]
 [ ] anatomical_region обязателен и равен одному из двух регионов
 [ ] violation_type при классе 0 равен ""
-[ ] violation_type при классе 1 — один или несколько точных фрагментов этого региона через ";"
+[ ] violation_type при классе 1 - один или несколько точных фрагментов этого региона через ";"
 [ ] Нарушение другого региона, пустой фрагмент, пробел у разделителя и повтор фрагмента не проходят validation
 [ ] Невалидный ответ записывается как error с текстом «Ошибка обработки ML.» и пустым результатом
 [ ] Исключение ML даёт тот же error и тот же текст
@@ -834,7 +834,7 @@ status = error      <=>  колонки результата пустые
 [ ] Неизвестный id даёт 404
 [ ] История без session_id возвращает все исследования
 [ ] История с session_id возвращает только эту сессию
-[ ] Пустая история — 200 и items: []
+[ ] Пустая история - 200 и items: []
 [ ] Сортировка created_at DESC, id DESC; пагинации нет
 [ ] Restart сохраняет SQLite, результаты, session_id и файлы
 [ ] Параллельные исследования не делят общее mutable-состояние
@@ -877,13 +877,13 @@ status = error      <=>  колонки результата пустые
 | Statuses | Рабочие статусы `processing`, `completed`, `error`. `uploaded` не используется и не удаляется из `CHECK` | `StudyStatus` и `CHECK` содержат `uploaded`. Сервис пишет только три рабочих статуса. Restart вызывает ML только для `processing` | Расхождения поведения нет. `uploaded` не удалять |
 | ML validation | До `completed`: тип и значение `quality_class`, диапазон `quality_prob`, обязательный регион, словарь нарушений, связка класса и текста. Иначе `error` | `processStudy` записывает объект клиента в результат без проверки. Исключение клиента уже даёт `error` | Проверки ответа нет. Невалидный `quality_class` ломает `CHECK` SQLite, внешний catch оставляет `processing`, restart повторяет ML |
 | `anatomical_region` | Обязателен в валидном результате и в JSON 200 | `MlPrediction.anatomical_region?` и `@ApiPropertyOptional` в `StudyResultResponseDto`. `getResult` опускает пустое поле | Контракт успешного ответа надо сделать обязательным. Колонку не добавлять |
-| `quality_prob` | Необязателен; если есть — число в `[0; 1]`, иначе `error` | Поле необязательно и пишется как пришло, диапазон не проверяется | Нет проверки диапазона и типа |
-| `violation_type` | Пустая строка только при классе `0`; при классе `1` — точные фрагменты региона через `;` | Любая строка сохраняется. Словарь и связка с классом не проверяются | Нет business validation |
+| `quality_prob` | Необязателен; если есть - число в `[0; 1]`, иначе `error` | Поле необязательно и пишется как пришло, диапазон не проверяется | Нет проверки диапазона и типа |
+| `violation_type` | Пустая строка только при классе `0`; при классе `1` - точные фрагменты региона через `;` | Любая строка сохраняется. Словарь и связка с классом не проверяются | Нет business validation |
 | session_id | Строка до 128 символов, без auth и без проверки UUID | `normalizeSessionId` уже так делает | Расхождения нет. Не ужесточать |
-| History | `GET /api/studies` без фильтра — все; с `session_id` — одна сессия. Без пагинации и без сущности History | `findAll` и индекс `session_id` уже так работают. Сортировка `created_at DESC, id DESC` | Расхождения нет |
+| History | `GET /api/studies` без фильтра - все; с `session_id` - одна сессия. Без пагинации и без сущности History | `findAll` и индекс `session_id` уже так работают. Сортировка `created_at DESC, id DESC` | Расхождения нет |
 | Error handling | Ошибки HTTP текущие. Ошибка анализа: статус `error`, текст «Ошибка обработки ML.», result пустой, `GET result` → 409 | Исключение ML уже так обрабатывается. Невалидный ответ до этого пути не доходит | Для validation использовать тот же текст и тот же 409, не новый код ошибки |
 | Restart | `processing` повторить; `completed` и `error` не повторять | `onModuleInit` уже вызывает `processStudy` только для `processing` | Поведение верное. После validation невалидный ответ должен стать `error`, чтобы restart его не повторял |
-| API | Те же маршруты, включая `GET /health`, `GET /api/docs`, `GET /api/docs-json`. `POST` → 201 `processing`. Result при `processing` недоступен | Контроллер и Swagger setup уже такие. `docs-json` — путь по умолчанию Nest | Маршруты не менять. В OpenAPI успешный result должен требовать `anatomical_region` |
+| API | Те же маршруты, включая `GET /health`, `GET /api/docs`, `GET /api/docs-json`. `POST` → 201 `processing`. Result при `processing` недоступен | Контроллер и Swagger setup уже такие. `docs-json` - путь по умолчанию Nest | Маршруты не менять. В OpenAPI успешный result должен требовать `anatomical_region` |
 | SQLite | Та же таблица `studies`, результат в той же строке, один statement на статус и колонки результата | `SqliteStudyRepository` уже хранит результат в `studies` и обновляет статус вместе с колонками результата | Схему не менять. Проверку списков делать в приложении, не новым `CHECK` |
 | Тесты | Невалидный ответ ожидает `error` и отсутствие повтора после restart | `studies.service.spec.ts` считает успешным ответ без `anatomical_region` (`quality_class`, `violation_type`, иногда `quality_prob`) | Эти заглушки после validation станут `error`. Тесты привести к SPEC, не ослабляя проверку |
 
@@ -918,7 +918,7 @@ status = error      <=>  колонки результата пустые
 [ ] Swagger успешного result показывает anatomical_region обязательным
 ```
 
-Пункты про session, history, API routes, SQLite, restart конечных статусов и текст ошибки при исключении ML уже выполнены текущим кодом. Их нужно сохранить. Обязательное изменение — validation до `completed` и тесты, которые фиксируют новый отказ.
+Пункты про session, history, API routes, SQLite, restart конечных статусов и текст ошибки при исключении ML уже выполнены текущим кодом. Их нужно сохранить. Обязательное изменение - validation до `completed` и тесты, которые фиксируют новый отказ.
 
 ## OUT OF SCOPE
 

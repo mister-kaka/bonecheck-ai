@@ -7,8 +7,6 @@
   background: var(--color-deep);
 }
 
-        /*  Кнопки зума — правый верхний угол  */
-
 .toolbar {
   position: absolute;
   top: var(--space-3);
@@ -26,8 +24,6 @@
   font-size: var(--fs-body);
   font-weight: 700;
 }
-
-        /*  Плейсхолдер по центру  */
 
 .placeholder {
   position: absolute;

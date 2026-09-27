@@ -1,13 +1,7 @@
 import styles from "../../styles/ProcessStatus.module.css";
 
-/** Этап главной страницы, для которого показывается карточка */
 export type ProcessStage = "idle" | "uploading" | "processing";
 
-/**
- * Состояние одного шага:
- * done — ✓ Готово, active — ● В процессе, next — ● Ожидание (следующий шаг),
- * waiting — ○ Ожидание, unavailable — ○ Недоступен
- */
 export type StepState = "done" | "active" | "next" | "waiting" | "unavailable";
 
 export interface ProcessStep {
@@ -16,9 +10,7 @@ export interface ProcessStep {
 }
 
 interface ProcessStatusProps {
-  /** Текущий экран главной. Из него карточка сама считает состояния шагов */
   stage?: ProcessStage;
-  /** Можно передать шаги вручную — тогда stage не используется */
   steps?: ProcessStep[];
 }
 

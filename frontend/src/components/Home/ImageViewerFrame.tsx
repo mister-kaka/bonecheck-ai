@@ -3,7 +3,6 @@ import { IconButton } from "../IconButton";
 import styles from "../../styles/ImageViewerFrame.module.css";
 
 interface ImageViewerFrameProps {
-  /** Содержимое рамки (например, canvas с DICOM). Если не передано — показывается плейсхолдер */
   children?: ReactNode;
   onZoomIn?: () => void;
   onZoomOut?: () => void;

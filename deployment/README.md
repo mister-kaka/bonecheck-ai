@@ -26,8 +26,8 @@ Backend в Compose получает `BACKEND_PORT`, `BACKEND_HOST`, `DATABASE_PA
 
 Volumes:
 
-- `./backend/data:/app/data` — файл SQLite переживает `docker compose down` и новый `up`;
-- `./backend/uploads:/app/uploads` — загруженные DICOM.
+- `./backend/data:/app/data` - файл SQLite переживает `docker compose down` и новый `up`;
+- `./backend/uploads:/app/uploads` - загруженные DICOM.
 
 ## Переменные (.env.example)
 
@@ -42,7 +42,7 @@ Volumes:
 
 - `MAX_FILE_SIZE_BYTES` (лимит зашит в backend как 50 МБ).
 
-`DATABASE_PATH` в `.env.example` — путь для локального `npm start` из `backend/`. В контейнере Compose задаёт свой абсолютный путь `/app/data/bonecheck.sqlite`, чтобы Windows-путь из `.env` не попал внутрь контейнера.
+`DATABASE_PATH` в `.env.example` - путь для локального `npm start` из `backend/`. В контейнере Compose задаёт свой абсолютный путь `/app/data/bonecheck.sqlite`, чтобы Windows-путь из `.env` не попал внутрь контейнера.
 
 ## PLANNED (не реализовано)
 

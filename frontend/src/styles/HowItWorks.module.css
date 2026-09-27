@@ -9,8 +9,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-        /*  Заголовок  */
-
 .head {
   display: flex;
   align-items: center;
@@ -31,8 +29,6 @@
 .title {
   font-size: var(--fs-body);
 }
-
-        /*  Шаги: в ряд, разделены вертикальными линиями  */
 
 .steps {
   display: grid;
@@ -70,8 +66,6 @@
   line-height: var(--lh-normal);
   color: var(--color-text-secondary);
 }
-
-        /*  Адаптив: на узком экране шаги идут столбиком  */
 
 @media (max-width: 640px) {
   .steps {

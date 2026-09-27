@@ -17,7 +17,6 @@
   min-width: 160px;
 }
 
-/* адаптив: на узких экранах переносим на строки */
 @media (max-width: 900px) {
   .filters {
     flex-direction: column;

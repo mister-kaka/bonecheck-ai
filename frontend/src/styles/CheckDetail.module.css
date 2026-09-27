@@ -5,7 +5,6 @@
   padding: var(--space-4) 0;
 }
 
-/* Несколько проверок подряд разделяются линией */
 .check + .check {
   border-top: 1px solid var(--color-border);
 }
@@ -50,8 +49,6 @@
   margin-top: var(--space-1);
 }
 
-        /*  Пункты описания со стрелками, как в макете  */
-
 .items {
   display: flex;
   flex-direction: column;
@@ -73,8 +70,6 @@
   left: 0;
   color: var(--color-text-secondary);
 }
-
-        /*  Тона  */
 
 .success .icon {
   background: var(--color-success);

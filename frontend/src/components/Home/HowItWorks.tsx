@@ -6,7 +6,6 @@ export interface HowItWorksStep {
 }
 
 interface HowItWorksProps {
-  /** Шаги можно переопределить, по умолчанию — три шага из макета */
   steps?: HowItWorksStep[];
 }
 

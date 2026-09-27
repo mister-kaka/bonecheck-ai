@@ -36,7 +36,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
         message = body.message;
       }
     } catch {
-      // The error body is not JSON.
+      // Тело ответа не JSON.
     }
     throw new Error(message);
   }

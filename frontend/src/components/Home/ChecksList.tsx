@@ -1,7 +1,6 @@
 import styles from "../../styles/ChecksList.module.css";
 
 interface ChecksListProps {
-  /** Список проверок; по умолчанию — три категории из макета */
   items?: string[];
 }
 

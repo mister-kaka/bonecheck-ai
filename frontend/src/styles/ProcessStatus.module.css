@@ -13,8 +13,6 @@
   font-size: var(--fs-body);
 }
 
-        /*  Шаги столбиком, между ними тонкая линия  */
-
 .steps {
   display: flex;
   flex-direction: column;
@@ -69,9 +67,6 @@
   color: var(--color-text-secondary);
 }
 
-        /*  Состояния шагов  */
-
-/* ✓ Готово — зелёный индикатор */
 .done .icon {
   border-color: var(--color-success);
   background: var(--color-success-bg);
@@ -83,7 +78,6 @@
   font-weight: 600;
 }
 
-/* ● В процессе — заполненный кружок */
 .active .icon {
   border-color: var(--color-slate);
   background: var(--color-slate);
@@ -96,14 +90,12 @@
   font-weight: 600;
 }
 
-/* ● Ожидание — следующий шаг, кружок приглушённый */
 .next .icon {
   border-color: var(--color-slate);
   color: var(--color-slate);
   font-size: 8px;
 }
 
-/* ○ Ожидание / ○ Недоступен — пустой кружок, текст приглушён */
 .waiting .label,
 .unavailable .label {
   color: var(--color-text-secondary);

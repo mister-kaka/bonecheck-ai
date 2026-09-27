@@ -53,7 +53,6 @@ export function ResultBlock({
   return (
     <div className={styles.grid}>
       <div className={styles.viewerColumn}>
-        {/* DicomViewer внутри содержит табы сверху и контролы слева */}
         <DicomViewer
           file={activeFile}
           layers={layers}

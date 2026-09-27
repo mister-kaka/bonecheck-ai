@@ -23,7 +23,7 @@ function getQualityLabel(item: HistoryItem): string {
   if (item.status === "Failure") return "Ошибка обработки";
   if (item.quality_class === 1) return "Некорректно";
   if (item.quality_class === 0) return "Корректно";
-  return "—";
+  return "-";
 }
 
 export function HistoryTable({

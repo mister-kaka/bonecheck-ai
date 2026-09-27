@@ -49,10 +49,12 @@ Backend не ходит в Python. Есть TypeScript-интерфейс `MlCli
 
 Выход (поля ТЗ):
 
-- `quality_class`
-- `violation_type`
-- опционально `quality_prob`
-- опционально `anatomical_region`
+- `quality_class` - целое `0` или `1`
+- `violation_type` - `""` при классе `0`; при классе `1` точные фрагменты региона через `;`
+- `anatomical_region` - обязателен у валидного результата
+- опционально `quality_prob` в `[0; 1]`
+
+Невалидный ответ backend не сохраняет как результат: исследование получает `error`.
 
 HTTP JSON Python-сервиса: **TBD**.
 

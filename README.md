@@ -19,7 +19,7 @@
 | --- | --- |
 | Вход | один DICOM-файл (`.dcm` / `.dicom`) |
 | Что делает система | принимает файл, сохраняет его, запускает анализ, отдаёт статус и результат |
-| Результат | `quality_class`, `violation_type`, опционально `quality_prob` и `anatomical_region` |
+| Результат | `quality_class`, `violation_type`, обязательный `anatomical_region`; опционально `quality_prob` |
 
 Сейчас анализ выполняет **mock ML** внутри backend. Реальная модель ещё не подключена.
 

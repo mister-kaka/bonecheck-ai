@@ -58,7 +58,7 @@ CSS-фреймворка нет: свои `styles/tokens.css` и `styles/global.
 
 Не вызывать Python ML.
 
-Поля результата для отображения: `quality_class`, `violation_type`, опционально `quality_prob`, `anatomical_region`.
+Поля результата для отображения: обязательные `quality_class`, `violation_type`, `anatomical_region`; опционально `quality_prob`.
 
 Пока backend на mock, UI будет получать «корректное» исследование почти всегда. Это ожидаемо.
 
@@ -69,7 +69,7 @@ CSS-фреймворка нет: свои `styles/tokens.css` и `styles/global.
 - анализ на главной - таймер и фиксированный мок, не `POST /api/studies`;
 - история читает `mocks/history.ts`, не `GET /api/studies`;
 - `DicomViewer` показывает загруженный снимок. Heatmap, контур и ключевые точки рисуются, только если эти данные переданы в `ResultBlock`. Главная их не передаёт;
-- переключателя «Мои / Все» нет;
+- «Мои / Все» есть на экране истории, но список пока читается из мока. Для API «Мои» - `GET /api/studies?session_id=`, «Все» - `GET /api/studies` без фильтра. Регион и исход фильтруются на клиенте по `GET /api/studies/:id/result`, эти параметры в query списка не отправляются;
 - несколько нарушений из `violation_type` режутся по `;` в `mapStudyResult`.
 
 ---

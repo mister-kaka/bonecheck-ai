@@ -1,4 +1,4 @@
-Status: READY FOR IMPLEMENTATION
+Status: IMPLEMENTED
 Owner: Maria
 Implementer: Karina
 
@@ -6,7 +6,7 @@ Implementer: Karina
 
 Этот документ - источник истины для backend business logic BoneCheck AI. Продуктовые решения принимает Maria. Реализует Karina.
 
-Код в этом этапе не менялся. Расхождения с текущим backend перечислены в разделе «Расхождения с текущим кодом» и остаются TODO реализации. Новые продуктовые сценарии не входят в работу: нет пользователей, ролей, JWT, PostgreSQL, Redis, Kafka, очереди задач, пагинации, политики повторов, автоматического удаления файлов, heatmap, contour и keypoints.
+Поведение из этого документа реализовано в текущем backend. Раздел 20 фиксирует, что прежние расхождения закрыты. Новые продуктовые сценарии не входят в работу: нет пользователей, ролей, JWT, PostgreSQL, Redis, Kafka, очереди задач, пагинации, политики повторов, автоматического удаления файлов, heatmap, contour и keypoints.
 
 Открытых продуктовых вопросов нет.
 
@@ -142,7 +142,7 @@ hasResult = (status == completed) AND (результат читается)
 
 `quality_prob` отсутствует в JSON, если в базе `NULL`.
 
-`anatomical_region` в успешном ответе обязателен. Текущий DTO помечает его необязательным; это расхождение, его закрывает реализация, не новая колонка.
+`anatomical_region` в успешном ответе обязателен. Колонка и имя поля не менялись: поле уже было в строке `studies`.
 
 `violation_type = ""` значит «нарушений нет». Это значение результата, не `NULL`. `NULL` в колонке значит «результата нет».
 
@@ -344,7 +344,7 @@ pixel_y_mm = 1.05
 
 Выполняется только после структурной проверки.
 
-`anatomical_region` обязателен у валидного результата. Текущий TypeScript-контракт `MlPrediction` помечает поле как необязательное и не выбирает по нему набор нарушений. Утверждённая проверка нарушений без региона невозможна, поэтому единый контракт валидного результата такой: поле обязательно и в сохранённом результате, и в JSON `200` метода `GET /api/studies/:id/result`.
+`anatomical_region` обязателен у валидного результата: набор нарушений выбирается по региону. Поле обязательно и в сохранённом результате, и в JSON `200` метода `GET /api/studies/:id/result`.
 
 Допустимы только точные строки, без обрезки пробелов и без других значений:
 
@@ -513,7 +513,7 @@ GET /api/studies?session_id=<значение>
 
 Элемент `items` - тот же объект, что у `GET /api/studies/:id`. Полей ML внутри списка нет. Пустая выборка - 200 и `items: []`, не 404.
 
-Фильтра по статусу, региону, дате и имени файла нет.
+Фильтра по статусу, региону, дате и имени файла нет. Эти отборы frontend делает сам. Для региона и `quality_class` он читает `GET /api/studies/:id/result` у записей с `hasResult = true`. Query списка принимает только `session_id`: лишний параметр даёт **400** `BAD_REQUEST`, сообщение «Неизвестный параметр запроса.»
 
 Длинный `session_id` (> 128) → **400** `INVALID_SESSION_ID`.
 
@@ -570,7 +570,7 @@ Backend:
 | 400 | `INVALID_FILE_TYPE` | не DICOM по имени/MIME |
 | 400 | `INVALID_SESSION_ID` | `session_id` не строка или длиннее 128 |
 | 400 | `INVALID_FILE` | прочая ошибка Multer |
-| 400 | `BAD_REQUEST` | id не UUID v4; прочий отказ validation pipe |
+| 400 | `BAD_REQUEST` | id не UUID v4, сообщение «Идентификатор исследования должен быть UUID v4.»; неизвестный query-параметр, сообщение «Неизвестный параметр запроса.»; прочий отказ validation pipe |
 | 404 | `STUDY_NOT_FOUND` | нет строки |
 | 409 | `RESULT_NOT_READY` | результат запрошен, а анализ не завершён успешно или результат не читается |
 | 409 | `ANALYSIS_FAILED` | результат запрошен у исследования в `error` |
@@ -666,7 +666,7 @@ completed  → restart → остаётся completed
 | `completed` и результат читается | 200, обязательны `quality_class`, `violation_type`, `anatomical_region` |
 | `error` | 409 `ANALYSIS_FAILED` |
 
-Swagger после реализации должен показывать `anatomical_region` обязательным полем успешного результата и `quality_prob` необязательным. Заголовок «RUEN API» и версия `0.3.0` не меняются этой спецификацией.
+Swagger показывает `anatomical_region` обязательным полем успешного результата, с закрытым списком из двух регионов, и `quality_prob` необязательным, диапазон `[0; 1]`. Заголовок «RUEN API» и версия `0.3.0` этой спецификацией не меняются.
 
 ---
 
@@ -724,7 +724,7 @@ Path `id`, UUID версии 4.
 
 Ошибки - `ApiErrorResponseDto`: `statusCode`, `error`, `code`, `message`, необязательный `status`.
 
-Текущий `StudyResultResponseDto` и `MlPrediction` помечают `anatomical_region` необязательным. Для успешного результата спецификация считает его обязательным. Реализация обновляет описание Swagger и тип валидного результата. Колонку и имя поля не переименовывать.
+`StudyResultResponseDto` и `MlPrediction` требуют `anatomical_region`. `quality_prob` остаётся необязательным. Колонку и имя поля не переименовывать.
 
 ---
 
@@ -802,46 +802,46 @@ status = error      <=>  колонки результата пустые
 ## 18. Definition of Done
 
 ```text
-[ ] POST /api/studies с одним DICOM создаёт строку и возвращает 201 processing, не дожидаясь ML
-[ ] id - UUID v4
-[ ] session_id сохраняется и возвращается как sessionId; пустое значение сохраняется как null
-[ ] session_id длиннее 128 символов даёт 400 и не создаёт строку
-[ ] Формат UUID у session_id backend не требует; пользователей и JWT нет
-[ ] Файл лежит в UPLOAD_DIR/<id>/..., путь в API не отдаётся
-[ ] Непринятый файл даёт 400 или 413 и не создаёт исследование
-[ ] Сбой записи файла или INSERT даёт 500 без stack trace и без доступной строки
-[ ] ML вызывается с studyId, filePath, originalFileName и без pixel scale
-[ ] До completed выполняются structural и business validation
-[ ] quality_class принимает только целое 0 или 1
-[ ] quality_prob можно не передавать; переданное значение только число в [0; 1]
-[ ] anatomical_region обязателен и равен одному из двух регионов
-[ ] violation_type при классе 0 равен ""
-[ ] violation_type при классе 1 - один или несколько точных фрагментов этого региона через ";"
-[ ] Нарушение другого региона, пустой фрагмент, пробел у разделителя и повтор фрагмента не проходят validation
-[ ] Невалидный ответ записывается как error с текстом «Ошибка обработки ML.» и пустым результатом
-[ ] Исключение ML даёт тот же error и тот же текст
-[ ] error и completed после restart в ML не отправляются
-[ ] processing после restart отправляется в ML снова
-[ ] completed и результат пишутся одним statement
-[ ] error и очистка результата пишутся одним statement
-[ ] Нет закоммиченных пар completed без результата и processing с результатом
-[ ] GET /api/studies/:id при processing возвращает 200 и hasResult false
-[ ] GET /api/studies/:id/result при processing возвращает 409 RESULT_NOT_READY
-[ ] GET /api/studies/:id при error возвращает 200 и поле error
-[ ] GET /api/studies/:id/result при error возвращает 409 ANALYSIS_FAILED
-[ ] Успешный result содержит studyId, quality_class, violation_type и anatomical_region
-[ ] quality_prob в JSON отсутствует, если ML его не вернул
-[ ] Неизвестный id даёт 404
-[ ] История без session_id возвращает все исследования
-[ ] История с session_id возвращает только эту сессию
-[ ] Пустая история - 200 и items: []
-[ ] Сортировка created_at DESC, id DESC; пагинации нет
-[ ] Restart сохраняет SQLite, результаты, session_id и файлы
-[ ] Параллельные исследования не делят общее mutable-состояние
-[ ] uploaded не записывается и из CHECK не удаляется
-[ ] PixelSpacing и размеры пикселя не пишутся в базу и не добавляются в запрос ML
-[ ] Swagger /api/docs и /api/docs-json совпадают с контрактом, anatomical_region в успешном результате обязателен
-[ ] Тесты покрывают валидный результат, невалидный ответ как error, исключение ML, 409 при processing, фильтр истории и restart для processing, completed и error
+[x] POST /api/studies с одним DICOM создаёт строку и возвращает 201 processing, не дожидаясь ML
+[x] id - UUID v4
+[x] session_id сохраняется и возвращается как sessionId; пустое значение сохраняется как null
+[x] session_id длиннее 128 символов даёт 400 и не создаёт строку
+[x] Формат UUID у session_id backend не требует; пользователей и JWT нет
+[x] Файл лежит в UPLOAD_DIR/<id>/..., путь в API не отдаётся
+[x] Непринятый файл даёт 400 или 413 и не создаёт исследование
+[x] Сбой записи файла или INSERT даёт 500 без stack trace и без доступной строки
+[x] ML вызывается с studyId, filePath, originalFileName и без pixel scale
+[x] До completed выполняются structural и business validation
+[x] quality_class принимает только целое 0 или 1
+[x] quality_prob можно не передавать; переданное значение только число в [0; 1]
+[x] anatomical_region обязателен и равен одному из двух регионов
+[x] violation_type при классе 0 равен ""
+[x] violation_type при классе 1 - один или несколько точных фрагментов этого региона через ";"
+[x] Нарушение другого региона, пустой фрагмент, пробел у разделителя и повтор фрагмента не проходят validation
+[x] Невалидный ответ записывается как error с текстом «Ошибка обработки ML.» и пустым результатом
+[x] Исключение ML даёт тот же error и тот же текст
+[x] error и completed после restart в ML не отправляются
+[x] processing после restart отправляется в ML снова
+[x] completed и результат пишутся одним statement
+[x] error и очистка результата пишутся одним statement
+[x] Нет закоммиченных пар completed без результата и processing с результатом
+[x] GET /api/studies/:id при processing возвращает 200 и hasResult false
+[x] GET /api/studies/:id/result при processing возвращает 409 RESULT_NOT_READY
+[x] GET /api/studies/:id при error возвращает 200 и поле error
+[x] GET /api/studies/:id/result при error возвращает 409 ANALYSIS_FAILED
+[x] Успешный result содержит studyId, quality_class, violation_type и anatomical_region
+[x] quality_prob в JSON отсутствует, если ML его не вернул
+[x] Неизвестный id даёт 404
+[x] История без session_id возвращает все исследования
+[x] История с session_id возвращает только эту сессию
+[x] Пустая история - 200 и items: []
+[x] Сортировка created_at DESC, id DESC; пагинации нет
+[x] Restart сохраняет SQLite, результаты, session_id и файлы
+[x] Параллельные исследования не делят общее mutable-состояние
+[x] uploaded не записывается и из CHECK не удаляется
+[x] PixelSpacing и размеры пикселя не пишутся в базу и не добавляются в запрос ML
+[x] Swagger /api/docs и /api/docs-json совпадают с контрактом, anatomical_region в успешном результате обязателен
+[x] Тесты покрывают валидный результат, невалидный ответ как error, исключение ML, 409 при processing, фильтр истории и restart для processing, completed и error
 ```
 
 ---
@@ -864,61 +864,50 @@ status = error      <=>  колонки результата пустые
 
 ### `anatomical_region` в контракте ответа
 
-Текущий код считает поле необязательным. Для валидного результата оно обязательное, потому что набор нарушений выбирается по региону. Успешный `StudyResultResponseDto` всегда содержит `anatomical_region`. `quality_prob` остаётся необязательным.
+Для валидного результата `anatomical_region` обязателен, потому что набор нарушений выбирается по региону. Успешный `StudyResultResponseDto` всегда содержит `anatomical_region`. `quality_prob` остаётся необязательным.
 
 ---
 
 ## 20. Расхождения с текущим кодом
 
-Эти пункты не исправлены в коде. Их реализует Karina.
+Прежние расхождения закрыты.
 
-| Область | SPEC | Текущий код | Расхождение |
-| --- | --- | --- | --- |
-| Statuses | Рабочие статусы `processing`, `completed`, `error`. `uploaded` не используется и не удаляется из `CHECK` | `StudyStatus` и `CHECK` содержат `uploaded`. Сервис пишет только три рабочих статуса. Restart вызывает ML только для `processing` | Расхождения поведения нет. `uploaded` не удалять |
-| ML validation | До `completed`: тип и значение `quality_class`, диапазон `quality_prob`, обязательный регион, словарь нарушений, связка класса и текста. Иначе `error` | `processStudy` записывает объект клиента в результат без проверки. Исключение клиента уже даёт `error` | Проверки ответа нет. Невалидный `quality_class` ломает `CHECK` SQLite, внешний catch оставляет `processing`, restart повторяет ML |
-| `anatomical_region` | Обязателен в валидном результате и в JSON 200 | `MlPrediction.anatomical_region?` и `@ApiPropertyOptional` в `StudyResultResponseDto`. `getResult` опускает пустое поле | Контракт успешного ответа надо сделать обязательным. Колонку не добавлять |
-| `quality_prob` | Необязателен; если есть - число в `[0; 1]`, иначе `error` | Поле необязательно и пишется как пришло, диапазон не проверяется | Нет проверки диапазона и типа |
-| `violation_type` | Пустая строка только при классе `0`; при классе `1` - точные фрагменты региона через `;` | Любая строка сохраняется. Словарь и связка с классом не проверяются | Нет business validation |
-| session_id | Строка до 128 символов, без auth и без проверки UUID | `normalizeSessionId` уже так делает | Расхождения нет. Не ужесточать |
-| History | `GET /api/studies` без фильтра - все; с `session_id` - одна сессия. Без пагинации и без сущности History | `findAll` и индекс `session_id` уже так работают. Сортировка `created_at DESC, id DESC` | Расхождения нет |
-| Error handling | Ошибки HTTP текущие. Ошибка анализа: статус `error`, текст «Ошибка обработки ML.», result пустой, `GET result` → 409 | Исключение ML уже так обрабатывается. Невалидный ответ до этого пути не доходит | Для validation использовать тот же текст и тот же 409, не новый код ошибки |
-| Restart | `processing` повторить; `completed` и `error` не повторять | `onModuleInit` уже вызывает `processStudy` только для `processing` | Поведение верное. После validation невалидный ответ должен стать `error`, чтобы restart его не повторял |
-| API | Те же маршруты, включая `GET /health`, `GET /api/docs`, `GET /api/docs-json`. `POST` → 201 `processing`. Result при `processing` недоступен | Контроллер и Swagger setup уже такие. `docs-json` - путь по умолчанию Nest | Маршруты не менять. В OpenAPI успешный result должен требовать `anatomical_region` |
-| SQLite | Та же таблица `studies`, результат в той же строке, один statement на статус и колонки результата | `SqliteStudyRepository` уже хранит результат в `studies` и обновляет статус вместе с колонками результата | Схему не менять. Проверку списков делать в приложении, не новым `CHECK` |
-| Тесты | Невалидный ответ ожидает `error` и отсутствие повтора после restart | `studies.service.spec.ts` считает успешным ответ без `anatomical_region` (`quality_class`, `violation_type`, иногда `quality_prob`) | Эти заглушки после validation станут `error`. Тесты привести к SPEC, не ослабляя проверку |
+Ответ ML проверяется до `completed`: тип и значение `quality_class`, диапазон `quality_prob`, обязательный `anatomical_region`, словарь нарушений и связка класса с текстом. Невалидный ответ и исключение клиента записываются как `error` с текстом «Ошибка обработки ML.» и пустым результатом. После restart такие строки в ML не отправляются. `processing` отправляется снова.
 
-Текущий `MockMlClient` уже возвращает валидную комбинацию класса `0`, пустого `violation_type` и региона поясничного отдела. Его ответ менять не нужно.
+`anatomical_region` обязателен в успешном JSON и в Swagger. `quality_prob` остаётся необязательным. `uploaded` по-прежнему есть в `StudyStatus` и в `CHECK`, сервис его не записывает. Схема SQLite, маршруты, `session_id` и история не менялись.
+
+`MockMlClient` возвращает валидную комбинацию: класс `0`, пустой `violation_type`, регион поясничного отдела, `quality_prob = 0.05`. Это заглушка до отдельного подключения Python ML. Ответ менять не нужно.
 
 ---
 
 ## IMPLEMENTATION CHECKLIST
 
 ```text
-[ ] Реализовать ML response validation
-[ ] Реализовать validation quality_class
-[ ] Реализовать validation quality_prob
-[ ] Реализовать validation anatomical_region
-[ ] Реализовать validation violation_type
-[ ] Реализовать cross-field validation quality_class ↔ violation_type
-[ ] Невалидный ML response переводит Study в error
-[ ] ML exception переводит Study в error
-[ ] Error не перезапускается после restart
-[ ] Processing может повторно обрабатываться после restart
-[ ] Completed не перезапускается
-[ ] Сохранить session_id
-[ ] Сохранить history filtering
-[ ] Сохранить текущий API contract
-[ ] Сохранить SQLite persistence
-[ ] Не добавлять authentication
-[ ] Не добавлять новые product features
-[ ] Успешный StudyResult всегда содержит anatomical_region
-[ ] quality_prob остаётся необязательным
-[ ] Невалидный ответ не остаётся processing из-за исключения CHECK SQLite
-[ ] Обновить тесты, которые считают валидным ответ ML без региона и без проверки словаря
-[ ] Swagger успешного result показывает anatomical_region обязательным
+[x] Реализовать ML response validation
+[x] Реализовать validation quality_class
+[x] Реализовать validation quality_prob
+[x] Реализовать validation anatomical_region
+[x] Реализовать validation violation_type
+[x] Реализовать cross-field validation quality_class ↔ violation_type
+[x] Невалидный ML response переводит Study в error
+[x] ML exception переводит Study в error
+[x] Error не перезапускается после restart
+[x] Processing может повторно обрабатываться после restart
+[x] Completed не перезапускается
+[x] Сохранить session_id
+[x] Сохранить history filtering
+[x] Сохранить текущий API contract
+[x] Сохранить SQLite persistence
+[x] Не добавлять authentication
+[x] Не добавлять новые product features
+[x] Успешный StudyResult всегда содержит anatomical_region
+[x] quality_prob остаётся необязательным
+[x] Невалидный ответ не остаётся processing из-за исключения CHECK SQLite
+[x] Обновить тесты, которые считают валидным ответ ML без региона и без проверки словаря
+[x] Swagger успешного result показывает anatomical_region обязательным
 ```
 
-Пункты про session, history, API routes, SQLite, restart конечных статусов и текст ошибки при исключении ML уже выполнены текущим кодом. Их нужно сохранить. Обязательное изменение - validation до `completed` и тесты, которые фиксируют новый отказ.
+Пункты checklist выполнены текущим кодом: validation до `completed`, session, history, маршруты, SQLite и restart. Новые продуктовые сценарии по-прежнему вне scope.
 
 ## OUT OF SCOPE
 

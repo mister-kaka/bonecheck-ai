@@ -37,7 +37,7 @@ PostgreSQL не используем. Отдельного контейнера 
 | `quality_class` | `quality_class` | `0` или `1` после успешного ML, иначе `NULL` |
 | `quality_prob` | `quality_prob` | опционально, вместе с результатом |
 | `violation_type` | `violation_type` | строка результата, включая `""`; `NULL`, если результата нет |
-| `anatomical_region` | `anatomical_region` | опционально, вместе с результатом |
+| `anatomical_region` | `anatomical_region` | обязателен у читаемого результата; `NULL`, если результата нет |
 
 Индексы: `session_id`, `created_at`.
 

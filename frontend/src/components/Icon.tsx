@@ -1,7 +1,6 @@
 import type { ReactNode, SVGProps } from "react";
 
 export type IconName =
-  | "mark"
   | "study"
   | "history"
   | "file"
@@ -42,13 +41,6 @@ export function Icon({ name, size = 18, ...rest }: IconProps) {
 }
 
 const paths: Record<IconName, ReactNode> = {
-  mark: (
-    <>
-      <path d="M8 4.5h5.5a2 2 0 0 1 2 2V9" />
-      <path d="M6.5 9.5h8a2 2 0 0 1 2 2V15" />
-      <path d="M5 15h8.5a2 2 0 0 1 2 2v2.5" />
-    </>
-  ),
   study: (
     <>
       <rect x="4" y="3.5" width="16" height="17" rx="2" />

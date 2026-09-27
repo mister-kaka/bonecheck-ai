@@ -6,9 +6,7 @@ export function AppHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.brand}>
-        <span className={styles.mark} aria-hidden="true">
-          <Icon name="mark" size={18} />
-        </span>
+        <span className={styles.mark} aria-hidden="true" />
         <div>
           <span className={styles.title}>BoneCheck AI</span>
           <span className={styles.product}>Качество укладки DXA</span>

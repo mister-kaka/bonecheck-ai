@@ -28,12 +28,9 @@
 
 .mark {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  color: var(--color-accent);
   background: var(--color-info-bg);
   border-radius: var(--radius-sm);
 }

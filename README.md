@@ -3,7 +3,7 @@
 
 Репозиторий: https://github.com/mister-kaka/bonecheck-ai
 
-Этот репозиторий на текущем этапе содержит каркас проекта: API, UI, ML-сервис и Docker. Бизнес-логика, модель и обработка DICOM намеренно не реализованы.
+В репозитории есть API, UI, mock ML и Docker. Реальная модель не подключена: анализ на backend выполняет MockMlClient.
 
 Хакатон ЛЦТ 2026, направление «Город», постановщик - Департамент здравоохранения Москвы / Центр диагностики и телемедицины.
 
@@ -27,12 +27,12 @@
 
 ## Текущий статус
 
-Дата фиксации: 2026-09-23.
+Дата фиксации: 2026-09-27.
 
 | Слой | Статус | Что есть в репозитории |
 | --- | --- | --- |
 | Backend | CONFIRMED, работает | NestJS REST: health, загрузка DICOM, список, статус, результат, Swagger, mock ML, файлы на диске, SQLite |
-| Frontend | CONFIRMED, каркас UI | React + Vite, маршруты `/` и `/history`. Страницы — заглушки. При старте создаётся `session_id` в `localStorage` |
+| Frontend | CONFIRMED, UI на моках | React + Vite, маршруты `/` и `/history`. Главная принимает один DICOM и показывает результат локальным моком. История - таблица на мок-данных. При старте создаётся `session_id` в `localStorage`. Страницы API не вызывают |
 | ML | CONFIRMED, каркас | Python-процесс-заглушка, пустые пакеты, Docker-контейнер без HTTP и без модели |
 | Docker | CONFIRMED | `docker-compose.yml`: frontend, backend, ml-service (dev-сборка) |
 | Метаданные | SQLite | файл `DATABASE_PATH`, не PostgreSQL |
@@ -69,7 +69,7 @@ Backend
 Результат JSON
 ```
 
-Метаданные — локальный файл SQLite, не PostgreSQL и не отдельный контейнер. Подробности: [docs/architecture.md](docs/architecture.md), [docs/database.md](docs/database.md).
+Метаданные - локальный файл SQLite, не PostgreSQL и не отдельный контейнер. Подробности: [docs/architecture.md](docs/architecture.md), [docs/database.md](docs/database.md).
 
 ---
 
@@ -104,10 +104,11 @@ bonecheck-ai/
 │   └── Dockerfile
 ├── frontend/
 │   ├── src/
-│   │   ├── api/client.ts         # только базовый URL, без fetch
-│   │   ├── pages/Home.tsx        # заглушка, маршрут /
-│   │   ├── pages/HistoryPage.tsx # заглушка, маршрут /history
-│   │   ├── components/           # AppHeader, Button, Card; Spinner пустой
+│   │   ├── api/                  # session_id, fetch-клиент, mapStudyResult
+│   │   ├── pages/Home/           # загрузка одного DICOM, локальный мок анализа
+│   │   ├── pages/HistoryPage/    # фильтры и таблица на мок-данных
+│   │   ├── components/           # хедер и блоки экранов
+│   │   ├── mocks/                # история до подключения API
 │   │   ├── styles/               # tokens.css, global.css
 │   │   ├── App.tsx               # хедер и маршруты
 │   │   └── main.tsx
@@ -175,7 +176,7 @@ npm run dev
 ```
 
 - UI: http://localhost:5173
-- Маршруты: `/` (главная) и `/history` (история). Обе страницы - заглушки, без загрузки DICOM.
+- Маршруты: `/` (главная) и `/history` (история). Главная принимает один DICOM и показывает локальный мок анализа. История - таблица на мок-данных. Запросы к API со страниц не уходят.
 
 ### ML
 
@@ -198,7 +199,7 @@ docker compose up --build
 - backend: http://localhost:3000
 - ml-service: контейнер-заглушка, порт хоста 8000 проброшен, но процесс внутри HTTP не поднимает
 
-Compose **не** соединяет backend с ml-service. Отдельного сервиса БД нет: SQLite — файл в volume `./backend/data`.
+Compose **не** соединяет backend с ml-service. Отдельного сервиса БД нет: SQLite - файл в volume `./backend/data`.
 
 ```bash
 docker compose down

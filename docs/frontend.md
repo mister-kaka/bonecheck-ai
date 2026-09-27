@@ -1,6 +1,6 @@
 # Frontend
 
-Статус: **заглушка**. UX/UI в разработке у frontend-команды (лид - Саша). В репозитории макета Figma нет.
+Статус: экраны главной и истории есть. Анализ и таблица истории идут с локальных моков, страницы API не вызывают. В репозитории макета Figma нет.
 
 Не описывать экраны, которых нет в коде.
 
@@ -14,18 +14,14 @@
 frontend/src/
 ├── main.tsx                 # BrowserRouter; при старте создаёт session_id
 ├── App.tsx                  # AppHeader и маршруты
-├── pages/Home.tsx           # заглушка главной
-├── pages/HistoryPage.tsx    # заглушка истории
+├── pages/Home/Home.tsx      # один DICOM, локальный мок анализа и результата
+├── pages/HistoryPage/       # фильтры и таблица
 ├── api/session.ts           # localStorage bonecheck_session_id
-├── api/client.ts            # базовый URL, createStudy, listStudies
-├── components/
-│   ├── AppHeader.tsx        # навигация: Главная, История
-│   ├── Button.tsx           # базовый компонент, страницы его не рендерят
-│   ├── Card.tsx             # базовый компонент; Card.module.css пустой
-│   └── Spinner.tsx          # пустой файл-заготовка, нигде не импортируется
-├── styles/tokens.css
-├── styles/global.css
-└── assets/                  # пусто
+├── api/client.ts            # createStudy, listStudies
+├── api/mapStudyResult.ts    # поля результата API -> текст на экране
+├── components/              # хедер и блоки экранов
+├── mocks/                   # история и справочники фильтров
+└── styles/
 ```
 
 Маршруты в `App.tsx`:
@@ -36,16 +32,13 @@ frontend/src/
 | `/history` | `HistoryPage` |
 | любой другой | редирект на `/` |
 
-`Home` показывает:
+`Home` показывает заголовок «Анализ исследования», приём одного файла `.dcm` / `.dicom` до 50 МБ и состояния загрузки, анализа, результата и ошибки файла. Результат берётся из константы `MOCK_COMPLETED_RESULT` через `mapStudyResult`, не из `GET /api/studies/:id/result`.
 
-- заголовок `RUEN AI Densitometry`;
-- текст «Статус сервиса:» и «Backend connection placeholder».
+`HistoryPage` показывает заголовок «История исследований», поиск, фильтры и таблицу по `mocks/history.ts`.
 
-`HistoryPage` показывает заголовок «История исследований» и текст, что таблица появится позже.
+При первом открытии приложения `main.tsx` вызывает `getOrCreateSessionId()`: если в `localStorage` нет ключа `bonecheck_session_id`, записывается `crypto.randomUUID()`. Повторные загрузки страницы читают тот же идентификатор.
 
-Страницы по-прежнему заглушки: формы загрузки и таблицы истории нет. При первом открытии приложения `main.tsx` вызывает `getOrCreateSessionId()`: если в `localStorage` нет ключа `bonecheck_session_id`, записывается `crypto.randomUUID()`. Повторные загрузки страницы читают тот же идентификатор.
-
-`createStudy(file)` отправляет этот `session_id` полем multipart вместе с файлом. `listMyStudies()` запрашивает `GET /api/studies?session_id=...`, `listAllStudies()` — список без фильтра. Страницы эти функции пока не вызывают.
+`createStudy(file)` отправляет этот `session_id` полем multipart вместе с файлом. `listMyStudies()` запрашивает `GET /api/studies?session_id=...`, `listAllStudies()` - список без фильтра. Страницы эти функции пока не вызывают.
 
 CSS-фреймворка нет: свои `styles/tokens.css` и `styles/global.css`.
 
@@ -71,22 +64,16 @@ CSS-фреймворка нет: свои `styles/tokens.css` и `styles/global.
 
 ---
 
-## Принято командой, ещё не в коде
+## Что на экране не из API
 
-Из плана работ (не из ТЗ и не из текущего UI):
-
-- экраны: загрузка, ожидание анализа, результат, нарушения, ошибки;
-- прототип допускается на моках до интеграции;
-- визуальные пояснения / heatmap - преимущество, не факт, что попадут в MVP.
-
-Статус этих экранов: **PLANNED**.
+- анализ на главной - таймер и фиксированный мок, не `POST /api/studies`;
+- история читает `mocks/history.ts`, не `GET /api/studies`;
+- `DicomViewer` показывает загруженный снимок. Heatmap, контур и ключевые точки рисуются, только если эти данные переданы в `ResultBlock`. Главная их не передаёт;
+- переключателя «Мои / Все» нет;
+- несколько нарушений из `violation_type` режутся по `;` в `mapStudyResult`.
 
 ---
 
 ## TBD
 
-- утверждённый макет;
-- финальный набор экранов сверх заглушек `/` и `/history`;
-- библиотека UI;
-- как показывать несколько нарушений из строки с `;`;
-- нужен ли просмотр самого DICOM в браузере.
+- утверждённый макет: Figma в репозитории нет.

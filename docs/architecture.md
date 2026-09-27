@@ -8,7 +8,7 @@
 
 ```text
 ┌─────────────────────┐
-│ Frontend (React)    │  заглушки / и /history
+│ Frontend (React)    │  UI / и /history, данные на моках
 └──────────┬──────────┘
            │ REST JSON  (вызовы из UI пока не сделаны)
            v
@@ -22,12 +22,12 @@
 └─────────────────────┘
 ```
 
-Метаданные — файл SQLite, не PostgreSQL и не отдельный контейнер БД. См. [database.md](database.md).
+Метаданные - файл SQLite, не PostgreSQL и не отдельный контейнер БД. См. [database.md](database.md).
 
 ## Основной поток данных (как работает код)
 
 ```text
-Пользователь (Swagger / curl; UI загрузки ещё нет)
+Пользователь (Swagger / curl; экран загрузки есть, в API не ходит)
     |
     v
 Frontend (опционально, позже)
@@ -59,13 +59,14 @@ Frontend / пользователь
 
 ## Frontend
 
-Статус: заглушка. Подробности: [frontend.md](frontend.md).
+Статус: экраны есть, анализ и история на локальных моках. Подробности: [frontend.md](frontend.md).
 
 - стек: React + TypeScript + Vite;
-- маршруты `/` (`Home`) и `/history` (`HistoryPage`), обе страницы - заглушки;
-- хедер с навигацией; `Button` и `Card` в страницах не используются;
-- `src/api/client.ts` задаёт `VITE_API_BASE_URL`, запросов нет;
-- ML не вызывается из браузера. Это принятое правило, даже когда UI появится.
+- маршруты `/` (`Home`) и `/history` (`HistoryPage`);
+- главная принимает один DICOM и показывает результат локальным моком;
+- история фильтрует `mocks/history.ts`;
+- `src/api/client.ts` умеет `createStudy` и `listStudies`, страницы их не вызывают;
+- ML из браузера не вызывается.
 
 ## Backend
 

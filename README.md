@@ -55,7 +55,8 @@ npm run dev
 ```
 
 - интерфейс: http://localhost:5173
-- API: http://localhost:3000/health
+- API: http://localhost:3000
+- проверка API: http://localhost:3000/health
 - описание API: http://localhost:3000/api/docs
 
 Docker:
@@ -63,6 +64,8 @@ Docker:
 ```bash
 docker compose up --build
 ```
+
+По умолчанию открываются те же адреса. Порт `8000` контейнера `ml-service` в браузере не открывают: заглушка HTTP не слушает, API к ней не обращается.
 
 Полная инструкция: [docs/system/running.md](docs/system/running.md). Контейнеры: [deployment/README.md](deployment/README.md).
 

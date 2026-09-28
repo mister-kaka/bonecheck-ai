@@ -2,6 +2,8 @@
 
 Запуск BoneCheck AI одной командой из корня репозитория.
 
+Оглавление: [../docs/README.md](../docs/README.md).
+
 ## Что запускается
 
 ```bash
@@ -12,9 +14,9 @@ docker compose up --build
 | --- | --- | --- | --- |
 | `frontend` | `frontend/Dockerfile` | веб-интерфейс | 5173 |
 | `backend` | `backend/Dockerfile` | API | 3000 |
-| `ml-service` | `ml/Dockerfile` | контейнер ML-компонента | 8000 |
+| `ml-service` | `ml/Dockerfile` | контейнер из каталога `ml` | 8000 |
 
-Интерфейс стартует после API. Образы интерфейса и API основаны на Node.js 20. Образ ML-компонента — на Python 3.12.
+Интерфейс стартует после API. Образы интерфейса и API основаны на Node.js 20. Образ `ml-service` основан на Python 3.12.
 
 Остановка:
 
@@ -66,6 +68,6 @@ API внутри контейнера получает:
 2. Откройте http://localhost:5173.
 3. Откройте http://localhost:3000/health и убедитесь, что ответ `{"status":"ok"}`.
 4. Загрузите DICOM или ZIP. Запись должна появиться в «Истории».
-5. Файл исследования должен остаться в `backend/uploads`, метаданные — в `backend/data`.
+5. Файл исследования должен остаться в `backend/uploads`, метаданные - в `backend/data`.
 
 Если порт 5173 или 3000 занят, задайте другой порт в `.env` и запустите Compose снова.

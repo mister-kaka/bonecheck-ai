@@ -2,6 +2,8 @@
 
 Инструкция для человека, который скачал репозиторий и хочет открыть BoneCheck AI.
 
+Оглавление: [README.md](../README.md).
+
 ## Требования
 
 Локальный запуск:
@@ -34,13 +36,13 @@ cp .env.example .env
 | `BACKEND_HOST` | адрес, на котором слушает API | `0.0.0.0` |
 | `FRONTEND_PORT` | порт интерфейса в Docker | `5173` |
 | `VITE_API_BASE_URL` | адрес API для интерфейса | `http://localhost:3000` |
-| `ML_SERVICE_PORT` | порт ML-компонента в Docker | `8000` |
+| `ML_SERVICE_PORT` | порт контейнера `ml-service` в Docker | `8000` |
 | `UPLOAD_DIR` | каталог DICOM при локальном запуске API | `./uploads` |
 | `DATABASE_PATH` | файл метаданных при локальном запуске API | `./data/bonecheck.sqlite` |
 
 Пути `UPLOAD_DIR` и `DATABASE_PATH` считаются от каталога, из которого запущена команда API. При `npm run start:dev` из `backend/` это `backend/uploads` и `backend/data/bonecheck.sqlite`.
 
-В Docker Compose пути внутри контейнера заданы отдельно: `/app/uploads` и `/app/data/bonecheck.sqlite`. Каталоги на машине — `backend/uploads` и `backend/data`.
+В Docker Compose пути внутри контейнера заданы отдельно: `/app/uploads` и `/app/data/bonecheck.sqlite`. Каталоги на машине - `backend/uploads` и `backend/data`.
 
 Лимит 50 МБ задан в API, отдельной переменной его нет.
 
@@ -66,7 +68,7 @@ npm run dev
 
 API перезапускается при изменении кода. Интерфейс открывается на http://localhost:5173.
 
-Остановка — `Ctrl+C` в каждом терминале.
+Остановка - `Ctrl+C` в каждом терминале.
 
 ## Проверка
 
@@ -107,7 +109,7 @@ npm run start:prod
 docker compose up --build
 ```
 
-Поднимаются интерфейс, API и контейнер ML-компонента. Интерфейс: http://localhost:5173. Проверка API: http://localhost:3000/health.
+Поднимаются интерфейс, API и контейнер `ml-service`. Интерфейс: http://localhost:5173. Проверка API: http://localhost:3000/health.
 
 Остановка:
 
@@ -115,10 +117,12 @@ docker compose up --build
 docker compose down
 ```
 
-Состав сервисов, порты и тома: [../deployment/README.md](../deployment/README.md).
+Состав сервисов, порты и тома: [../deployment/README.md](../../deployment/README.md).
 
 ## Данные между запусками
 
 История и загруженные DICOM сохраняются. После `docker compose down` каталоги `backend/data` и `backend/uploads` остаются.
 
 Пустая история: остановить API и удалить `backend/data/bonecheck.sqlite`. Рядом могут лежать `bonecheck.sqlite-wal` и `bonecheck.sqlite-shm`, их тоже удаляют. Каталог `backend/uploads` очищается отдельно.
+
+Дальше: [тестирование](testing.md).

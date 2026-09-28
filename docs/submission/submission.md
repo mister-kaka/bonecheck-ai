@@ -4,6 +4,8 @@
 
 Постановщик: Департамент здравоохранения Москвы, Центр диагностики и телемедицины.
 
+Оглавление: [README.md](../README.md).
+
 ## Команда
 
 Состав и зоны ответственности: [team.md](team.md).
@@ -12,24 +14,27 @@
 
 Публичный репозиторий: https://github.com/mister-kaka/bonecheck-ai
 
-Исходный код интерфейса, API и ML-компонента лежит в этом репозитории. Личные пароли для доступа не используются.
+Исходный код интерфейса и API лежит в этом репозитории. Личные пароли для доступа не используются. В текущей версии модель не подключена: [limitations.md](../product/limitations.md), [ml/README.md](../ml/README.md).
 
 Медицинские изображения в репозиторий не входят. Для проверки система принимает DICOM локально.
 
 ## Документация
 
-Точка входа: [README.md](../README.md).
+Точка входа в репозиторий: [README.md](../../README.md). Оглавление документов: [docs/README.md](../README.md).
 
 | Что проверить | Документ |
 | --- | --- |
-| Что это за система | [product.md](product.md) |
-| Сценарий | [scenario.md](scenario.md) |
-| Результат и нарушения | [results.md](results.md) |
-| Запуск | [running.md](running.md) |
-| Docker | [../deployment/README.md](../deployment/README.md) |
-| API | [api.md](api.md) |
+| Что это за система | [product.md](../product/product.md) |
+| Сценарий | [scenario.md](../product/scenario.md) |
+| Результат и нарушения | [results.md](../product/results.md) |
+| Запуск | [running.md](../system/running.md) |
+| Docker | [deployment/README.md](../../deployment/README.md) |
+| API | [api.md](../system/api.md) |
+| Архитектура | [architecture.md](../system/architecture.md) |
+| Модель | [ml/README.md](../ml/README.md) |
 | Соответствие задаче | [requirements.md](requirements.md) |
-| Короткие ответы | [faq.md](faq.md) |
+| Ограничения | [limitations.md](../product/limitations.md) |
+| Короткие ответы | [faq.md](../product/faq.md) |
 
 ## Презентация
 
@@ -37,9 +42,9 @@
 
 ## Прототип
 
-Рабочий прототип — запущенное приложение.
+Рабочий прототип - запущенное приложение.
 
-1. Запустить систему по [running.md](running.md).
+1. Запустить систему по [running.md](../system/running.md).
 2. Открыть http://localhost:5173.
 3. Загрузить DICOM или ZIP.
 4. Открыть результат, снимок, «Историю» и XLSX.
@@ -48,6 +53,4 @@
 
 ## Дополнительные материалы
 
-Описание ML-компонента: [ml/README.md](ml/README.md).
-
-Проверки API: [testing.md](testing.md).
+Проверки: [testing.md](../system/testing.md).

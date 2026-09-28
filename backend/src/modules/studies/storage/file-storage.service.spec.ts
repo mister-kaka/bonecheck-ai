@@ -9,7 +9,7 @@ describe('FileStorageService', () => {
   let previousUploadDir: string | undefined;
 
   beforeEach(() => {
-    directory = mkdtempSync(path.join(os.tmpdir(), 'ruen-uploads-'));
+    directory = mkdtempSync(path.join(os.tmpdir(), 'bonecheck-uploads-'));
     previousUploadDir = process.env.UPLOAD_DIR;
     process.env.UPLOAD_DIR = directory;
   });

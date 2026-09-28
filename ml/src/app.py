@@ -1,4 +1,4 @@
-"""Заглушка ML-сервиса RUEN. Модели и обработки DICOM пока нет."""
+"""Заглушка ML-сервиса BoneCheck AI. Модели и обработки DICOM пока нет."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import time
 
 
 def main() -> None:
-    print("Заглушка ML-сервиса RUEN запущена")
+    print("Заглушка ML-сервиса BoneCheck AI запущена")
     while True:
         time.sleep(60)
 

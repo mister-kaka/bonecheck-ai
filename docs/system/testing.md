@@ -2,6 +2,8 @@
 
 Проверки API лежат в `backend/`. Интерфейс проверяется сборкой.
 
+Оглавление: [README.md](../README.md).
+
 Команды выполняются из каталога `backend/` после `npm install`, если не сказано иное.
 
 ## Модульные тесты API
@@ -49,4 +51,25 @@ npm run build
 
 Команда проверяет типы и собирает интерфейс. Если она завершается без ошибки, сборка прошла.
 
+## Сборка API
+
+```bash
+cd backend
+npm run build
+```
+
+Команда собирает API. Запуск собранной версии: [running.md](running.md).
+
+## Файл Docker Compose
+
+Из корня репозитория:
+
+```bash
+docker compose config
+```
+
+Команда проверяет `docker-compose.yml`. Сборка и запуск контейнеров: [../deployment/README.md](../../deployment/README.md).
+
 Команды выше процент покрытия не выводят.
+
+Дальше: [требования задания](../submission/requirements.md).

@@ -35,7 +35,7 @@ describe('study persistence (sqlite)', () => {
   const repositories: SqliteStudyRepository[] = [];
 
   beforeEach(() => {
-    directory = mkdtempSync(path.join(os.tmpdir(), 'ruen-sqlite-'));
+    directory = mkdtempSync(path.join(os.tmpdir(), 'bonecheck-sqlite-'));
     previousDatabasePath = process.env.DATABASE_PATH;
     previousDelay = process.env.ML_MOCK_DELAY_MS;
     process.env.DATABASE_PATH = path.join(directory, 'bonecheck.sqlite');

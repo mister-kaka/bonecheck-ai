@@ -14,7 +14,7 @@ describe('Исследования (сквозные тесты)', () => {
   let previousDatabasePath: string | undefined;
 
   beforeAll(async () => {
-    uploadDir = mkdtempSync(path.join(os.tmpdir(), 'ruen-studies-'));
+    uploadDir = mkdtempSync(path.join(os.tmpdir(), 'bonecheck-studies-'));
     previousDatabasePath = process.env.DATABASE_PATH;
     process.env.UPLOAD_DIR = uploadDir;
     process.env.DATABASE_PATH = path.join(uploadDir, 'bonecheck.sqlite');

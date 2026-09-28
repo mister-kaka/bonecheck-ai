@@ -14,7 +14,7 @@ describe('Проверка работоспособности (сквозные 
   let previousDatabasePath: string | undefined;
 
   beforeAll(async () => {
-    uploadDir = mkdtempSync(path.join(os.tmpdir(), 'ruen-health-'));
+    uploadDir = mkdtempSync(path.join(os.tmpdir(), 'bonecheck-health-'));
     previousDatabasePath = process.env.DATABASE_PATH;
     process.env.UPLOAD_DIR = uploadDir;
     process.env.DATABASE_PATH = path.join(uploadDir, 'health.sqlite');

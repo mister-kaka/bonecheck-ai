@@ -1,7 +1,7 @@
 {
-  "name": "ruen-backend",
+  "name": "bonecheck-ai-backend",
   "version": "0.1.0",
-  "description": "RUEN NestJS API",
+  "description": "BoneCheck AI API",
   "private": true,
   "scripts": {
     "build": "nest build",

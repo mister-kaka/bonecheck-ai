@@ -9,21 +9,26 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { FileStorageService } from './file-storage.service';
-import { isAllowedDicomUpload, MAX_FILE_SIZE_BYTES } from './file-validation';
+import { FileStorageService } from './storage/file-storage.service';
+import { isAllowedDicomUpload, MAX_FILE_SIZE_BYTES } from './storage/file-validation';
 import { ML_CLIENT, MlClient, MlPrediction } from '../ml/ml.types';
 import {
   STUDY_REPOSITORY,
   StudyRecord,
   StudyRepository,
   StudyStatus,
-} from './study.types';
+} from './types/study.types';
 import {
+  CreatePackageResponseDto,
   CreateStudyResponseDto,
   StudyListResponseDto,
   StudyResultResponseDto,
   StudyStatusResponseDto,
 } from './dto/study-responses.dto';
+import { ExportStudiesQueryDto } from './dto/study-requests.dto';
+import { formatMoscowDateTime } from './export/moscow-time';
+import { buildXlsx, XLSX_HEADERS, xlsxDownloadName } from './export/xlsx-workbook';
+import { readZipPackage, ZipPackageError } from './archive/zip-package';
 
 type ValidMlPrediction = MlPrediction & {
   anatomical_region:
@@ -35,6 +40,21 @@ type UploadedFile = {
   mimetype: string;
   size: number;
   buffer: Buffer;
+};
+
+const UUID_V4 =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const STATUS_LABEL: Record<StudyStatus, string> = {
+  [StudyStatus.Uploaded]: 'Файл принят',
+  [StudyStatus.Processing]: 'Идёт анализ',
+  [StudyStatus.Completed]: 'Готово',
+  [StudyStatus.Error]: 'Ошибка анализа',
+};
+
+export type XlsxFile = {
+  filename: string;
+  body: Buffer;
 };
 
 @Injectable()
@@ -62,35 +82,60 @@ export class StudiesService implements OnModuleInit {
   ): Promise<CreateStudyResponseDto> {
     this.assertFile(file);
     const normalizedSessionId = this.normalizeSessionId(sessionId);
+    return this.persistStudy(file, normalizedSessionId);
+  }
 
-    const id = randomUUID();
-    const now = new Date().toISOString();
-    const storedFilePath = await this.fileStorage.save(
-      id,
-      file.originalname,
-      file.buffer,
-    );
+  async createPackage(
+    file: UploadedFile | undefined,
+    sessionId?: unknown,
+  ): Promise<CreatePackageResponseDto> {
+    this.assertZipFile(file);
+    const normalizedSessionId = this.normalizeSessionId(sessionId);
 
-    const study: StudyRecord = {
-      id,
-      sessionId: normalizedSessionId,
-      status: StudyStatus.Processing,
-      originalFileName: file.originalname,
-      storedFilePath,
-      createdAt: now,
-      updatedAt: now,
-      error: null,
-      result: null,
-    };
+    let entries;
+    try {
+      entries = readZipPackage(file.buffer);
+    } catch (error) {
+      if (error instanceof ZipPackageError) {
+        this.raiseZipError(error);
+      }
+      throw new BadRequestException({
+        code: 'INVALID_ZIP',
+        message: 'Архив повреждён или не является ZIP.',
+      });
+    }
 
-    await this.studies.save(study);
-    void this.processStudy(id);
+    // Сводного заключения по пакету нет: каждый DICOM - отдельное исследование.
+    const items = [];
+    for (const entry of entries) {
+      const created = await this.persistStudy(
+        {
+          originalname: entry.originalName,
+          mimetype: 'application/dicom',
+          size: entry.buffer.length,
+          buffer: entry.buffer,
+        },
+        normalizedSessionId,
+      );
+      items.push({
+        ...created,
+        originalFileName: entry.originalName,
+      });
+    }
+
+    return { items };
+  }
+
+  async exportXlsx(query: ExportStudiesQueryDto): Promise<XlsxFile> {
+    const studies = await this.studiesForExport(query);
+    const rows = [
+      [...XLSX_HEADERS],
+      ...studies.map((study) => this.toExportRow(study)),
+    ];
 
     return {
-      id: study.id,
-      status: study.status,
-      createdAt: study.createdAt,
-      sessionId: study.sessionId,
+      filename: xlsxDownloadName(studies.map((study) => study.originalFileName)),
+      body: buildXlsx(rows),
     };
   }
 
@@ -140,6 +185,181 @@ export class StudiesService implements OnModuleInit {
         ? { quality_prob: study.result.quality_prob }
         : {}),
     };
+  }
+
+  async getFile(id: string): Promise<{ body: Buffer; filename: string }> {
+    const study = await this.requireStudy(id);
+    const body = await this.fileStorage.read(study.storedFilePath);
+    if (!body) {
+      throw new NotFoundException({
+        code: 'FILE_NOT_FOUND',
+        message: 'Файл исследования не найден.',
+      });
+    }
+
+    return {
+      body,
+      filename: study.originalFileName,
+    };
+  }
+
+  private async persistStudy(
+    file: UploadedFile,
+    sessionId: string | null,
+  ): Promise<CreateStudyResponseDto> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    const storedFilePath = await this.fileStorage.save(
+      id,
+      file.originalname,
+      file.buffer,
+    );
+
+    const study: StudyRecord = {
+      id,
+      sessionId,
+      status: StudyStatus.Processing,
+      originalFileName: file.originalname,
+      storedFilePath,
+      createdAt: now,
+      updatedAt: now,
+      error: null,
+      result: null,
+    };
+
+    await this.studies.save(study);
+    void this.processStudy(id);
+
+    return {
+      id: study.id,
+      status: study.status,
+      createdAt: study.createdAt,
+      sessionId: study.sessionId,
+    };
+  }
+
+  private async studiesForExport(
+    query: ExportStudiesQueryDto,
+  ): Promise<StudyRecord[]> {
+    if (query.ids !== undefined) {
+      const ids = this.parseExportIds(query.ids);
+      const studies: StudyRecord[] = [];
+      for (const id of ids) {
+        const study = await this.studies.findById(id);
+        if (!study) {
+          throw new NotFoundException({
+            code: 'STUDY_NOT_FOUND',
+            message: 'Исследование не найдено.',
+          });
+        }
+        studies.push(study);
+      }
+      return studies;
+    }
+
+    const sessionId = this.normalizeSessionId(query.session_id);
+    return this.studies.findAll(sessionId ?? undefined);
+  }
+
+  private parseExportIds(value: string): string[] {
+    const parts = value
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+
+    if (parts.length === 0) {
+      throw new BadRequestException({
+        code: 'BAD_REQUEST',
+        message: 'Не указаны исследования для выгрузки.',
+      });
+    }
+
+    if (parts.length > 200) {
+      throw new BadRequestException({
+        code: 'BAD_REQUEST',
+        message: 'Слишком много исследований для одной выгрузки.',
+      });
+    }
+
+    const ids: string[] = [];
+    const seen = new Set<string>();
+    for (const part of parts) {
+      if (!UUID_V4.test(part)) {
+        throw new BadRequestException({
+          code: 'BAD_REQUEST',
+          message: 'Идентификатор исследования должен быть UUID v4.',
+        });
+      }
+      const id = part.toLowerCase();
+      if (seen.has(id)) {
+        continue;
+      }
+      seen.add(id);
+      ids.push(id);
+    }
+
+    return ids;
+  }
+
+  private toExportRow(study: StudyRecord): string[] {
+    const result = this.isReadableResult(study.result) ? study.result : null;
+    const probability =
+      result && result.quality_prob !== undefined
+        ? `${Math.round(result.quality_prob * 100)}%`
+        : '';
+
+    return [
+      study.originalFileName,
+      formatMoscowDateTime(study.createdAt),
+      result?.anatomical_region ?? '',
+      result ? (result.quality_class === 0 ? 'Корректно' : 'Нарушение') : '',
+      result?.violation_type ?? '',
+      probability,
+      STATUS_LABEL[study.status],
+    ];
+  }
+
+  private assertZipFile(
+    file: UploadedFile | undefined,
+  ): asserts file is UploadedFile {
+    if (!file || !file.buffer) {
+      throw new BadRequestException({
+        code: 'FILE_REQUIRED',
+        message: 'Архив не передан. Ожидается поле формы с именем file.',
+      });
+    }
+
+    if (
+      file.size > MAX_FILE_SIZE_BYTES ||
+      file.buffer.length > MAX_FILE_SIZE_BYTES
+    ) {
+      throw new PayloadTooLargeException({
+        code: 'FILE_TOO_LARGE',
+        message: 'Файл слишком большой. Максимальный размер - 50 МБ.',
+      });
+    }
+
+    if (file.size === 0 || file.buffer.length === 0) {
+      throw new BadRequestException({
+        code: 'FILE_REQUIRED',
+        message: 'Архив пустой.',
+      });
+    }
+
+    if (!isZipUpload(file.originalname, file.mimetype)) {
+      throw new BadRequestException({
+        code: 'INVALID_FILE_TYPE',
+        message: 'Некорректный формат файла. Ожидается ZIP-архив (.zip).',
+      });
+    }
+  }
+
+  private raiseZipError(error: ZipPackageError): never {
+    const body = { code: error.code, message: error.message };
+    if (error.statusCode === 413) {
+      throw new PayloadTooLargeException(body);
+    }
+    throw new BadRequestException(body);
   }
 
   private assertFile(
@@ -283,17 +503,12 @@ export class StudiesService implements OnModuleInit {
         );
 
         study.status = StudyStatus.Error;
-        study.error = 'Ошибка обработки ML.';
+        study.error = 'Не удалось проверить качество укладки.';
         study.result = null;
       }
 
-      const current = await this.studies.findById(id);
-      if (!current || current.status !== StudyStatus.Processing) {
-        return;
-      }
-
       study.updatedAt = new Date().toISOString();
-      await this.studies.save(study);
+      await this.studies.finishIfProcessing(study);
     } catch (error) {
       this.logger.error(
         `Не удалось сохранить итог исследования ${id}`,
@@ -398,4 +613,17 @@ export class StudiesService implements OnModuleInit {
       seen.add(violation);
     }
   }
+}
+
+function isZipUpload(originalName: string, mimeType: string): boolean {
+  const lowerName = originalName.toLowerCase();
+  const extension = lowerName.includes('.')
+    ? lowerName.slice(lowerName.lastIndexOf('.'))
+    : '';
+  if (extension === '.zip') {
+    return true;
+  }
+
+  const mime = (mimeType ?? '').toLowerCase();
+  return mime === 'application/zip' || mime === 'application/x-zip-compressed';
 }

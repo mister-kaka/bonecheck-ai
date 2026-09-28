@@ -9,6 +9,8 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Res,
+  StreamableFile,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -27,17 +29,23 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Response } from 'express';
 import { memoryStorage } from 'multer';
-import { ListStudiesQueryDto } from './dto/study-requests.dto';
+import {
+  ExportStudiesQueryDto,
+  ListStudiesQueryDto,
+} from './dto/study-requests.dto';
 import {
   ApiErrorResponseDto,
+  CreatePackageResponseDto,
   CreateStudyResponseDto,
   StudyListResponseDto,
   StudyResultResponseDto,
   StudyStatusResponseDto,
 } from './dto/study-responses.dto';
-import { MAX_FILE_SIZE_BYTES } from './file-validation';
+import { MAX_FILE_SIZE_BYTES } from './storage/file-validation';
 import { StudiesService } from './studies.service';
+import { XLSX_CONTENT_TYPE } from './export/xlsx-workbook';
 
 const studyIdPipe = new ParseUUIDPipe({
   version: '4',
@@ -58,7 +66,7 @@ export class StudiesController {
   @ApiOperation({
     summary: 'Создать исследование',
     description:
-      'Принимает один DICOM-файл, создаёт идентификатор и запускает анализ (сейчас заглушка ML).',
+      'Принимает один DICOM-файл, создаёт исследование и запускает проверку качества укладки.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -100,6 +108,52 @@ export class StudiesController {
     return this.studiesService.create(file, sessionId);
   }
 
+  @Post('packages')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Загрузить ZIP с DICOM',
+    description:
+      'Принимает один ZIP. Каждый DICOM внутри становится отдельным исследованием. Архив не распаковывается в файловую систему по путям из архива.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'ZIP-архив с файлами .dcm / .dicom',
+        },
+        session_id: {
+          type: 'string',
+          description:
+            'Технический идентификатор браузерной сессии из localStorage. Не user id. Необязателен.',
+        },
+      },
+    },
+  })
+  @ApiCreatedResponse({ type: CreatePackageResponseDto })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiResponse({
+    status: HttpStatus.PAYLOAD_TOO_LARGE,
+    type: ApiErrorResponseDto,
+  })
+  @ApiInternalServerErrorResponse({ type: ApiErrorResponseDto })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_FILE_SIZE_BYTES },
+    }),
+  )
+  createPackage(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body('session_id') sessionId?: string,
+  ): Promise<CreatePackageResponseDto> {
+    return this.studiesService.createPackage(file, sessionId);
+  }
+
   @Get()
   @ApiOperation({
     summary: 'Список исследований',
@@ -117,6 +171,45 @@ export class StudiesController {
   @ApiBadRequestResponse({ type: ApiErrorResponseDto })
   list(@Query() query: ListStudiesQueryDto): Promise<StudyListResponseDto> {
     return this.studiesService.list(query.session_id);
+  }
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Выгрузить исследования в XLSX',
+    description:
+      'Без ids выгружает список (все или сессию session_id). С ids выгружает только эти исследования. Пустой список даёт файл с одной строкой заголовков.',
+  })
+  @ApiQuery({
+    name: 'ids',
+    required: false,
+    description: 'UUID v4 через запятую. Если параметр задан, session_id не фильтрует выборку.',
+  })
+  @ApiQuery({
+    name: 'session_id',
+    required: false,
+    description: 'Сессия «Мои», если ids не передан.',
+  })
+  @ApiOkResponse({
+    description: 'Файл XLSX',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  async exportXlsx(
+    @Query() query: ExportStudiesQueryDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const file = await this.studiesService.exportXlsx(query);
+    res.setHeader('Content-Type', XLSX_CONTENT_TYPE);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${file.filename}"`,
+    );
+    return new StreamableFile(file.body);
   }
 
   @Get(':id')
@@ -141,4 +234,36 @@ export class StudiesController {
   ): Promise<StudyResultResponseDto> {
     return this.studiesService.getResult(id);
   }
+
+  @Get(':id/file')
+  @ApiOperation({
+    summary: 'Скачать DICOM исследования',
+    description:
+      'Отдаёт файл, сохранённый для этого исследования. Путь на диске в ответ не входит.',
+  })
+  @ApiOkResponse({
+    description: 'DICOM-файл',
+    content: {
+      'application/dicom': {
+        schema: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  async getFile(
+    @Param('id', studyIdPipe) id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const file = await this.studiesService.getFile(id);
+    res.setHeader('Content-Type', 'application/dicom');
+    res.setHeader('Content-Disposition', contentDisposition(file.filename));
+    return new StreamableFile(file.body);
+  }
+}
+
+function contentDisposition(filename: string): string {
+  const cleaned = filename.replace(/[\r\n"]/g, '_');
+  const ascii = cleaned.replace(/[^\x20-\x7E]/g, '_') || 'study.dcm';
+  return `inline; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(cleaned)}`;
 }

@@ -91,9 +91,9 @@ describe('Исследования (сквозные тесты)', () => {
       studyId: created.body.id,
       quality_class: 0,
       violation_type: '',
-      quality_prob: 0.05,
       anatomical_region: 'Поясничный отдел позвоночника',
     });
+    expect(result.body).not.toHaveProperty('quality_prob');
 
     const status = await request(app.getHttpServer())
       .get(`/api/studies/${created.body.id}`)

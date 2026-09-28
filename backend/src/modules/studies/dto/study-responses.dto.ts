@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { StudyStatus } from '../study.types';
+import { StudyStatus } from '../types/study.types';
 
 export class CreateStudyResponseDto {
   @ApiProperty({ example: '3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b21' })
@@ -56,6 +56,16 @@ export class StudyStatusResponseDto {
   hasResult!: boolean;
 }
 
+export class PackageStudyCreatedDto extends CreateStudyResponseDto {
+  @ApiProperty({ example: 'spine.dcm' })
+  originalFileName!: string;
+}
+
+export class CreatePackageResponseDto {
+  @ApiProperty({ type: [PackageStudyCreatedDto] })
+  items!: PackageStudyCreatedDto[];
+}
+
 export class StudyListResponseDto {
   @ApiProperty({ type: [StudyStatusResponseDto] })
   items!: StudyStatusResponseDto[];
@@ -75,14 +85,17 @@ export class StudyResultResponseDto {
   violation_type!: string;
 
   @ApiPropertyOptional({
-    description: 'Вероятность нарушения [0; 1].',
+    description: 'Вероятность нарушения [0; 1]. Ключ отсутствует, если ML его не вернул.',
     example: 0.05,
+    minimum: 0,
+    maximum: 1,
   })
   quality_prob?: number;
 
   @ApiProperty({
     example: 'Поясничный отдел позвоночника',
-    description: 'Поясничный отдел позвоночника или Проксимальный отдел бедра.',
+    enum: ['Поясничный отдел позвоночника', 'Проксимальный отдел бедра'],
+    description: 'Обязательный регион успешного результата.',
   })
   anatomical_region!: string;
 }

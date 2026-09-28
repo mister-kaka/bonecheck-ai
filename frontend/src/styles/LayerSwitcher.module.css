@@ -1,7 +1,0 @@
-.wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: center;
-  padding: 12px 0;
-}

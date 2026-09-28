@@ -1,0 +1,238 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+  max-width: var(--content-max);
+  padding-bottom: 64px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.layoutFull {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.sideColumn {
+  position: sticky;
+  top: 20px;
+  min-width: 0;
+}
+
+.intake {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: 28px 28px 24px;
+}
+
+.dropActive {
+  background: rgba(8, 145, 178, 0.06);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.dropMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--color-accent);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.hint {
+  color: var(--color-text-secondary);
+  max-width: 420px;
+  font-size: var(--fs-small);
+}
+
+.uploadActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.formats {
+  margin-top: var(--space-2);
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+}
+
+.infoRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(240px, 0.7fr);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  overflow: hidden;
+}
+
+.infoRow > :first-child {
+  border-right: 1px solid var(--color-border);
+}
+
+.workPanel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 1024px) {
+  .layout,
+  .infoRow {
+    grid-template-columns: 1fr;
+  }
+
+  .sideColumn {
+    position: static;
+  }
+
+  .infoRow > :first-child {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding-bottom: 96px;
+  }
+}
+
+@media (max-width: 640px) {
+  .drop {
+    padding: var(--space-5) var(--space-4);
+  }
+
+  .uploadActions > *,
+  .packageActions > * {
+    width: 100%;
+  }
+
+  .package {
+    padding: var(--space-5) var(--space-4);
+  }
+}
+
+.package {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 28px;
+}
+
+.packageKicker {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.packageTitle {
+  font-size: var(--fs-h2);
+}
+
+.packageLead {
+  margin-top: var(--space-2);
+  max-width: 640px;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-small);
+}
+
+.packageList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.packageItem {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.packageItem:hover .packageName {
+  color: var(--color-accent);
+}
+
+.packageName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.packageStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 1;
+  min-width: 0;
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-small);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.packageOutcome {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.packageError {
+  margin: 0 0 8px;
+  color: var(--color-danger);
+  font-size: var(--fs-tiny);
+}
+
+.packageActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

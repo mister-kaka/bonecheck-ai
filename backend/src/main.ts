@@ -8,11 +8,9 @@ async function bootstrap() {
   configureApp(app);
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('RUEN API')
-    .setDescription(
-      'API сервиса оценки качества DXA/DICOM-исследований. Контракт для фронтенда: docs/api.md',
-    )
-    .setVersion('0.3.0')
+    .setTitle('BoneCheck AI')
+    .setDescription('API оценки качества укладки DXA-исследований.')
+    .setVersion('0.4.0')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

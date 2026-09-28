@@ -1,35 +1,39 @@
+export type StudyStatus = "uploaded" | "processing" | "completed" | "error";
+
 export type AnatomicalRegion =
   | "Поясничный отдел позвоночника"
   | "Проксимальный отдел бедра";
 
 export type QualityClass = 0 | 1;
 
-export type ProcessingStatus = "Success" | "Failure";
-
-export interface HistoryItem {
+export interface StudyListItem {
   id: string;
-  date: string;
-  uid: string;
-  region: AnatomicalRegion;
-  status: ProcessingStatus;
-  quality_class: QualityClass | null;
+  sessionId: string | null;
+  status: StudyStatus;
+  originalFileName: string;
+  createdAt: string;
+  updatedAt: string;
+  error: string | null;
+  hasResult: boolean;
 }
 
-export interface StudyResult {
-  id: string;
-  path_to_study: string;
-  study_uid: string;
-  image_uid: string;
-  anatomical_region: AnatomicalRegion;
+export interface StudyResultPayload {
+  studyId: string;
   quality_class: QualityClass;
-  quality_prob: number;
   violation_type: string;
-  processing_status: ProcessingStatus;
-  time_of_processing: number;
-  description: string;
+  anatomical_region: AnatomicalRegion;
+  quality_prob?: number;
 }
 
 export interface SelectOption {
   value: string;
   label: string;
 }
+
+export type PackageStudyItem = {
+  id: string;
+  fileName: string;
+  status: StudyStatus;
+  error: string | null;
+  layoutLabel: string | null;
+};

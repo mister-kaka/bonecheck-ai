@@ -1,5 +1,3 @@
-/*    Сброс + базовая типографика + утилиты     */
-
 *,
 *::before,
 *::after {
@@ -15,7 +13,7 @@ body,
 }
 
 body {
-  font-family: var(--font-family) !important;   /* «!important» - временно, чтобы перебить чужое правило. */
+  font-family: var(--font-family);
   font-size: var(--fs-body);
   line-height: var(--lh-normal);
   color: var(--color-text-primary);
@@ -35,6 +33,7 @@ h6 {
   line-height: var(--lh-tight);
   color: var(--color-text-primary);
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 h1 { font-size: var(--fs-h1); }
@@ -65,7 +64,7 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 input,
@@ -83,6 +82,11 @@ textarea:focus {
   outline: none;
 }
 
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 a {
   color: var(--color-text-secondary);
   text-decoration: none;
@@ -90,7 +94,6 @@ a {
 
 a:hover {
   color: var(--color-text-primary);
-  text-decoration: none;
 }
 
 img,
@@ -100,40 +103,20 @@ svg {
 }
 
 .app-shell {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
 }
 
 .app-main {
-  flex: 1;
-  padding: var(--space-6);
-  max-width: 1400px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.surfaceCard {
-  background: var(--gradient-card);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-}
-
-.gradientButton {
-  background: var(--gradient-button);
-  color: var(--color-text-inverse);
-  border-radius: var(--radius-md);
-  padding: 10px 20px;
-  font-weight: 600;
-  transition: background 0.15s ease, transform 0.05s ease;
-}
-
-.gradientButton:hover {
-  background: var(--gradient-button-hover);
-}
-
-.gradientButton:active {
-  transform: translateY(1px);
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 32px 48px;
 }
 
 ::-webkit-scrollbar {
@@ -142,26 +125,43 @@ svg {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-app);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-border-strong);
   border-radius: var(--radius-pill);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary);
+  border: 2px solid var(--color-bg-app);
 }
 
 @media (max-width: 1024px) {
+  .app-shell {
+    grid-template-columns: 208px minmax(0, 1fr);
+  }
+
   .app-main {
-    padding: var(--space-5);
+    padding: 24px 20px 40px;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
   .app-main {
-    padding: var(--space-4);
+    padding: 16px 16px 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

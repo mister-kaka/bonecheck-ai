@@ -1,0 +1,146 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-5);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  color: var(--color-processing);
+  background: var(--color-processing-bg);
+  border-radius: var(--radius-sm);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.stage {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-processing);
+}
+
+.title {
+  font-size: var(--fs-h3);
+  font-weight: 600;
+}
+
+.fileName {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tiny);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+}
+
+.next {
+  margin-top: 2px;
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+}
+
+.meter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.track {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-progress-track);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  width: var(--progress, 0%);
+  height: 100%;
+  background: var(--color-processing);
+  border-radius: inherit;
+}
+
+.value {
+  min-width: 36px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-tiny);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+.cancelBtn {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-small);
+  font-weight: 500;
+}
+
+.cancelBtn:hover {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 35%, var(--color-border));
+  background: var(--color-danger-bg);
+}
+
+.cancelBtn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.cancelNote {
+  margin: 0;
+  max-width: 520px;
+  font-size: var(--fs-tiny);
+  line-height: var(--lh-normal);
+  color: var(--color-text-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+@media (max-width: 640px) {
+  .wrap {
+    padding: var(--space-4);
+  }
+
+  .fileName {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

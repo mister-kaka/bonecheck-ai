@@ -1,54 +1,53 @@
-/**
- * Поля успешного GET /api/studies/:id/result.
- * Источник: docs/api.md. Мок истории и StudyResult в types/study.ts шире этого контракта.
- */
-export type ApiStudyResult = {
-  studyId: string;
-  quality_class: 0 | 1;
-  violation_type: string;
-  quality_prob?: number;
-  anatomical_region?: string;
-};
+import type { StudyResultPayload, StudyStatus } from "../types/study";
+import { criteriaForRegion, type CriterionRow } from "./layoutCriteria";
+
+export type { StudyResultPayload as ApiStudyResult };
+export type { CriterionRow };
 
 export type StudyResultView = {
   isOk: boolean;
   region: string;
   qualityProb?: number;
   violations: string[];
+  criteria: CriterionRow[];
   summary: string;
 };
 
-const REGION_FALLBACK = "Область не определена";
-
-export function splitViolationTypes(violationType: string): string[] {
-  return violationType
-    .split(";")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
+/** Текст колонки «Нарушение». Пустой violation_type: «Без нарушений». Незавершённый статус: «-». */
+export function historyViolationText(
+  status: StudyStatus,
+  violationType: string | null | undefined,
+): string {
+  if (status !== "completed" || violationType == null) return "-";
+  if (violationType.length === 0) return "Без нарушений";
+  return violationType;
 }
 
-export function mapStudyResult(result: ApiStudyResult): StudyResultView {
-  const violations = splitViolationTypes(result.violation_type);
+/** Делим violation_type по ";" без обрезки пробелов. У класса 0 строка пустая. */
+export function splitViolationTypes(violationType: string): string[] {
+  if (violationType.length === 0) return [];
+  return violationType.split(";").filter((item) => item.length > 0);
+}
+
+export function mapStudyResult(result: StudyResultPayload): StudyResultView {
   const isOk = result.quality_class === 0;
-  const region = result.anatomical_region?.trim() || REGION_FALLBACK;
+  const violations = isOk ? [] : splitViolationTypes(result.violation_type);
 
   let summary: string;
   if (!isOk && violations.length > 1) {
-    summary =
-      "Обнаружено несколько нарушений качества укладки. Это не клинический диагноз и не измерение минеральной плотности.";
+    summary = "Обнаружено несколько нарушений качества укладки.";
   } else if (!isOk) {
-    summary =
-      "Обнаружено нарушение качества укладки. Это не клинический диагноз и не измерение минеральной плотности.";
+    summary = "Обнаружено нарушение качества укладки.";
   } else {
-    summary =
-      "Нарушений качества укладки не обнаружено. Это не клинический диагноз и не измерение минеральной плотности.";
+    summary = "Нарушений качества укладки не обнаружено.";
   }
 
   return {
     isOk,
-    region,
+    region: result.anatomical_region,
     qualityProb: result.quality_prob,
     violations,
+    criteria: criteriaForRegion(result.anatomical_region, violations),
     summary,
   };
 }

@@ -1,52 +1,71 @@
-# Deployment
+# Docker
 
-Каркас развёртывания. Kubernetes / CI на этом этапе нет.
+Запуск BoneCheck AI одной командой из корня репозитория.
 
-## Локально (Compose)
-
-Из корня репозитория:
+## Что запускается
 
 ```bash
 docker compose up --build
 ```
 
-Сервисы в `docker-compose.yml`:
-
-| Сервис | Образ собирается из | Команда в контейнере | Порт |
+| Сервис | Откуда собирается | Что делает | Порт |
 | --- | --- | --- | --- |
-| `frontend` | `frontend/Dockerfile` | `npm run dev` (Vite) | 5173 |
-| `backend` | `backend/Dockerfile` (`node:20-alpine`, сборка `better-sqlite3`) | `npm run start:dev` | 3000 |
-| `ml-service` | `ml/Dockerfile` | `python src/app.py` | 8000 на хосте |
+| `frontend` | `frontend/Dockerfile` | веб-интерфейс | 5173 |
+| `backend` | `backend/Dockerfile` | API | 3000 |
+| `ml-service` | `ml/Dockerfile` | контейнер ML-компонента | 8000 |
 
-`frontend` зависит от `backend`. `backend` **не** зависит от `ml-service` и не передаёт в него запросы.
+Интерфейс стартует после API. Образы интерфейса и API основаны на Node.js 20. Образ ML-компонента — на Python 3.12.
 
-Переменные Compose: шаблон [../.env.example](../.env.example).
+Остановка:
 
-Backend в Compose получает `BACKEND_PORT`, `BACKEND_HOST`, `DATABASE_PATH=/app/data/bonecheck.sqlite` и `UPLOAD_DIR=/app/uploads`.
+```bash
+docker compose down
+```
 
-Volumes:
+Каталоги с исследованиями при этом не удаляются.
 
-- `./backend/data:/app/data` — файл SQLite переживает `docker compose down` и новый `up`;
-- `./backend/uploads:/app/uploads` — загруженные DICOM.
+## Порты
 
-## Переменные (.env.example)
+| Адрес | Что открыть |
+| --- | --- |
+| http://localhost:5173 | экран «Проверка исследования» |
+| http://localhost:3000/health | `{"status":"ok"}` |
+| http://localhost:3000/api/docs | описание API |
 
-Используются кодом или Compose:
+Порты можно переопределить переменными `FRONTEND_PORT`, `BACKEND_PORT` и `ML_SERVICE_PORT`.
 
-- `BACKEND_PORT`, `BACKEND_HOST`
-- `FRONTEND_PORT`, `VITE_API_BASE_URL`
-- `ML_SERVICE_PORT`
-- `UPLOAD_DIR`, `DATABASE_PATH`, `ML_MOCK_DELAY_MS`
+## Переменные
 
-Не используются кодом, только комментарий/намерение:
+Шаблон: [.env.example](../.env.example). Compose читает его из корня.
 
-- `MAX_FILE_SIZE_BYTES` (лимит зашит в backend как 50 МБ).
+Интерфейс получает `VITE_API_BASE_URL`. По умолчанию это `http://localhost:3000`: браузер на вашей машине обращается к API на порту хоста.
 
-`DATABASE_PATH` в `.env.example` — путь для локального `npm start` из `backend/`. В контейнере Compose задаёт свой абсолютный путь `/app/data/bonecheck.sqlite`, чтобы Windows-путь из `.env` не попал внутрь контейнера.
+API внутри контейнера получает:
 
-## PLANNED (не реализовано)
+| Переменная | Значение |
+| --- | --- |
+| `BACKEND_PORT` | `3000` |
+| `BACKEND_HOST` | `0.0.0.0` |
+| `DATABASE_PATH` | `/app/data/bonecheck.sqlite` |
+| `UPLOAD_DIR` | `/app/uploads` |
 
-- production-сборка frontend (`vite build` + nginx);
-- production backend (`npm run build` + `node dist/main`);
-- HTTP inference в ML-контейнере;
-- volume с весами между backend и ML.
+Путь базы из `.env` в контейнер не подставляется. Так локальный путь Windows не попадает внутрь Linux-контейнера.
+
+## Тома
+
+| На машине | В контейнере | Что хранится |
+| --- | --- | --- |
+| `backend/data` | `/app/data` | файл метаданных исследований |
+| `backend/uploads` | `/app/uploads` | загруженные DICOM |
+
+Оба каталога переживают `docker compose down` и следующий `up`.
+
+## Проверка
+
+1. Дождитесь, пока сборка закончится и сервисы останутся запущенными.
+2. Откройте http://localhost:5173.
+3. Откройте http://localhost:3000/health и убедитесь, что ответ `{"status":"ok"}`.
+4. Загрузите DICOM или ZIP. Запись должна появиться в «Истории».
+5. Файл исследования должен остаться в `backend/uploads`, метаданные — в `backend/data`.
+
+Если порт 5173 или 3000 занят, задайте другой порт в `.env` и запустите Compose снова.

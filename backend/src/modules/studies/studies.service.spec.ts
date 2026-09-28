@@ -1,7 +1,8 @@
 /// <reference types="jest" />
 import { PayloadTooLargeException } from '@nestjs/common';
-import { MAX_FILE_SIZE_BYTES } from './file-validation';
-import { StudyRecord, StudyRepository, StudyStatus } from './study.types';
+import { strFromU8, unzipSync } from 'fflate';
+import { MAX_FILE_SIZE_BYTES } from './storage/file-validation';
+import { StudyRecord, StudyRepository, StudyStatus } from './types/study.types';
 import { StudiesService } from './studies.service';
 
 const file = {
@@ -17,6 +18,11 @@ const validSpine = {
   anatomical_region: 'Поясничный отдел позвоночника',
 };
 
+function sheetText(body: Buffer): string {
+  const files = unzipSync(new Uint8Array(body));
+  return strFromU8(files['xl/worksheets/sheet1.xml']);
+}
+
 function createService(analyze?: (input: unknown) => Promise<unknown>) {
   const store = new Map<string, StudyRecord>();
   const studies: StudyRepository = {
@@ -27,6 +33,18 @@ function createService(analyze?: (input: unknown) => Promise<unknown>) {
       };
       store.set(copy.id, copy);
       return copy;
+    }),
+    finishIfProcessing: jest.fn(async (study: StudyRecord) => {
+      const current = store.get(study.id);
+      if (!current || current.status !== StudyStatus.Processing) {
+        return false;
+      }
+      const copy: StudyRecord = {
+        ...study,
+        result: study.result ? { ...study.result } : null,
+      };
+      store.set(copy.id, copy);
+      return true;
     }),
     findById: jest.fn(async (id: string) => {
       const study = store.get(id);
@@ -218,7 +236,7 @@ describe('StudiesService', () => {
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
 
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
     expect(status.hasResult).toBe(false);
     await expect(service.getResult(created.id)).rejects.toMatchObject({
       response: { code: 'ANALYSIS_FAILED' },
@@ -243,7 +261,7 @@ describe('StudiesService', () => {
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
   });
 
   it('marks study as error when ML returns unknown anatomical_region', async () => {
@@ -254,7 +272,7 @@ describe('StudiesService', () => {
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
   });
 
   it('marks study as error when ML returns invalid quality_prob', async () => {
@@ -266,7 +284,7 @@ describe('StudiesService', () => {
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
   });
 
   it('marks study as error when ML returns null quality_prob', async () => {
@@ -280,7 +298,7 @@ describe('StudiesService', () => {
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
 
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
   });
 
   it('marks study as error when violation does not match the region', async () => {
@@ -291,7 +309,7 @@ describe('StudiesService', () => {
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
   });
 
   it('marks study as error on repeated violations', async () => {
@@ -302,7 +320,7 @@ describe('StudiesService', () => {
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
   });
 
   it('marks study as error for empty violation on class 1', async () => {
@@ -313,7 +331,7 @@ describe('StudiesService', () => {
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
   });
 
   it('marks study as error for non-empty violation on class 0', async () => {
@@ -324,7 +342,7 @@ describe('StudiesService', () => {
     }));
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
   });
 
   it.each([
@@ -388,7 +406,7 @@ describe('StudiesService', () => {
     const created = await service.create(file);
     const status = await waitForStatus(service, created.id, StudyStatus.Error);
 
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
     expect(status.hasResult).toBe(false);
     await expect(service.getResult(created.id)).rejects.toMatchObject({
       response: { code: 'ANALYSIS_FAILED', status: StudyStatus.Error },
@@ -463,7 +481,7 @@ describe('StudiesService', () => {
     const succeeded = await service.create(file);
 
     expect((await waitForStatus(service, failed.id, StudyStatus.Error)).error).toBe(
-      'Ошибка обработки ML.',
+      'Не удалось проверить качество укладки.',
     );
     expect(
       (await waitForStatus(service, succeeded.id, StudyStatus.Completed)).hasResult,
@@ -552,5 +570,50 @@ describe('StudiesService', () => {
     expect(first.id).not.toBe(second.id);
     expect(first.status).toBe(StudyStatus.Processing);
     expect(second.status).toBe(StudyStatus.Processing);
+  });
+
+  it('exports one completed study and an empty selection', async () => {
+    const { service } = createService();
+    const created = await service.create(file, 'session-a');
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    const one = await service.exportXlsx({ ids: created.id });
+    expect(one.filename).toBe('bonecheck-spine.xlsx');
+    expect(one.body.subarray(0, 2).toString()).toBe('PK');
+    const oneSheet = sheetText(one.body);
+    expect(oneSheet).toContain('spine.dcm');
+    expect(oneSheet).toContain('Корректно');
+    expect(oneSheet).toContain('10%');
+
+    const empty = await service.exportXlsx({ session_id: 'nobody' });
+    expect(empty.filename).toBe('bonecheck-history.xlsx');
+    const emptySheet = sheetText(empty.body);
+    expect(emptySheet).toContain('Файл');
+    expect(emptySheet).not.toContain('spine.dcm');
+    expect(emptySheet).not.toContain('<row r="2">');
+  });
+
+  it('exports several studies and rejects an unknown id', async () => {
+    const { service } = createService();
+    const first = await service.create(file);
+    const second = await service.create({
+      ...file,
+      originalname: 'hip.dcm',
+    });
+    await waitForStatus(service, first.id, StudyStatus.Completed);
+    await waitForStatus(service, second.id, StudyStatus.Completed);
+
+    const many = await service.exportXlsx({ ids: `${second.id},${first.id}` });
+    expect(many.filename).toBe('bonecheck-history.xlsx');
+    const text = sheetText(many.body);
+    expect(text.indexOf('hip.dcm')).toBeLessThan(text.indexOf('spine.dcm'));
+    expect(text).toContain('spine.dcm');
+    expect(text).toContain('hip.dcm');
+
+    await expect(
+      service.exportXlsx({ ids: '3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b21' }),
+    ).rejects.toMatchObject({
+      response: { code: 'STUDY_NOT_FOUND' },
+    });
   });
 });

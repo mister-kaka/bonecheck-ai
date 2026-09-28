@@ -1,23 +1,18 @@
-import { Badge } from "../Badge";
-import type { HistoryItem } from "../../types/study";
+import { Badge, type BadgeTone } from "../ui/Badge";
+import type { StudyStatus } from "../../types/study";
 
-interface StatusBadgeProps {
-  status: HistoryItem["status"];
-  qualityClass: HistoryItem["quality_class"];
+const STATUS_VIEW: Record<StudyStatus, { label: string; tone: BadgeTone }> = {
+  uploaded: { label: "Файл принят", tone: "muted" },
+  processing: { label: "Идёт анализ", tone: "info" },
+  completed: { label: "Готово", tone: "success" },
+  error: { label: "Ошибка анализа", tone: "danger" },
+};
+
+export function statusLabel(status: StudyStatus): string {
+  return STATUS_VIEW[status].label;
 }
 
-export function StatusBadge({ status, qualityClass }: StatusBadgeProps) {
-  if (status === "Failure") {
-    return <Badge tone="danger">✕ Ошибка</Badge>;
-  }
-
-  if (qualityClass === 1) {
-    return <Badge tone="warning">⚠ Нарушение</Badge>;
-  }
-
-  if (qualityClass === 0) {
-    return <Badge tone="success">✓ Качественно</Badge>;
-  }
-
-  return <Badge>—</Badge>;
+export function StatusBadge({ status }: { status: StudyStatus }) {
+  const view = STATUS_VIEW[status];
+  return <Badge tone={view.tone}>{view.label}</Badge>;
 }

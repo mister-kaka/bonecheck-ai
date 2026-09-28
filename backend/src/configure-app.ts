@@ -3,7 +3,10 @@ import { ValidationError } from 'class-validator';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 export function configureApp(app: INestApplication): void {
-  app.enableCors();
+  app.enableCors({
+    origin: true,
+    exposedHeaders: ['Content-Disposition'],
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -18,7 +21,20 @@ export function configureApp(app: INestApplication): void {
           });
         }
 
-        return new BadRequestException(errors);
+        const unknownParameter = errors.find(
+          (error) => error.constraints && 'whitelistValidation' in error.constraints,
+        );
+        if (unknownParameter) {
+          return new BadRequestException({
+            code: 'BAD_REQUEST',
+            message: 'Неизвестный параметр запроса.',
+          });
+        }
+
+        return new BadRequestException({
+          code: 'BAD_REQUEST',
+          message: 'Некорректный запрос.',
+        });
       },
     }),
   );

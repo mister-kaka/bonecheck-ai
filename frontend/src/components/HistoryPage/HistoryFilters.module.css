@@ -1,0 +1,140 @@
+.filters {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    minmax(0, 1.15fr)
+    minmax(0, 0.85fr)
+    minmax(0, 1.15fr)
+    auto
+    minmax(132px, 0.7fr);
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.searchField,
+.selectField,
+.dateField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dateRange {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dateInput {
+  width: 124px;
+  height: 36px;
+  min-width: 0;
+  padding: 0 6px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: var(--fs-tiny);
+  cursor: pointer;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  margin: 0;
+  cursor: pointer;
+}
+
+.dateInput:hover:not(:disabled) {
+  border-color: var(--color-slate);
+}
+
+.dateInput:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+.dateInput:disabled {
+  background: var(--color-bg-soft);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
+.dateSep {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-small);
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip,
+.resetAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-soft);
+  color: var(--color-text-primary);
+  font-size: var(--fs-tiny);
+  font-weight: 500;
+}
+
+.chip:hover:not(:disabled),
+.resetAll:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  background: var(--color-bg-surface);
+}
+
+.resetAll {
+  margin-left: auto;
+}
+
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .searchField {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .filters {
+    padding: var(--space-3);
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .resetAll {
+    margin-left: 0;
+  }
+}

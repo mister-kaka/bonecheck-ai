@@ -1,187 +1,98 @@
-import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import styles from "../../styles/Home.module.css";
-
-import { UploadProgressBlock } from "../../components/Home/UploadProgressBlock";
-import { AnalysisBlock } from "../../components/Home/AnalysisBlock";
-import { Card } from "../../components/Card";
-import { Button } from "../../components/Button";
-import { ResultBlock } from "../../components/Home/ResultBlock";
-import { HowItWorks } from "../../components/Home/HowItWorks";
-import { ChecksList } from "../../components/Home/ChecksList";
-import { ProcessStatus } from "../../components/Home/ProcessStatus";
-import { ErrorBlock } from "../../components/Home/ErrorBlock";
-import { mapStudyResult, type ApiStudyResult } from "../../api/mapStudyResult";
-
-type ScreenState = "idle" | "uploading" | "processing" | "result" | "error";
-
-type SelectedFile = {
-  file: File;
-  sizeLabel: string;
-};
-
-/** Лимит Multer, docs/api.md: 50 МБ. */
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
-const UPLOAD_MS = 900;
-const ANALYSIS_MS = 1400;
-
-/**
- * Типичный ответ MockMlClient (docs/api.md).
- * При интеграции заменить на GET /api/studies/:id/result после polling статуса.
- */
-const MOCK_COMPLETED_RESULT: ApiStudyResult = {
-  studyId: "mock",
-  quality_class: 0,
-  violation_type: "",
-  quality_prob: 0.05,
-  anatomical_region: "Поясничный отдел позвоночника",
-};
-
-function isDicomFile(file: File): boolean {
-  const name = file.name.toLowerCase();
-  if (name.endsWith(".dcm") || name.endsWith(".dicom")) return true;
-  return file.type === "application/dicom" || file.type === "application/x-dicom";
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} Б`;
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} КБ`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
-}
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import styles from "./Home.module.css";
+import { UploadProgressBlock } from "../../components/Home/upload/UploadProgressBlock";
+import { SelectedFileBlock } from "../../components/Home/upload/SelectedFileBlock";
+import { AnalysisBlock } from "../../components/Home/status/AnalysisBlock";
+import { Button } from "../../components/ui/Button";
+import { ResultBlock } from "../../components/Home/result/ResultBlock";
+import { HowItWorks } from "../../components/Home/status/HowItWorks";
+import { ChecksList } from "../../components/Home/status/ChecksList";
+import { ProcessStatus } from "../../components/Home/status/ProcessStatus";
+import { ErrorBlock } from "../../components/Home/status/ErrorBlock";
+import { PackageOutcome } from "../../components/Home/status/PackageOutcome";
+import { PageIntro } from "../../components/layout/PageIntro";
+import { Icon } from "../../components/ui/Icon";
+import { mapStudyResult } from "../../api/mapStudyResult";
+import { useXlsxDownload } from "../../api/useXlsxDownload";
+import { useStudyFlow } from "./useStudyFlow";
 
 function Home() {
-  const [state, setState] = useState<ScreenState>("idle");
-  const [selected, setSelected] = useState<SelectedFile | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
   const [dragOver, setDragOver] = useState(false);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const generation = useRef(0);
-  const timerRef = useRef<number | null>(null);
-
-  const clearTimer = () => {
-    if (timerRef.current !== null) {
-      window.clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-
-  useEffect(() => clearTimer, []);
+  const zipInputRef = useRef<HTMLInputElement>(null);
+  const flow = useStudyFlow();
+  const xlsx = useXlsxDownload();
+  const view = flow.view;
 
   const resetInput = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (zipInputRef.current) zipInputRef.current.value = "";
   };
 
-  const resetToIdle = () => {
-    generation.current += 1;
-    clearTimer();
+  const returnToUpload = () => {
+    flow.reset();
     resetInput();
-    setSelected(null);
-    setProgress(0);
-    setErrorMessage("");
     setDragOver(false);
-    setState("idle");
+    xlsx.clearExportError();
   };
 
-  const showError = (message: string) => {
-    generation.current += 1;
-    clearTimer();
+  const openHistory = (path: string) => {
+    document.querySelector(".app-main")?.scrollTo({ top: 0 });
+    navigate(path);
+  };
+
+  const acceptList = (list: FileList) => {
+    const files = Array.from(list);
+    setDragOver(false);
     resetInput();
-    setSelected(null);
-    setProgress(0);
-    setDragOver(false);
-    setErrorMessage(message);
-    setState("error");
-  };
-
-  const beginMockRun = (file: File) => {
-    const runId = generation.current + 1;
-    generation.current = runId;
-    clearTimer();
-    resetInput();
-    setSelected({ file, sizeLabel: formatFileSize(file.size) });
-    setErrorMessage("");
-    setDragOver(false);
-    setProgress(0);
-    setState("uploading");
-
-    const started = performance.now();
-    timerRef.current = window.setInterval(() => {
-      if (generation.current !== runId) return;
-      const elapsed = performance.now() - started;
-      if (elapsed < UPLOAD_MS) {
-        setState("uploading");
-        setProgress(Math.min(100, Math.round((elapsed / UPLOAD_MS) * 100)));
-        return;
-      }
-      const analysisElapsed = elapsed - UPLOAD_MS;
-      if (analysisElapsed < ANALYSIS_MS) {
-        setState("processing");
-        setProgress(Math.min(100, Math.round((analysisElapsed / ANALYSIS_MS) * 100)));
-        return;
-      }
-      clearTimer();
-      setProgress(100);
-      setState("result");
-    }, 50);
-  };
-
-  const acceptFile = (file: File | undefined) => {
-    if (!file) return;
-    if (file.size === 0) {
-      showError("Файл пустой. Выберите DICOM-исследование.");
-      return;
-    }
-    if (file.size > MAX_FILE_BYTES) {
-      showError("Файл больше 50 МБ. Можно загрузить один DICOM не больше этого размера.");
-      return;
-    }
-    if (!isDicomFile(file)) {
-      showError("Нужен один файл DICOM с расширением .dcm или .dicom.");
-      return;
-    }
-    beginMockRun(file);
+    flow.acceptFileList(files);
   };
 
   const handleDcmChange = (event: ChangeEvent<HTMLInputElement>) => {
-    acceptFile(event.target.files?.[0]);
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    acceptList(files);
+  };
+
+  const handleZipChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setDragOver(false);
+    resetInput();
+    flow.acceptZip(file);
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setDragOver(false);
-    const list = event.dataTransfer.files;
-    if (list.length === 0) {
-      showError("Папка не поддерживается. Выберите один DICOM-файл.");
-      return;
-    }
-    if (list.length > 1) {
-      showError("Можно загрузить только один DICOM-файл.");
-      return;
-    }
-    acceptFile(list[0]);
+    acceptList(event.dataTransfer.files);
   };
 
-  const showProcessStatus = state === "uploading" || state === "processing";
-  const resultView = mapStudyResult(MOCK_COMPLETED_RESULT);
+  const showProcessStatus =
+    view.kind === "uploading" || view.kind === "processing" || view.kind === "still-running";
+  const processStage = view.kind === "uploading" ? "uploading" : "processing";
+  const resultView = view.kind === "result" ? mapStudyResult(view.result) : null;
 
   return (
-    <div className={styles.page}>
-      <header className={styles.pageHead}>
-        <h1>Анализ исследования</h1>
-        <p className={styles.subtitle}>
-          Загрузите один DICOM-файл. Сервис оценит качество укладки, а не поставит диагноз
-          и не измерит минеральную плотность кости.
-        </p>
-      </header>
+    <div className={styles.page} data-home-state={view.kind}>
+      {view.kind !== "result" && (
+        <header>
+          <PageIntro
+            kicker="Качество укладки"
+            title="Проверка исследования"
+            subtitle="Один DICOM или ZIP. Каждый снимок в архиве проверяется отдельно."
+          />
+        </header>
+      )}
 
       <div className={showProcessStatus ? styles.layout : styles.layoutFull}>
         <div className={styles.mainColumn}>
-          {state === "idle" && (
+          {view.kind === "idle" && (
             <>
-              <Card highlighted={dragOver}>
+              <section className={styles.intake} aria-labelledby="upload-title">
                 <div
-                  className={styles.uploadBlock}
+                  className={`${styles.drop} ${dragOver ? styles.dropActive : ""}`}
                   onDragEnter={(event) => {
                     event.preventDefault();
                     setDragOver(true);
@@ -198,23 +109,32 @@ function Home() {
                   }}
                   onDrop={handleDrop}
                 >
-                  <div className={styles.uploadIcon} aria-hidden="true">
-                    ⬆
+                  <div className={styles.dropMark} aria-hidden="true">
+                    <Icon name="file" size={22} />
                   </div>
-                  <h2 id="upload-title">Загрузите DICOM-исследование</h2>
-                  <p className={styles.hint}>Перетащите один файл сюда или выберите его на компьютере</p>
+                  <h2 id="upload-title">Загрузите DICOM или ZIP</h2>
+                  <p className={styles.hint}>
+                    Перетащите один файл сюда или выберите его на компьютере.
+                  </p>
 
                   <div className={styles.uploadActions}>
                     <Button
-                      variant="secondary"
-                      iconLeft={<img src="/icons/folder.png" alt="" width={18} height={18} />}
+                      variant="primary"
+                      iconLeft={<Icon name="upload" size={16} />}
                       onClick={() => fileInputRef.current?.click()}
                     >
                       Выбрать файл
                     </Button>
+                    <Button
+                      variant="secondary"
+                      iconLeft={<Icon name="file" size={16} />}
+                      onClick={() => zipInputRef.current?.click()}
+                    >
+                      Загрузить ZIP
+                    </Button>
                   </div>
 
-                  <p className={styles.formats}>Поддерживается один файл: .dcm, .dicom. До 50 МБ.</p>
+                  <p className={styles.formats}>Один файл .dcm / .dicom или один архив .zip. До 50 МБ.</p>
 
                   <input
                     ref={fileInputRef}
@@ -224,8 +144,16 @@ function Home() {
                     aria-label="Выбрать DICOM-файл"
                     onChange={handleDcmChange}
                   />
+                  <input
+                    ref={zipInputRef}
+                    type="file"
+                    accept=".zip,application/zip"
+                    hidden
+                    aria-label="Загрузить ZIP"
+                    onChange={handleZipChange}
+                  />
                 </div>
-              </Card>
+              </section>
 
               <div className={styles.infoRow}>
                 <HowItWorks />
@@ -234,48 +162,124 @@ function Home() {
             </>
           )}
 
-          {state === "uploading" && selected && (
-            <Card>
-              <UploadProgressBlock
-                fileName={selected.file.name}
-                fileSize={selected.sizeLabel}
-                fileFormat="DICOM"
-                progress={progress}
-                onCancel={resetToIdle}
+          {view.kind === "selected" && (
+            <section className={styles.workPanel}>
+              <SelectedFileBlock
+                fileName={view.fileName}
+                fileSize={view.sizeLabel}
+                fileFormat={view.format}
+                onStart={flow.start}
+                onCancel={returnToUpload}
               />
-            </Card>
+            </section>
           )}
 
-          {state === "processing" && (
-            <Card>
-              <AnalysisBlock progress={progress} onCancel={resetToIdle} />
-            </Card>
+          {view.kind === "uploading" && (
+            <section className={styles.workPanel}>
+              <UploadProgressBlock
+                fileName={view.fileName}
+                fileSize={view.sizeLabel}
+                fileFormat={view.format}
+                progress={view.progress}
+                onCancel={returnToUpload}
+              />
+            </section>
           )}
 
-          {state === "result" && selected && (
+          {view.kind === "processing" && (
+            <section className={styles.workPanel}>
+              <AnalysisBlock fileName={view.fileName} onCancel={returnToUpload} />
+            </section>
+          )}
+
+          {view.kind === "still-running" && (
+            <section className={styles.workPanel} aria-live="polite">
+              <div className={styles.package}>
+                <div>
+                  <p className={styles.packageKicker}>Идёт проверка</p>
+                  <h2 className={styles.packageTitle}>Анализ ещё выполняется</h2>
+                  <p className={styles.packageLead}>
+                    Проверка укладки ещё не закончилась, результат пока не создан. Можно
+                    подождать здесь или открыть историю.
+                  </p>
+                  <p className={styles.packageName}>{view.fileName}</p>
+                </div>
+                <div className={styles.packageActions}>
+                  <Button variant="primary" onClick={flow.continueWaiting}>
+                    Продолжить ожидание
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      openHistory(
+                        view.studyIds.length === 1
+                          ? `/history/${view.studyIds[0]}`
+                          : "/history",
+                      );
+                    }}
+                  >
+                    Открыть в истории
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {view.kind === "result" && resultView && (
             <ResultBlock
-              files={[selected.file]}
+              files={view.file ? [view.file] : []}
               isOk={resultView.isOk}
               region={resultView.region}
               qualityProb={resultView.qualityProb}
               violations={resultView.violations}
+              criteria={resultView.criteria}
+              fileName={view.fileName}
               description={resultView.summary}
-              onNewStudy={resetToIdle}
+              emptyLabel={
+                view.notice || "Снимок недоступен для просмотра."
+              }
+              exporting={xlsx.exporting}
+              exportError={xlsx.exportError}
+              onExport={() => {
+                void xlsx.download({ ids: [view.studyId] });
+              }}
+              onOpenHistory={() => openHistory(`/history/${view.studyId}`)}
+              onNewStudy={returnToUpload}
             />
           )}
 
-          {state === "error" && (
+          {view.kind === "package" && (
+            <section className={styles.workPanel}>
+              <PackageOutcome
+                archiveName={view.archiveName}
+                items={view.items}
+                onOpenStudy={(id) => navigate(`/history/${id}`)}
+                onOpenHistory={() => navigate("/history")}
+                onNewStudy={returnToUpload}
+              />
+            </section>
+          )}
+
+          {view.kind === "file-error" && (
             <ErrorBlock
               title="Файл не принят"
-              message={errorMessage}
-              onRetry={resetToIdle}
+              message={view.message}
+              onRetry={returnToUpload}
+            />
+          )}
+
+          {view.kind === "analysis-error" && (
+            <ErrorBlock
+              title="Проверка не выполнена"
+              message={view.message}
+              onRetry={returnToUpload}
             />
           )}
         </div>
 
         {showProcessStatus && (
           <div className={styles.sideColumn}>
-            <ProcessStatus stage={state} />
+            <ProcessStatus stage={processStage} />
           </div>
         )}
       </div>

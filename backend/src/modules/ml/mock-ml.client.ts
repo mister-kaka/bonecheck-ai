@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { MlAnalyzeInput, MlClient, MlPrediction } from './ml.types';
 
+// Фиксированный ответ, пока нет модели. Регион обязателен контрактом и по снимку не определяется.
+// quality_prob нет: у заглушки нет вероятности.
 @Injectable()
 export class MockMlClient implements MlClient {
   async analyze(_input: MlAnalyzeInput): Promise<MlPrediction> {
@@ -13,7 +15,6 @@ export class MockMlClient implements MlClient {
     return {
       quality_class: 0,
       violation_type: '',
-      quality_prob: 0.05,
       anatomical_region: 'Поясничный отдел позвоночника',
     };
   }

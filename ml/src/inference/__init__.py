@@ -4,6 +4,8 @@ _EXPORTS = (
     "load_models",
     "predict_single_dicom",
     "process_directory",
+    "site_prediction",
+    "save_heatmap_png",
     "visualize_dicom",
 )
 

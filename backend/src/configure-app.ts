@@ -3,7 +3,10 @@ import { ValidationError } from 'class-validator';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 export function configureApp(app: INestApplication): void {
-  app.enableCors();
+  app.enableCors({
+    origin: true,
+    exposedHeaders: ['Content-Disposition'],
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

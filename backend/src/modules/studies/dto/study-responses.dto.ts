@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { StudyStatus } from '../study.types';
+import { StudyStatus } from '../types/study.types';
 
 export class CreateStudyResponseDto {
   @ApiProperty({ example: '3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b21' })
@@ -54,6 +54,16 @@ export class StudyStatusResponseDto {
 
   @ApiProperty({ description: 'Истина, если анализ завершён и результат можно запросить' })
   hasResult!: boolean;
+}
+
+export class PackageStudyCreatedDto extends CreateStudyResponseDto {
+  @ApiProperty({ example: 'spine.dcm' })
+  originalFileName!: string;
+}
+
+export class CreatePackageResponseDto {
+  @ApiProperty({ type: [PackageStudyCreatedDto] })
+  items!: PackageStudyCreatedDto[];
 }
 
 export class StudyListResponseDto {

@@ -1,5 +1,5 @@
-import { Icon } from "../Icon";
-import styles from "../../styles/EmptyState.module.css";
+import { Icon } from "../ui/Icon";
+import styles from "./EmptyState.module.css";
 
 interface EmptyStateProps {
   title?: string;

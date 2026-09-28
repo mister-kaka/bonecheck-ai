@@ -1,7 +1,8 @@
-import { Icon } from "../Icon";
-import styles from "../../styles/HistoryFilters.module.css";
-import { Input } from "../Input";
-import { Select } from "../Select";
+import type { MouseEvent } from "react";
+import { Icon } from "../ui/Icon";
+import styles from "./HistoryFilters.module.css";
+import { Input } from "../ui/Input";
+import { Select } from "../ui/Select";
 import type { SelectOption } from "../../types/study";
 
 export interface ActiveFilterChip {
@@ -21,6 +22,15 @@ interface HistoryFiltersProps {
   status: string;
   onStatusChange: (value: string) => void;
   statusOptions: SelectOption[];
+
+  violation: string;
+  onViolationChange: (value: string) => void;
+  violationOptions: SelectOption[];
+
+  dateFrom: string;
+  dateTo: string;
+  onDateFromChange: (value: string) => void;
+  onDateToChange: (value: string) => void;
 
   sort: string;
   onSortChange: (value: string) => void;
@@ -42,6 +52,13 @@ export function HistoryFilters({
   status,
   onStatusChange,
   statusOptions,
+  violation,
+  onViolationChange,
+  violationOptions,
+  dateFrom,
+  dateTo,
+  onDateFromChange,
+  onDateToChange,
   sort,
   onSortChange,
   sortOptions,
@@ -50,6 +67,17 @@ export function HistoryFilters({
   onResetAll,
   disabled = false,
 }: HistoryFiltersProps) {
+  const openDatePicker = (event: MouseEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    if (typeof input.showPicker !== "function") return;
+    event.preventDefault();
+    try {
+      input.showPicker();
+    } catch {
+      input.focus();
+    }
+  };
+
   return (
     <div className={styles.filters}>
       <div className={styles.grid}>
@@ -66,7 +94,7 @@ export function HistoryFilters({
         </div>
 
         <div className={styles.selectField}>
-          <label className={styles.label} htmlFor="history-region">Область</label>
+          <label className={styles.label} htmlFor="history-region">Анатомическая область</label>
           <Select
             id="history-region"
             aria-label="Анатомическая область"
@@ -87,6 +115,45 @@ export function HistoryFilters({
             disabled={disabled}
             onChange={(event) => onStatusChange(event.target.value)}
           />
+        </div>
+
+        <div className={styles.selectField}>
+          <label className={styles.label} htmlFor="history-violation">Тип нарушения</label>
+          <Select
+            id="history-violation"
+            aria-label="Тип нарушения"
+            options={violationOptions}
+            value={violation}
+            disabled={disabled}
+            onChange={(event) => onViolationChange(event.target.value)}
+          />
+        </div>
+
+        <div className={styles.dateField}>
+          <span className={styles.label} id="history-date-label">Дата</span>
+          <div className={styles.dateRange} role="group" aria-labelledby="history-date-label">
+            <input
+              className={styles.dateInput}
+              type="date"
+              aria-label="Дата с"
+              value={dateFrom}
+              max={dateTo || undefined}
+              disabled={disabled}
+              onClick={openDatePicker}
+              onChange={(event) => onDateFromChange(event.target.value)}
+            />
+            <span className={styles.dateSep} aria-hidden="true">-</span>
+            <input
+              className={styles.dateInput}
+              type="date"
+              aria-label="Дата по"
+              value={dateTo}
+              min={dateFrom || undefined}
+              disabled={disabled}
+              onClick={openDatePicker}
+              onChange={(event) => onDateToChange(event.target.value)}
+            />
+          </div>
         </div>
 
         <div className={styles.selectField}>

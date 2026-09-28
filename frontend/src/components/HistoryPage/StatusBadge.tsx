@@ -1,52 +1,18 @@
-import { Badge } from "../Badge";
-import { Icon } from "../Icon";
-import type { QualityClass, StudyStatus } from "../../types/study";
+import { Badge, type BadgeTone } from "../ui/Badge";
+import type { StudyStatus } from "../../types/study";
 
-interface StatusBadgeProps {
-  status: StudyStatus;
-  qualityClass: QualityClass | null;
+const STATUS_VIEW: Record<StudyStatus, { label: string; tone: BadgeTone }> = {
+  uploaded: { label: "Файл принят", tone: "muted" },
+  processing: { label: "Идёт анализ", tone: "info" },
+  completed: { label: "Готово", tone: "success" },
+  error: { label: "Ошибка анализа", tone: "danger" },
+};
+
+export function statusLabel(status: StudyStatus): string {
+  return STATUS_VIEW[status].label;
 }
 
-export function StatusBadge({ status, qualityClass }: StatusBadgeProps) {
-  if (status === "error") {
-    return (
-      <Badge tone="muted">
-        <Icon name="error" size={12} />
-        Ошибка анализа
-      </Badge>
-    );
-  }
-
-  if (status === "processing") {
-    return (
-      <Badge tone="info">
-        <Icon name="study" size={12} />
-        Идёт анализ
-      </Badge>
-    );
-  }
-
-  if (status === "uploaded") {
-    return <Badge tone="muted">Файл принят</Badge>;
-  }
-
-  if (qualityClass === 1) {
-    return (
-      <Badge tone="warning">
-        <Icon name="alert" size={12} />
-        Нарушение
-      </Badge>
-    );
-  }
-
-  if (qualityClass === 0) {
-    return (
-      <Badge tone="success">
-        <Icon name="check" size={12} />
-        Качественно
-      </Badge>
-    );
-  }
-
-  return <Badge tone="neutral">Готово</Badge>;
+export function StatusBadge({ status }: { status: StudyStatus }) {
+  const view = STATUS_VIEW[status];
+  return <Badge tone={view.tone}>{view.label}</Badge>;
 }

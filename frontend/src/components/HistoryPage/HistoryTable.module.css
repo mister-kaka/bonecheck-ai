@@ -1,11 +1,15 @@
 .tableWrapper {
+  flex: 1;
   width: 100%;
-  overflow-x: auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
 }
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: var(--fs-small);
 }
 
@@ -20,6 +24,9 @@
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-soft);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .table tbody td {
@@ -47,13 +54,21 @@
   outline-offset: -2px;
 }
 
+.date {
+  white-space: nowrap;
+}
+
 .fileName {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--color-text-secondary);
-  max-width: 280px;
+  max-width: 240px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.region {
   white-space: nowrap;
 }
 
@@ -65,10 +80,24 @@
 }
 
 .thDate { width: 168px; }
-.thFile { width: 36%; }
-.thStatus { width: 180px; }
+.thStatus { width: 132px; }
+
+.violation {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.violationEmpty {
+  color: var(--color-text-secondary);
+}
 
 @media (max-width: 768px) {
+  .tableWrapper {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
   .table thead {
     display: none;
   }
@@ -88,8 +117,10 @@
 
   .table tbody td {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 12px;
+    min-width: 0;
     padding: 6px 16px;
     border-bottom: none;
     text-align: right;
@@ -105,7 +136,10 @@
     text-align: left;
   }
 
-  .fileName {
+  .date,
+  .region,
+  .fileName,
+  .violation {
     max-width: none;
     white-space: normal;
     overflow-wrap: anywhere;

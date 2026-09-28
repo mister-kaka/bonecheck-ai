@@ -1,48 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useXlsxDownload } from "../../api/useXlsxDownload";
+import { PageIntro } from "../../components/layout/PageIntro";
+import { Button } from "../../components/ui/Button";
 import { HistoryFilters } from "../../components/HistoryPage/HistoryFilters";
 import { HistoryTable } from "../../components/HistoryPage/HistoryTable";
-import { Icon } from "../../components/Icon";
-import { Select } from "../../components/Select";
-import { getOrCreateSessionId } from "../../api/session";
+import { Icon } from "../../components/ui/Icon";
+import { Select } from "../../components/ui/Select";
+import {
+  historyFilterChips,
+  outcomeFilterOptions,
+  pageSizeOptions,
+  violationFilterOptions,
+  regionFilterOptions,
+  sortOptions,
+} from "../../history/filterOptions";
 import {
   applyHistoryFilters,
   hasActiveQuery,
   hasNarrowingFilters,
   readHistoryQuery,
-  studiesInScope,
   toSearchParams,
   type HistoryQuery,
+  type HistoryRecord,
 } from "../../history/queryHistory";
-import { buildDemoStudies, type DemoStudy } from "../../mocks/history";
-import {
-  outcomeFilterOptions,
-  pageSizeOptions,
-  regionFilterOptions,
-  sortOptions,
-} from "../../mocks/regions";
-import tabStyles from "../../styles/Tabs.module.css";
-import styles from "../../styles/HistoryPage.module.css";
+import tabStyles from "../../components/ui/Tabs.module.css";
+import styles from "./HistoryPage.module.css";
+import { useHistoryCatalog } from "./useHistoryCatalog";
 
-const DEMO_LOAD_MS = 300;
+const EMPTY_EXPORT_MESSAGE = "По выбранным фильтрам нет исследований для выгрузки.";
 
 export function HistoryPage() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const query = readHistoryQuery(params);
-  const sessionId = getOrCreateSessionId();
-  const [catalog, setCatalog] = useState<DemoStudy[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      if (!cancelled) setCatalog(buildDemoStudies(sessionId));
-    }, DEMO_LOAD_MS);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [sessionId]);
+  const xlsx = useXlsxDownload();
+  const { load, sessionId, reload } = useHistoryCatalog(query.scope);
 
   const patch = (partial: Partial<HistoryQuery>, resetPage = false) => {
     const next: HistoryQuery = {
@@ -53,63 +46,62 @@ export function HistoryPage() {
     setParams(toSearchParams(next), { replace: true });
   };
 
-  const scoped = useMemo(
-    () => (catalog ? studiesInScope(catalog, query.scope, sessionId) : []),
-    [catalog, query.scope, sessionId],
-  );
-
+  const catalog = load.status === "ready" ? load.items : [];
   const filtered = useMemo(
-    () => (catalog ? applyHistoryFilters(scoped, query) : []),
-    [catalog, scoped, query],
+    () => applyHistoryFilters(catalog, query),
+    [catalog, query],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / query.pageSize));
   const currentPage = Math.min(query.page, totalPages);
+  const loading = load.status === "loading";
 
   useEffect(() => {
-    if (!catalog) return;
+    if (load.status !== "ready") return;
     if (query.page > totalPages) {
       patch({ page: totalPages });
     }
-  }, [catalog, query.page, totalPages]);
+  }, [load.status, query.page, totalPages]);
 
   const start = (currentPage - 1) * query.pageSize;
   const pageItems = filtered.slice(start, start + query.pageSize);
-  const loading = catalog === null;
   const narrowing = hasNarrowingFilters(query);
-  const scopeEmpty = !loading && scoped.length === 0 && !narrowing;
+  const scopeEmpty = load.status === "ready" && catalog.length === 0 && !narrowing;
 
-  const chips = [
-    query.region !== "all"
-      ? {
-          id: "region",
-          label: regionFilterOptions.find((option) => option.value === query.region)?.label
-            ?? query.region,
-        }
-      : null,
-    query.outcome !== "all"
-      ? {
-          id: "outcome",
-          label: outcomeFilterOptions.find((option) => option.value === query.outcome)?.label
-            ?? query.outcome,
-        }
-      : null,
-  ].filter((chip): chip is { id: string; label: string } => chip !== null);
+  const chips = historyFilterChips(query);
 
   const resetFilters = () => {
     patch({
       search: "",
       region: "all",
       outcome: "all",
+      violation: "all",
+      dateFrom: "",
+      dateTo: "",
       sort: "date_desc",
     }, true);
   };
 
-  const openStudy = (item: DemoStudy) => {
+  const openStudy = (item: HistoryRecord) => {
     navigate({
       pathname: `/history/${item.study.id}`,
       search: params.toString(),
     });
+  };
+
+  const exportHistory = () => {
+    if (load.status !== "ready") return;
+    if (filtered.length === 0) {
+      if (narrowing) {
+        xlsx.report(EMPTY_EXPORT_MESSAGE);
+        return;
+      }
+      void xlsx.download({
+        sessionId: query.scope === "mine" ? sessionId : undefined,
+      });
+      return;
+    }
+    void xlsx.download({ ids: filtered.map((item) => item.study.id) });
   };
 
   const goToPage = (page: number) => {
@@ -120,17 +112,27 @@ export function HistoryPage() {
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
-    <div className={styles.page} data-history-state={loading ? "loading" : "ready"}>
+    <div className={`${styles.page} ${styles.pageFill}`} data-history-state={loading ? "loading" : load.status}>
       <header className={styles.header}>
-        <div className={styles.headerText}>
-          <p className={styles.kicker}>Журнал</p>
-          <h1 className={styles.title}>История исследований</h1>
-          <p className={styles.subtitle}>
-            Мои - исследования этой сессии браузера. Все - общая история.
-            Сейчас показаны демонстрационные записи, сервер не запрашивался.
-          </p>
-        </div>
+        <PageIntro
+          kicker="Журнал"
+          title="История исследований"
+          subtitle="Мои - ваши загрузки. Все - общая история."
+        />
         <div className={styles.headerAside}>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={xlsx.exporting || load.status !== "ready"}
+            onClick={exportHistory}
+          >
+            {xlsx.exporting ? "Выгрузка..." : "Экспорт XLSX"}
+          </Button>
+          {xlsx.exportError && (
+            <p className={styles.exportError} role="alert">
+              {xlsx.exportError}
+            </p>
+          )}
           <div className={tabStyles.tabs} role="tablist" aria-label="Раздел истории">
             <button
               type="button"
@@ -156,7 +158,7 @@ export function HistoryPage() {
         </div>
       </header>
 
-      <section className={styles.worklist} aria-label="Список исследований" aria-busy={loading}>
+      <section className={`${styles.worklist} ${styles.worklistFill}`} aria-label="Список исследований" aria-busy={loading}>
         <HistoryFilters
           search={query.search}
           onSearchChange={(value) => patch({ search: value }, true)}
@@ -167,6 +169,13 @@ export function HistoryPage() {
           status={query.outcome}
           onStatusChange={(value) => patch({ outcome: value as HistoryQuery["outcome"] }, true)}
           statusOptions={outcomeFilterOptions}
+          violation={query.violation}
+          onViolationChange={(value) => patch({ violation: value as HistoryQuery["violation"] }, true)}
+          violationOptions={violationFilterOptions}
+          dateFrom={query.dateFrom}
+          dateTo={query.dateTo}
+          onDateFromChange={(value) => patch({ dateFrom: value }, true)}
+          onDateToChange={(value) => patch({ dateTo: value }, true)}
           sort={query.sort}
           onSortChange={(value) => patch({ sort: value as HistoryQuery["sort"] }, true)}
           sortOptions={sortOptions}
@@ -174,32 +183,47 @@ export function HistoryPage() {
           onClearChip={(id) => {
             if (id === "region") patch({ region: "all" }, true);
             if (id === "outcome") patch({ outcome: "all" }, true);
+            if (id === "violation") patch({ violation: "all" }, true);
+            if (id === "dateFrom") patch({ dateFrom: "" }, true);
+            if (id === "dateTo") patch({ dateTo: "" }, true);
           }}
           onResetAll={hasActiveQuery(query) ? resetFilters : undefined}
           disabled={loading}
         />
-        <HistoryTable
-          items={pageItems}
-          loading={loading}
-          emptyTitle="Нет исследований"
-          emptySubtitle={
-            scopeEmpty
-              ? query.scope === "mine"
-                ? "В вашей сессии пока нет исследований."
-                : "Общая история пуста."
-              : "По выбранным фильтрам ничего не найдено"
-          }
-          emptyActionLabel={narrowing || query.sort !== "date_desc" ? "Сбросить фильтры" : undefined}
-          onEmptyAction={narrowing || query.sort !== "date_desc" ? resetFilters : undefined}
-          onRowClick={openStudy}
-        />
+        {load.status === "error" ? (
+          <div className={styles.panel}>
+            <h2 className={styles.panelTitle}>Не удалось загрузить историю</h2>
+            <p className={styles.panelText}>{load.message}</p>
+            <Button variant="secondary" size="sm" onClick={reload}>
+              Повторить
+            </Button>
+          </div>
+        ) : (
+          <HistoryTable
+            items={pageItems}
+            loading={loading}
+            emptyTitle="Нет исследований"
+            emptySubtitle={
+              scopeEmpty
+                ? query.scope === "mine"
+                  ? "Вы ещё не загружали исследования."
+                  : "Общая история пуста."
+                : "По выбранным фильтрам ничего не найдено"
+            }
+            emptyActionLabel={narrowing || query.sort !== "date_desc" ? "Сбросить фильтры" : undefined}
+            onEmptyAction={narrowing || query.sort !== "date_desc" ? resetFilters : undefined}
+            onRowClick={openStudy}
+          />
+        )}
       </section>
 
       <footer className={styles.footer}>
         <div className={styles.counter}>
           {loading
             ? "Загрузка списка"
-            : `Показано ${pageItems.length} из ${filtered.length} · страница ${currentPage} из ${totalPages}`}
+            : load.status === "error"
+              ? "Список недоступен"
+              : `Показано ${pageItems.length} из ${filtered.length} · страница ${currentPage} из ${totalPages}`}
         </div>
 
         <div className={styles.footerControls}>

@@ -1,18 +1,19 @@
 import { EmptyState } from "./EmptyState";
 import { StatusBadge } from "./StatusBadge";
-import { Skeleton } from "../Skeleton";
+import { Skeleton } from "../ui/Skeleton";
+import { historyViolationText } from "../../api/mapStudyResult";
 import { formatDate } from "../../history/formatDate";
-import type { DemoStudy } from "../../mocks/history";
-import styles from "../../styles/HistoryTable.module.css";
+import type { HistoryRecord } from "../../history/queryHistory";
+import styles from "./HistoryTable.module.css";
 
 interface HistoryTableProps {
-  items: DemoStudy[];
+  items: HistoryRecord[];
   loading?: boolean;
   emptyTitle?: string;
   emptySubtitle?: string;
   emptyActionLabel?: string;
   onEmptyAction?: () => void;
-  onRowClick?: (item: DemoStudy) => void;
+  onRowClick?: (item: HistoryRecord) => void;
 }
 
 export function HistoryTable({
@@ -33,6 +34,7 @@ export function HistoryTable({
           <tbody>
             {Array.from({ length: 5 }, (_, index) => (
               <tr key={index}>
+                <td><Skeleton /></td>
                 <td><Skeleton /></td>
                 <td><Skeleton /></td>
                 <td><Skeleton /></td>
@@ -63,7 +65,11 @@ export function HistoryTable({
         <tbody>
           {items.map((item) => {
             const region = item.result?.anatomical_region ?? "-";
-            const qualityClass = item.result?.quality_class ?? null;
+            const violation = historyViolationText(
+              item.study.status,
+              item.result?.violation_type,
+            );
+            const violationEmpty = violation === "-" || violation === "Без нарушений";
             return (
               <tr
                 key={item.study.id}
@@ -83,13 +89,20 @@ export function HistoryTable({
                     : undefined
                 }
               >
-                <td data-label="Дата">{formatDate(item.study.createdAt)}</td>
-                <td className={styles.fileName} data-label="Файл">
+                <td className={styles.date} data-label="Дата">{formatDate(item.study.createdAt)}</td>
+                <td className={styles.fileName} data-label="Файл" title={item.study.originalFileName}>
                   {item.study.originalFileName}
                 </td>
-                <td data-label="Область">{region}</td>
+                <td className={styles.region} data-label="Анатомическая область">{region}</td>
                 <td data-label="Статус">
-                  <StatusBadge status={item.study.status} qualityClass={qualityClass} />
+                  <StatusBadge status={item.study.status} />
+                </td>
+                <td
+                  data-label="Нарушение"
+                  className={violationEmpty ? styles.violationEmpty : styles.violation}
+                  title={violationEmpty ? undefined : violation}
+                >
+                  {violation}
                 </td>
               </tr>
             );
@@ -106,8 +119,9 @@ function TableHead() {
       <tr>
         <th scope="col" className={styles.thDate}>Дата</th>
         <th scope="col" className={styles.thFile}>Файл</th>
-        <th scope="col" className={styles.thRegion}>Область</th>
+        <th scope="col" className={styles.thRegion}>Анатомическая область</th>
         <th scope="col" className={styles.thStatus}>Статус</th>
+        <th scope="col" className={styles.thViolation}>Нарушение</th>
       </tr>
     </thead>
   );

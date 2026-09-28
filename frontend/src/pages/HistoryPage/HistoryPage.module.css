@@ -3,45 +3,38 @@
   flex-direction: column;
   gap: var(--space-4);
   width: 100%;
-  max-width: 1180px;
+  max-width: var(--content-max);
   min-width: 0;
+}
+
+.pageFill {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .header {
   display: flex;
+  flex-shrink: 0;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--space-4);
 }
 
-.headerText {
+.headerAside {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.kicker {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-}
-
-.title {
-  font-size: var(--fs-h1);
-  font-weight: 600;
-}
-
-.subtitle {
-  font-size: var(--fs-small);
-  color: var(--color-text-secondary);
-  max-width: 640px;
-}
-
-.headerAside {
+  align-items: flex-end;
+  gap: var(--space-3);
   flex-shrink: 0;
+}
+
+.exportError {
+  margin: 0;
+  max-width: 280px;
+  text-align: right;
+  color: var(--color-danger);
+  font-size: var(--fs-tiny);
 }
 
 .worklist {
@@ -52,8 +45,16 @@
   overflow: hidden;
 }
 
+.worklistFill {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .footer {
   display: flex;
+  flex-shrink: 0;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-3);
@@ -89,7 +90,10 @@
 .pagination {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 4px;
+  max-width: 100%;
 }
 
 .panel {
@@ -159,8 +163,27 @@
 }
 
 @media (max-width: 768px) {
+  .pageFill {
+    flex: 1 0 auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .worklistFill {
+    flex: 0 0 auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
   .header {
+    flex-direction: column;
     align-items: stretch;
+  }
+
+  .headerAside,
+  .exportError {
+    align-items: stretch;
+    text-align: left;
   }
 
   .footer {

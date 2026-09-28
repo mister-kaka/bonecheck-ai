@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { ArgumentsHost, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, HttpStatus, NotFoundException } from '@nestjs/common';
 import { HttpExceptionFilter } from './http-exception.filter';
 
 function capture(exception: unknown): { statusCode: number; body: Record<string, unknown> } {
@@ -58,7 +58,18 @@ describe('HttpExceptionFilter', () => {
       statusCode: 500,
       error: 'INTERNAL SERVER ERROR',
       code: 'INTERNAL_ERROR',
-      message: 'Внутренняя ошибка сервера.',
+      message: 'Не удалось обработать запрос. Попробуйте ещё раз.',
     });
+  });
+
+  it('does not return the framework route text for an unknown address', () => {
+    const response = capture(
+      new NotFoundException('Cannot GET /api/studies?session_id=secret'),
+    );
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body.message).toBe('Запрошенный адрес не найден.');
+    expect(JSON.stringify(response.body)).not.toContain('session_id');
+    expect(JSON.stringify(response.body)).not.toContain('Cannot GET');
   });
 });

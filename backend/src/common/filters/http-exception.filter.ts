@@ -47,7 +47,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const raw = exception.getResponse();
       const payload = typeof raw === 'string' ? { message: raw } : raw;
       const record = payload as Record<string, unknown>;
-      const message = this.readMessage(record.message ?? record.msg) || exception.message;
+      const message = this.publicMessage(
+        statusCode,
+        this.readMessage(record.message ?? record.msg) || exception.message,
+      );
 
       return {
         statusCode,
@@ -62,7 +65,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       error: this.statusName(HttpStatus.INTERNAL_SERVER_ERROR),
       code: 'INTERNAL_ERROR',
-      message: 'Внутренняя ошибка сервера.',
+      message: 'Не удалось обработать запрос. Попробуйте ещё раз.',
     };
   }
 
@@ -75,6 +78,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       'name' in exception &&
       (exception as { name: string }).name === 'MulterError'
     );
+  }
+
+  private publicMessage(statusCode: number, message: string): string {
+    if (/^Cannot (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/.test(message)) {
+      return statusCode === HttpStatus.NOT_FOUND
+        ? 'Запрошенный адрес не найден.'
+        : 'Не удалось обработать запрос. Попробуйте ещё раз.';
+    }
+
+    return message;
   }
 
   private readMessage(value: unknown): string {

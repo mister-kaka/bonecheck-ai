@@ -14,6 +14,24 @@ export class FileStorageService {
     return filePath;
   }
 
+  async read(storedFilePath: string): Promise<Buffer | null> {
+    const root = path.resolve(this.rootDir());
+    const resolved = path.resolve(storedFilePath);
+    const relative = path.relative(root, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      return null;
+    }
+
+    try {
+      return await fs.readFile(resolved);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   private rootDir(): string {
     return process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads');
   }

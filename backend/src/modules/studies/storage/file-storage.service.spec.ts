@@ -53,4 +53,13 @@ describe('FileStorageService', () => {
     expect(readFileSync(parent).toString()).toBe('b');
     expect(readFileSync(empty).toString()).toBe('c');
   });
+
+  it('читает файл исследования и не отдаёт путь вне каталога загрузок', async () => {
+    const service = new FileStorageService();
+    const stored = await service.save('study-1', 'spine.dcm', Buffer.from('dicom'));
+
+    await expect(service.read(stored)).resolves.toEqual(Buffer.from('dicom'));
+    await expect(service.read(path.join(directory, 'missing', 'spine.dcm'))).resolves.toBeNull();
+    await expect(service.read(path.join(directory, '..', 'secret.dcm'))).resolves.toBeNull();
+  });
 });

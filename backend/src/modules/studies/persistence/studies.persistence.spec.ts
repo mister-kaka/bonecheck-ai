@@ -3,11 +3,11 @@ import { mkdtempSync, rmSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import Database from 'better-sqlite3';
-import { MockMlClient } from '../ml/mock-ml.client';
-import { MlClient } from '../ml/ml.types';
+import { MockMlClient } from '../../ml/mock-ml.client';
+import { MlClient } from '../../ml/ml.types';
 import { SqliteStudyRepository } from './sqlite-study.repository';
-import { StudiesService } from './studies.service';
-import { StudyRecord, StudyStatus } from './study.types';
+import { StudiesService } from '../studies.service';
+import { StudyRecord, StudyStatus } from '../types/study.types';
 
 const file = {
   originalname: 'spine.dcm',
@@ -161,7 +161,7 @@ describe('study persistence (sqlite)', () => {
       status: 'completed',
       original_file_name: 'spine.dcm',
       quality_class: 0,
-      quality_prob: 0.05,
+      quality_prob: null,
       violation_type: '',
       anatomical_region: 'Поясничный отдел позвоночника',
       error: null,
@@ -173,9 +173,9 @@ describe('study persistence (sqlite)', () => {
       studyId: created.id,
       quality_class: 0,
       violation_type: '',
-      quality_prob: 0.05,
       anatomical_region: 'Поясничный отдел позвоночника',
     });
+    expect(result).not.toHaveProperty('quality_prob');
   });
 
   it('keeps an ML error in sqlite and exposes it through the existing API', async () => {
@@ -189,7 +189,7 @@ describe('study persistence (sqlite)', () => {
 
     const row = readRow(created.id);
     expect(row?.status).toBe('error');
-    expect(row?.error).toBe('Ошибка обработки ML.');
+    expect(row?.error).toBe('Не удалось проверить качество укладки.');
     expect(row?.quality_class).toBeNull();
     expect(row?.quality_prob).toBeNull();
     expect(row?.violation_type).toBeNull();
@@ -301,7 +301,7 @@ describe('study persistence (sqlite)', () => {
 
     expect(status.status).toBe(StudyStatus.Error);
     expect(status.hasResult).toBe(false);
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
 
     await expect(second.service.getResult(created.id)).rejects.toMatchObject({
       response: {
@@ -389,7 +389,7 @@ describe('study persistence (sqlite)', () => {
 
     expect(readRow(created.id)).toMatchObject({
       status: 'error',
-      error: 'Ошибка обработки ML.',
+      error: 'Не удалось проверить качество укладки.',
       quality_class: null,
       quality_prob: null,
       violation_type: null,
@@ -478,7 +478,7 @@ describe('study persistence (sqlite)', () => {
       stored_file_path: path.join(directory, 'spine.dcm'),
       created_at: '2026-09-18T11:21:00.000Z',
       updated_at: '2026-09-18T11:21:01.000Z',
-      error: 'Ошибка обработки ML.',
+      error: 'Не удалось проверить качество укладки.',
       quality_class: 0,
       quality_prob: 0.05,
       violation_type: '',
@@ -488,7 +488,7 @@ describe('study persistence (sqlite)', () => {
     const status = await service.getById(id);
     expect(status.status).toBe(StudyStatus.Error);
     expect(status.hasResult).toBe(false);
-    expect(status.error).toBe('Ошибка обработки ML.');
+    expect(status.error).toBe('Не удалось проверить качество укладки.');
     await expect(service.getResult(id)).rejects.toMatchObject({
       response: { code: 'ANALYSIS_FAILED', status: StudyStatus.Error },
     });
@@ -566,5 +566,57 @@ describe('study persistence (sqlite)', () => {
     const items = await service.list();
     expect(items.items.map((item) => item.id)).toEqual(['id-c', 'id-b', 'id-a']);
     expect(items.items[0]).not.toHaveProperty('quality_class');
+  });
+
+  it('does not overwrite a finished study when a second processing result arrives', async () => {
+    const { repository } = openService();
+    const id = '3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b24';
+    const createdAt = '2026-09-18T11:21:00.000Z';
+    await repository.save({
+      id,
+      sessionId: null,
+      status: StudyStatus.Processing,
+      originalFileName: 'spine.dcm',
+      storedFilePath: path.join(directory, 'spine.dcm'),
+      createdAt,
+      updatedAt: createdAt,
+      error: null,
+      result: null,
+    });
+
+    const completed = await repository.finishIfProcessing({
+      id,
+      sessionId: null,
+      status: StudyStatus.Completed,
+      originalFileName: 'spine.dcm',
+      storedFilePath: path.join(directory, 'spine.dcm'),
+      createdAt,
+      updatedAt: '2026-09-18T11:21:02.000Z',
+      error: null,
+      result: {
+        quality_class: 0,
+        violation_type: '',
+        anatomical_region: 'Поясничный отдел позвоночника',
+      },
+    });
+    const overwritten = await repository.finishIfProcessing({
+      id,
+      sessionId: null,
+      status: StudyStatus.Error,
+      originalFileName: 'other.dcm',
+      storedFilePath: path.join(directory, 'other.dcm'),
+      createdAt,
+      updatedAt: '2026-09-18T11:21:03.000Z',
+      error: 'Не удалось проверить качество укладки.',
+      result: null,
+    });
+
+    expect(completed).toBe(true);
+    expect(overwritten).toBe(false);
+    const row = readRow(id);
+    expect(row?.status).toBe('completed');
+    expect(row?.quality_class).toBe(0);
+    expect(row?.error).toBeNull();
+    expect(row?.original_file_name).toBe('spine.dcm');
   });
 });

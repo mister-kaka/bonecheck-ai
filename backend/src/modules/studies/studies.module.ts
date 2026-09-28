@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { FileStorageService } from './file-storage.service';
-import { SqliteStudyRepository } from './sqlite-study.repository';
+import { FileStorageService } from './storage/file-storage.service';
+import { SqliteStudyRepository } from './persistence/sqlite-study.repository';
 import { StudiesController } from './studies.controller';
 import { StudiesService } from './studies.service';
-import { STUDY_REPOSITORY } from './study.types';
+import { STUDY_REPOSITORY } from './types/study.types';
 import { MlModule } from '../ml/ml.module';
 
 @Module({

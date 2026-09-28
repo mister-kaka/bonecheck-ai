@@ -2,9 +2,9 @@ import { mkdirSync } from 'fs';
 import path from 'path';
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import Database from 'better-sqlite3';
-import { MlPrediction } from '../ml/ml.types';
+import { MlPrediction } from '../../ml/ml.types';
 import { resolveDatabasePath } from './database-path';
-import { StudyRecord, StudyRepository, StudyStatus } from './study.types';
+import { StudyRecord, StudyRepository, StudyStatus } from '../types/study.types';
 
 type StudyRow = {
   id: string;
@@ -61,6 +61,7 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
   private readonly logger = new Logger(SqliteStudyRepository.name);
   private readonly db: Database.Database;
   private readonly upsert: Database.Statement<StudyParams>;
+  private readonly finishProcessing: Database.Statement<StudyParams>;
   private readonly selectById: Database.Statement<[string], StudyRow>;
   private readonly selectAll: Database.Statement<[], StudyRow>;
   private readonly selectBySession: Database.Statement<[string], StudyRow>;
@@ -111,6 +112,17 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
         violation_type = excluded.violation_type,
         anatomical_region = excluded.anatomical_region
     `);
+    this.finishProcessing = this.db.prepare<StudyParams>(`
+      UPDATE studies SET
+        status = @status,
+        updated_at = @updated_at,
+        error = @error,
+        quality_class = @quality_class,
+        quality_prob = @quality_prob,
+        violation_type = @violation_type,
+        anatomical_region = @anatomical_region
+      WHERE id = @id AND status = 'processing'
+    `);
     this.selectById = this.db.prepare<[string], StudyRow>(
       'SELECT * FROM studies WHERE id = ?',
     );
@@ -137,6 +149,11 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
       throw new Error(`Study ${study.id} was not persisted.`);
     }
     return saved;
+  }
+
+  async finishIfProcessing(study: StudyRecord): Promise<boolean> {
+    const result = this.finishProcessing.run(this.toParams(study));
+    return result.changes > 0;
   }
 
   async findById(id: string): Promise<StudyRecord | null> {

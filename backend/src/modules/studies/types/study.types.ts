@@ -1,4 +1,4 @@
-import { MlPrediction } from '../ml/ml.types';
+import { MlPrediction } from '../../ml/ml.types';
 
 export enum StudyStatus {
   Uploaded = 'uploaded',
@@ -23,6 +23,7 @@ export const STUDY_REPOSITORY = Symbol('STUDY_REPOSITORY');
 
 export interface StudyRepository {
   save(study: StudyRecord): Promise<StudyRecord>;
+  finishIfProcessing(study: StudyRecord): Promise<boolean>;
   findById(id: string): Promise<StudyRecord | null>;
   findAll(sessionId?: string): Promise<StudyRecord[]>;
 }

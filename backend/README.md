@@ -2,14 +2,20 @@
 
 API BoneCheck AI. Принимает DICOM и ZIP, хранит исследования и отдаёт статус, результат и XLSX.
 
+Публичный API: https://bonecheck-backend.onrender.com
+
+Описание методов: https://bonecheck-backend.onrender.com/api/docs
+
 ## Запуск
 
-Из этой папки, нужен Node.js 20:
+Локальный запуск из этой папки. Нужен Node.js 20:
 
 ```bash
 npm install
 npm run start:dev
 ```
+
+Локальные адреса:
 
 - API: http://localhost:3000
 - проверка: http://localhost:3000/health

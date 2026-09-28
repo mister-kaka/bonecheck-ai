@@ -1,6 +1,14 @@
 # Запуск
 
-Инструкция для человека, который скачал репозиторий и хочет открыть BoneCheck AI.
+Инструкция для человека, который скачал репозиторий и хочет открыть BoneCheck AI на своей машине.
+
+Публичный стенд уже запущен и этих команд не требует:
+
+- интерфейс: https://bonecheck-ai.onrender.com/
+- API: https://bonecheck-backend.onrender.com
+- описание API: https://bonecheck-backend.onrender.com/api/docs
+
+Адреса `localhost` ниже относятся только к локальному запуску.
 
 Оглавление: [README.md](../README.md).
 
@@ -125,7 +133,7 @@ docker compose up --build
 docker compose down
 ```
 
-Состав сервисов, порты и каталоги с данными: [../deployment/README.md](../../deployment/README.md).
+Состав сервисов, порты и каталоги с данными: [deployment/README.md](../../deployment/README.md).
 
 ## Данные между запусками
 

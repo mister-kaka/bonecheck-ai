@@ -4,24 +4,16 @@
   --color-text-secondary: #64748b;
   --color-text-inverse: #ffffff;
 
-  --color-ink: #0f172a;
-  --color-muted: #64748b;
   --color-slate: #475569;
-  --color-deep: #0f172a;
   --color-accent: #0891b2;
   --color-accent-hover: #0e7490;
-  --color-surface: #ffffff;
-  --color-black: #0b1220;
 
   --color-bg-app: var(--color-bg);
   --color-bg-surface: #ffffff;
   --color-bg-soft: #f1f5f9;
-  --color-bg-inset: #e8eef5;
 
-  --gradient-card: var(--color-bg-surface);
   --gradient-button: var(--color-accent);
   --gradient-button-hover: var(--color-accent-hover);
-  --gradient-header: #ffffff;
 
   --color-border: #e4e8ee;
   --color-border-strong: #cfd6e0;
@@ -42,7 +34,6 @@
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
-  --radius-xl: 10px;
   --radius-pill: 999px;
 
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
@@ -55,8 +46,8 @@
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
-  --space-7: 40px;
-  --space-8: 56px;
+
+  --content-max: 1480px;
 
   --font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;

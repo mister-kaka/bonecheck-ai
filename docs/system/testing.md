@@ -68,8 +68,8 @@ npm run build
 docker compose config
 ```
 
-Команда проверяет `docker-compose.yml`. Сборка и запуск контейнеров: [../deployment/README.md](../../deployment/README.md).
+Команда проверяет `docker-compose.yml`. Сборка и запуск контейнеров: [deployment/README.md](../../deployment/README.md).
 
 Команды выше процент покрытия не выводят.
 
-Дальше: [требования задания](../submission/requirements.md).
+Дальше: [материалы сдачи](../submission/submission.md).

@@ -4,6 +4,20 @@
 
 Команда: АУРА.
 
+Публичный прототип: https://bonecheck-ai.onrender.com/
+
+API: https://bonecheck-backend.onrender.com
+
+Описание API: https://bonecheck-backend.onrender.com/api/docs
+
+Репозиторий: https://github.com/mister-kaka/bonecheck-ai
+
+Презентация: https://drive.google.com/drive/folders/1zlEBlKHtzzT_uzwYWin5M9-7FRvxSmvV?usp=sharing
+
+Документация: https://drive.google.com/drive/folders/1Kmc9kUhgRQJAQj1I4TXELsZ0TAhWphzD?usp=sharing
+
+Общая папка проекта: https://drive.google.com/drive/folders/1IpQ52A42A0EOxw_bs1yTRJ9V7IUtbRfm?usp=sharing
+
 ## С чего начать
 
 1. [О проекте](product/product.md) - что это и для кого.
@@ -39,6 +53,5 @@
 
 ### Сдача
 
-- [Соответствие задаче](submission/requirements.md)
 - [Комплект сдачи](submission/submission.md)
 - [Команда](submission/team.md)

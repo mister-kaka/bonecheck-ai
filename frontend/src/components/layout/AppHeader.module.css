@@ -18,21 +18,32 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 0 8px;
+  padding: 6px 8px;
   min-width: 0;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.brand > div {
+.brand:hover {
+  background: var(--color-bg-soft);
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.brandText {
   min-width: 0;
 }
 
 .mark {
-  display: inline-flex;
+  display: block;
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  background: var(--color-info-bg);
-  border-radius: var(--radius-sm);
 }
 
 .title {
@@ -50,7 +61,6 @@
   font-size: var(--fs-tiny);
   font-weight: 400;
   color: var(--color-text-secondary);
-  white-space: nowrap;
 }
 
 .nav {
@@ -132,12 +142,8 @@
   }
 
   .note {
-    display: none;
+    margin-top: 0;
+    padding: 8px 4px 0;
   }
 }
 
-@media (max-width: 375px) {
-  .product {
-    display: none;
-  }
-}

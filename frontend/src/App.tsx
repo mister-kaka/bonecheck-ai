@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AppHeader } from "./components/AppHeader";
+import { AppHeader } from "./components/layout/AppHeader";
 import Home from "./pages/Home/Home";
 import { HistoryPage } from "./pages/HistoryPage/HistoryPage";
 import { StudyPage } from "./pages/StudyPage/StudyPage";

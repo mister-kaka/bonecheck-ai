@@ -1,17 +1,17 @@
 import { NavLink } from "react-router-dom";
-import { Icon } from "./Icon";
-import styles from "../styles/AppHeader.module.css";
+import { Icon } from "../ui/Icon";
+import styles from "./AppHeader.module.css";
 
 export function AppHeader() {
   return (
     <header className={styles.header}>
-      <div className={styles.brand}>
-        <span className={styles.mark} aria-hidden="true" />
-        <div>
+      <NavLink to="/" className={styles.brand} aria-label="BoneCheck AI, на главную">
+        <img className={styles.mark} src="/favicon.svg" alt="" width={32} height={32} />
+        <span className={styles.brandText}>
           <span className={styles.title}>BoneCheck AI</span>
           <span className={styles.product}>Качество укладки DXA</span>
-        </div>
-      </div>
+        </span>
+      </NavLink>
 
       <nav className={styles.nav} aria-label="Разделы">
         <NavLink
@@ -40,7 +40,7 @@ export function AppHeader() {
       </nav>
 
       <p className={styles.note}>
-        Поддержка оценки укладки. Не диагноз и не измерение минеральной плотности.
+        Проверка качества укладки. Не диагноз и не измерение минеральной плотности.
       </p>
     </header>
   );

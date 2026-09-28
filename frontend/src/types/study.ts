@@ -29,3 +29,11 @@ export interface SelectOption {
   value: string;
   label: string;
 }
+
+export type PackageStudyItem = {
+  id: string;
+  fileName: string;
+  status: StudyStatus;
+  error: string | null;
+  layoutLabel: string | null;
+};

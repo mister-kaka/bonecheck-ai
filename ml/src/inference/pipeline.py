@@ -545,26 +545,31 @@ def process_directory(input_dir: str, output_path: str = "submission.csv") -> pd
     return out
 
 
-def visualize_dicom(file_path: str) -> None:
-    """Grad-CAM ансамбля. Для бедра карта строится по canonical-кадру, не по исходнику."""
-    import cv2
-    import matplotlib.pyplot as plt
+def site_prediction(file_path: str) -> dict:
+    """Ответ для BoneCheck. Лишних полей нет, quality_prob не заполняется."""
+    row = predict_single_dicom(file_path)
+    if row.get("processing_status") != "Success":
+        raise RuntimeError(row.get("error") or "Не удалось проверить качество укладки.")
+    return {
+        "quality_class": int(row["quality_class"]),
+        "violation_type": str(row["violation_type"]),
+        "anatomical_region": str(row["anatomical_region"]),
+    }
 
-    dcm = pydicom.dcmread(file_path)
-    arr = dcm.pixel_array
-    columns = int(getattr(dcm, "Columns", -1))
-    region, _ = U.classify_region(columns)
 
+def _view_for_cam(arr: np.ndarray) -> tuple[np.ndarray, np.ndarray, bool]:
+    if not spine_models or axis_model is None or not femur_image_models or not femur_hybrid_models:
+        raise RuntimeError("Модели не загружены. Вызови load_models().")
+    region, _ = U.classify_region(int(arr.shape[1]))
     if region == U.SPINE_REGION:
         shown = normalize_uint8(arr)
-        x = preprocess_spine(arr)
         cam = _gradcam_ensemble(
             spine_models,
-            x,
+            preprocess_spine(arr),
             layer_of=lambda m: m.layer4[-1],
         )
-        title = "Spine lay Grad-CAM"
-    elif region == U.FEMUR_REGION:
+        return shown, cam, False
+    if region == U.FEMUR_REGION:
         info = U.detect_femur_side(arr)
         raw = femur_variants(arr, info)[0]
         shown = normalize_uint8(raw)
@@ -583,10 +588,49 @@ def visualize_dicom(file_path: str) -> None:
             x_geom=x_geom,
         )
         cam = FEMUR_IMAGE_WEIGHT * cam_image + FEMUR_HYBRID_WEIGHT * cam_hybrid
-        title = "Femur blend Grad-CAM (canonical)"
-    else:
-        raise ValueError(f"Unsupported anatomical region: {region}")
+        flip_back = bool(info["confident"] and info["side"] == "L")
+        return shown, cam, flip_back
+    raise ValueError(f"Unsupported anatomical region: {region}")
 
+
+def heatmap_rgb(arr: np.ndarray) -> np.ndarray:
+    """Снимок с картой укладки. Размер и лево-право как у исходного DICOM."""
+    import cv2
+
+    shown, cam, flip_back = _view_for_cam(arr)
+    height, width = int(arr.shape[0]), int(arr.shape[1])
+    shown_img = cv2.resize(shown, (width, height), interpolation=cv2.INTER_LINEAR)
+    cam_img = cv2.resize(
+        np.clip(cam, 0, 1).astype(np.float32),
+        (width, height),
+        interpolation=cv2.INTER_LINEAR,
+    )
+    heat = cv2.applyColorMap(np.uint8(255 * cam_img), cv2.COLORMAP_JET)
+    heat = cv2.cvtColor(heat, cv2.COLOR_BGR2RGB)
+    base = np.stack([shown_img] * 3, axis=-1)
+    overlay = cv2.addWeighted(base, 0.6, heat, 0.4, 0)
+    if flip_back:
+        overlay = np.ascontiguousarray(overlay[:, ::-1])
+    return overlay
+
+
+def save_heatmap_png(file_path: str, output_path: str) -> str:
+    import cv2
+
+    rgb = heatmap_rgb(pydicom.dcmread(file_path).pixel_array)
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not cv2.imwrite(str(path), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)):
+        raise OSError(f"Не удалось записать {path}")
+    return str(path.resolve())
+
+
+def visualize_dicom(file_path: str) -> None:
+    """Окно matplotlib: вход модели и карта. Для сайта нужен save_heatmap_png."""
+    import cv2
+    import matplotlib.pyplot as plt
+
+    shown, cam, _flip_back = _view_for_cam(pydicom.dcmread(file_path).pixel_array)
     shown_img = np.array(T.Resize((IMG_SIZE, IMG_SIZE))(T.ToPILImage()(shown)))
     heat = cv2.applyColorMap(np.uint8(255 * np.clip(cam, 0, 1)), cv2.COLORMAP_JET)
     heat = cv2.cvtColor(heat, cv2.COLOR_BGR2RGB)
@@ -597,7 +641,7 @@ def visualize_dicom(file_path: str) -> None:
     plt.imshow(shown_img, cmap="gray")
     plt.axis("off")
     plt.subplot(1, 2, 2)
-    plt.title(title)
+    plt.title("Grad-CAM укладки")
     plt.imshow(overlay)
     plt.axis("off")
     plt.show()

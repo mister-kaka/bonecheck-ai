@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -9,7 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "./Icon";
-import styles from "../styles/Select.module.css";
+import styles from "./Select.module.css";
 
 export interface SelectOption {
   value: string;
@@ -36,6 +37,7 @@ export function Select({
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [menuBox, setMenuBox] = useState({
@@ -67,6 +69,16 @@ export function Select({
       maxHeight,
     });
   };
+
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+    menu.style.setProperty("--menu-top", menuBox.top == null ? "auto" : `${menuBox.top}px`);
+    menu.style.setProperty("--menu-bottom", menuBox.bottom == null ? "auto" : `${menuBox.bottom}px`);
+    menu.style.setProperty("--menu-left", `${menuBox.left}px`);
+    menu.style.setProperty("--menu-width", `${menuBox.width}px`);
+    menu.style.setProperty("--menu-max-height", `${menuBox.maxHeight}px`);
+  }, [menuBox, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -183,18 +195,12 @@ export function Select({
       {open &&
         createPortal(
           <ul
+            ref={menuRef}
             id={listId}
             data-select-menu={listId}
             className={styles.menu}
             role="listbox"
             aria-label={ariaLabel}
-            style={{
-              top: menuBox.top ?? "auto",
-              bottom: menuBox.bottom ?? "auto",
-              left: menuBox.left,
-              width: menuBox.width,
-              maxHeight: menuBox.maxHeight,
-            }}
           >
             {options.map((option, index) => {
               const isSelected = option.value === value;
@@ -217,7 +223,7 @@ export function Select({
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => choose(index)}
                   >
-                    <span>{option.label}</span>
+                    <span className={styles.optionLabel}>{option.label}</span>
                     {isSelected && <Icon name="check" size={14} />}
                   </button>
                 </li>

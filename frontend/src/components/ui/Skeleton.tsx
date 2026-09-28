@@ -1,4 +1,4 @@
-import styles from "../styles/Skeleton.module.css";
+import styles from "./Skeleton.module.css";
 
 interface SkeletonProps {
   circle?: boolean;

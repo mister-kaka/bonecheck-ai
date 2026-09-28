@@ -1,5 +1,5 @@
 import { InputHTMLAttributes, ReactNode } from "react";
-import styles from "../styles/Input.module.css";
+import styles from "./Input.module.css";
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   icon?: ReactNode;

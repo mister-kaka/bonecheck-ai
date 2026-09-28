@@ -71,6 +71,12 @@
 .menu {
   position: fixed;
   z-index: 300;
+  top: var(--menu-top, auto);
+  right: auto;
+  bottom: var(--menu-bottom, auto);
+  left: var(--menu-left, 0px);
+  width: var(--menu-width, auto);
+  max-height: var(--menu-max-height, 240px);
   margin: 0;
   padding: 4px;
   overflow: auto;
@@ -91,6 +97,12 @@
   border-radius: var(--radius-sm);
   color: var(--color-text-primary);
   font-size: var(--fs-small);
+  text-align: left;
+}
+
+.optionLabel {
+  min-width: 0;
+  overflow-wrap: anywhere;
   text-align: left;
 }
 

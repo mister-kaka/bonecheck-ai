@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { DicomViewer } from "./DicomViewer";
-import type { Layers } from "./LayerSwitcher";
+import type { CriterionRow } from "../../../api/layoutCriteria";
+import { DicomViewer } from "../viewer/DicomViewer";
+import type { Layers } from "../viewer/ViewerTabs";
 import { ResultCard } from "./ResultCard";
-import { ImageCarousel } from "./ImageCarousel";
-import styles from "../../styles/ResultBlock.module.css";
+import { ImageCarousel } from "../viewer/ImageCarousel";
+import styles from "./ResultBlock.module.css";
 
 interface Keypoint {
   x: number;
@@ -17,13 +18,18 @@ interface ResultBlockProps {
   region: string;
   qualityProb?: number;
   violations?: string[];
+  criteria?: CriterionRow[];
+  fileName?: string;
   description?: string;
   heatmapUrls?: string[];
   contourPoints?: Array<[number, number]>;
   keypoints?: Keypoint[];
   emptyLabel?: string;
   onExport?: () => void;
+  onOpenHistory?: () => void;
   onNewStudy?: () => void;
+  exporting?: boolean;
+  exportError?: string;
 }
 
 export function ResultBlock({
@@ -32,13 +38,18 @@ export function ResultBlock({
   region,
   qualityProb,
   violations,
+  criteria,
+  fileName,
   description,
   heatmapUrls,
   contourPoints,
   keypoints,
   emptyLabel,
   onExport,
+  onOpenHistory,
   onNewStudy,
+  exporting,
+  exportError,
 }: ResultBlockProps) {
   const [layers, setLayers] = useState<Layers>({
     original: true,
@@ -80,9 +91,14 @@ export function ResultBlock({
           region={region}
           qualityProb={qualityProb}
           violations={violations}
+          criteria={criteria}
+          fileName={fileName}
           description={description}
           onExport={onExport}
+          onOpenHistory={onOpenHistory}
           onNewStudy={onNewStudy}
+          exporting={exporting}
+          exportError={exportError}
         />
       </div>
     </div>

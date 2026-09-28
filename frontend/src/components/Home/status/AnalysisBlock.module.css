@@ -69,6 +69,12 @@
   font-weight: 600;
 }
 
+.next {
+  margin-top: 2px;
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+}
+
 .meter {
   display: flex;
   align-items: center;
@@ -85,9 +91,15 @@
 
 .fill {
   display: block;
+  width: var(--progress, 0%);
   height: 100%;
   background: var(--color-processing);
   border-radius: inherit;
+}
+
+.fillIndeterminate {
+  width: 35%;
+  animation: indeterminate 1.2s ease-in-out infinite;
 }
 
 .value {
@@ -100,6 +112,7 @@
 
 .cancelBtn {
   align-self: flex-start;
+  min-height: 36px;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
@@ -120,10 +133,23 @@
   outline-offset: 2px;
 }
 
+.cancelNote {
+  margin: 0;
+  max-width: 520px;
+  font-size: var(--fs-tiny);
+  line-height: var(--lh-normal);
+  color: var(--color-text-secondary);
+}
+
 @keyframes pulse {
   0%,
   100% { opacity: 1; }
   50% { opacity: 0.45; }
+}
+
+@keyframes indeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
 }
 
 @media (max-width: 640px) {
@@ -138,7 +164,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mark svg {
+  .mark svg,
+  .fillIndeterminate {
     animation: none;
   }
 }

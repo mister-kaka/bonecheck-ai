@@ -1,5 +1,5 @@
-import { Icon, type IconName } from "../Icon";
-import styles from "../../styles/ProcessStatus.module.css";
+import { Icon, type IconName } from "../../ui/Icon";
+import styles from "./ProcessStatus.module.css";
 
 export type ProcessStage = "idle" | "uploading" | "processing";
 
@@ -15,12 +15,12 @@ interface ProcessStatusProps {
   steps?: ProcessStep[];
 }
 
-const LABELS = ["Загрузка файла", "Подготовка данных", "Анализ", "Результат"];
+const LABELS = ["Загрузка файла", "Анализ", "Результат"];
 
 const STAGE_STATES: Record<ProcessStage, StepState[]> = {
-  idle: ["waiting", "waiting", "waiting", "unavailable"],
-  uploading: ["active", "waiting", "waiting", "waiting"],
-  processing: ["done", "done", "active", "waiting"],
+  idle: ["waiting", "waiting", "unavailable"],
+  uploading: ["active", "waiting", "waiting"],
+  processing: ["done", "active", "waiting"],
 };
 
 const STATUS_TEXT: Record<StepState, string> = {
@@ -30,6 +30,14 @@ const STATUS_TEXT: Record<StepState, string> = {
   waiting: "Ожидание",
   unavailable: "Недоступен",
 };
+
+// Результат открывается на этом же экране, без отдельного шага.
+function stepStatus(step: ProcessStep): string {
+  if (step.label === "Результат" && (step.state === "waiting" || step.state === "next")) {
+    return "На этом экране";
+  }
+  return STATUS_TEXT[step.state];
+}
 
 const STEP_ICON: Record<StepState, IconName | null> = {
   done: "check",
@@ -63,7 +71,7 @@ export function ProcessStatus({ stage = "idle", steps }: ProcessStatusProps) {
               </span>
               <div className={styles.text}>
                 <p className={styles.label}>{step.label}</p>
-                <p className={styles.status}>{STATUS_TEXT[step.state]}</p>
+                <p className={styles.status}>{stepStatus(step)}</p>
               </div>
             </li>
           );

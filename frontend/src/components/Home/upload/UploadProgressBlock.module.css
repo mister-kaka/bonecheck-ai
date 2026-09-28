@@ -60,6 +60,12 @@
   color: var(--color-text-secondary);
 }
 
+.next {
+  margin-top: 2px;
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+}
+
 .meter {
   display: flex;
   align-items: center;
@@ -76,6 +82,7 @@
 
 .fill {
   display: block;
+  width: var(--progress, 0%);
   height: 100%;
   background: var(--color-processing);
   border-radius: inherit;
@@ -91,6 +98,7 @@
 
 .cancelBtn {
   align-self: flex-start;
+  min-height: 36px;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
@@ -109,6 +117,14 @@
 .cancelBtn:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+.cancelNote {
+  margin: 0;
+  max-width: 520px;
+  font-size: var(--fs-tiny);
+  line-height: var(--lh-normal);
+  color: var(--color-text-secondary);
 }
 
 .actions {

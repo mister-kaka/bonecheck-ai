@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import dicomParser from "dicom-parser";
-import { ViewerTabs } from "./ViewerTabs";
+import { ViewerTabs, type Layers } from "./ViewerTabs";
 import { ViewerControls } from "./ViewerControls";
-import type { Layers } from "./LayerSwitcher";
-import styles from "../../styles/DicomViewer.module.css";
+import styles from "./DicomViewer.module.css";
 
 type DecodedFrame =
   | { ok: true; rgba: Uint8ClampedArray; width: number; height: number; modality: string }
@@ -22,27 +21,27 @@ function decodeFrame(dataSet: dicomParser.DataSet, byteArray: Uint8Array): Decod
   const pixelElement = dataSet.elements.x7fe00010;
 
   if (!rows || !columns || !pixelElement) {
-    return { ok: false, message: "Не удалось прочитать пиксельные данные DICOM" };
+    return { ok: false, message: "Не удалось прочитать снимок. Файл может быть повреждён." };
   }
 
   if (pixelElement.length === 0xffffffff) {
-    return { ok: false, message: "Сжатый DICOM в просмотре не поддерживается" };
+    return { ok: false, message: "Сжатый DICOM в просмотре не поддерживается." };
   }
 
   const samplesPerPixel = dataSet.uint16("x00280002") ?? 1;
   if (samplesPerPixel !== 1) {
-    return { ok: false, message: "Поддерживаются только одноканальные DICOM-изображения" };
+    return { ok: false, message: "В просмотре поддерживаются только одноканальные снимки." };
   }
 
   const bitsAllocated = dataSet.uint16("x00280100") ?? 8;
   if (bitsAllocated !== 8 && bitsAllocated !== 16) {
-    return { ok: false, message: "Неподдерживаемая глубина пикселей DICOM" };
+    return { ok: false, message: "Эта глубина изображения в просмотре не поддерживается." };
   }
 
   const pixelCount = rows * columns;
   const bytesNeeded = pixelCount * (bitsAllocated / 8);
   if (pixelElement.length < bytesNeeded) {
-    return { ok: false, message: "Не удалось прочитать пиксельные данные DICOM" };
+    return { ok: false, message: "Не удалось прочитать снимок. Файл может быть повреждён." };
   }
 
   const signed = (dataSet.uint16("x00280103") ?? 0) === 1;
@@ -134,6 +133,7 @@ export function DicomViewer({
   emptyLabel = "Нет изображения",
 }: DicomViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -160,7 +160,7 @@ export function DicomViewer({
       if (cancelled) return;
       const buffer = reader.result;
       if (!(buffer instanceof ArrayBuffer)) {
-        setError("Ошибка чтения DICOM");
+        setError("Не удалось открыть снимок.");
         return;
       }
 
@@ -190,12 +190,12 @@ export function DicomViewer({
         setModality(frame.modality);
         setError(null);
       } catch {
-        setError("Ошибка чтения DICOM");
+        setError("Не удалось открыть снимок.");
       }
     };
 
     reader.onerror = () => {
-      if (!cancelled) setError("Ошибка чтения DICOM");
+      if (!cancelled) setError("Не удалось открыть снимок.");
     };
 
     reader.readAsArrayBuffer(file);
@@ -227,6 +227,14 @@ export function DicomViewer({
     if (e.deltaY < 0) zoomIn();
     else zoomOut();
   };
+
+  useLayoutEffect(() => {
+    const image = imageRef.current;
+    if (!image) return;
+    image.style.setProperty("--pan-x", `${pan.x}px`);
+    image.style.setProperty("--pan-y", `${pan.y}px`);
+    image.style.setProperty("--zoom", String(zoom));
+  }, [pan.x, pan.y, zoom]);
 
   const availableLayers: Array<keyof Layers> = ["original"];
   if (contourPoints && contourPoints.length > 0) availableLayers.push("contour");
@@ -260,24 +268,20 @@ export function DicomViewer({
           />
 
           <div
-            className={styles.stage}
+            className={isPanning ? `${styles.stage} ${styles.stagePanning}` : styles.stage}
             onMouseDown={onMouseDown}
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
             onWheel={onWheel}
-            style={{ cursor: isPanning ? "grabbing" : "grab" }}
           >
             <div
+              ref={imageRef}
               className={`${styles.imageWrapper} ${imageSize ? styles.framed : ""}`}
-              style={{
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-              }}
             >
               <canvas
                 ref={canvasRef}
-                className={styles.canvas}
-                style={{ opacity: layers.original ? 1 : 0 }}
+                className={layers.original ? styles.canvas : `${styles.canvas} ${styles.canvasHidden}`}
               />
 
               {layers.heatmap && heatmapUrl && (

@@ -1,5 +1,5 @@
-import { Icon } from "../Icon";
-import styles from "../../styles/ImageCarousel.module.css";
+import { Icon } from "../../ui/Icon";
+import styles from "./ImageCarousel.module.css";
 
 interface ImageCarouselProps {
   total: number;

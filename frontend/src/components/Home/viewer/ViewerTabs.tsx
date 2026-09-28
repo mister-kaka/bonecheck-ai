@@ -1,5 +1,11 @@
-import type { Layers } from "./LayerSwitcher";
-import styles from "../../styles/ViewerTabs.module.css";
+import styles from "./ViewerTabs.module.css";
+
+export interface Layers {
+  original: boolean;
+  heatmap: boolean;
+  contour: boolean;
+  keypoints: boolean;
+}
 
 interface ViewerTabsProps {
   layers: Layers;

@@ -1,5 +1,5 @@
-import { Icon } from "../Icon";
-import styles from "../../styles/HowItWorks.module.css";
+import { Icon } from "../../ui/Icon";
+import styles from "./HowItWorks.module.css";
 
 export interface HowItWorksStep {
   title: string;
@@ -11,9 +11,9 @@ interface HowItWorksProps {
 }
 
 const defaultSteps: HowItWorksStep[] = [
-  { title: "Загрузите исследование", caption: "Один файл DICOM (.dcm или .dicom)" },
+  { title: "Загрузите исследование", caption: "Один DICOM или ZIP. Каждый снимок проверяется отдельно" },
   { title: "Дождитесь анализа", caption: "Сервис проверит качество укладки" },
-  { title: "Получите результат", caption: "Класс качества, нарушения и просмотр снимка" },
+  { title: "Получите результат", caption: "Корректна укладка или какое нарушение найдено, и снимок" },
 ];
 
 export function HowItWorks({ steps = defaultSteps }: HowItWorksProps) {

@@ -1,5 +1,5 @@
-import { Icon } from "../Icon";
-import styles from "../../styles/ViewerControls.module.css";
+import { Icon } from "../../ui/Icon";
+import styles from "./ViewerControls.module.css";
 
 interface ViewerControlsProps {
   onZoomIn: () => void;

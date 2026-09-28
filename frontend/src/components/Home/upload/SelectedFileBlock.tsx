@@ -1,6 +1,6 @@
-import { Button } from "../Button";
-import { Icon } from "../Icon";
-import styles from "../../styles/UploadProgressBlock.module.css";
+import { Button } from "../../ui/Button";
+import { Icon } from "../../ui/Icon";
+import styles from "./UploadProgressBlock.module.css";
 
 interface SelectedFileBlockProps {
   fileName: string;

@@ -1,5 +1,5 @@
-import { Icon, type IconName } from "../Icon";
-import styles from "../../styles/CheckDetail.module.css";
+import { Icon, type IconName } from "../../ui/Icon";
+import styles from "./CheckDetail.module.css";
 
 export type CheckTone = "success" | "warning" | "danger";
 

@@ -1,5 +1,5 @@
-import { Icon } from "../Icon";
-import styles from "../../styles/UploadProgressBlock.module.css";
+import { Icon } from "../../ui/Icon";
+import styles from "./UploadProgressBlock.module.css";
 
 interface UploadProgressBlockProps {
   fileName: string;
@@ -31,6 +31,7 @@ export function UploadProgressBlock({
           <p className={styles.meta}>
             {fileSize} · {fileFormat}
           </p>
+          <p className={styles.next}>После загрузки начнётся проверка укладки.</p>
         </div>
       </div>
 
@@ -43,14 +44,20 @@ export function UploadProgressBlock({
           aria-valuemax={100}
           aria-label="Приём файла"
         >
-          <span className={styles.fill} style={{ width: `${value}%` }} />
+          <span
+            className={styles.fill}
+            ref={(node) => node?.style.setProperty("--progress", `${value}%`)}
+          />
         </div>
         <span className={styles.value}>{value}%</span>
       </div>
 
       <button type="button" className={styles.cancelBtn} onClick={onCancel}>
-        Отмена
+        Прервать ожидание
       </button>
+      <p className={styles.cancelNote}>
+        Останавливается только этот экран. Если файл уже принят, исследование останется в истории.
+      </p>
     </div>
   );
 }

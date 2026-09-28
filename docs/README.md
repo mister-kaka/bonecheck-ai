@@ -6,10 +6,6 @@
 
 Публичный прототип: https://bonecheck-ai.onrender.com/
 
-API: https://bonecheck-backend.onrender.com
-
-Описание API: https://bonecheck-backend.onrender.com/api/docs
-
 Репозиторий: https://github.com/mister-kaka/bonecheck-ai
 
 Презентация: https://drive.google.com/drive/folders/1zlEBlKHtzzT_uzwYWin5M9-7FRvxSmvV?usp=sharing

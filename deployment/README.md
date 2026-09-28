@@ -1,32 +1,4 @@
-# Docker и публичный стенд
-
-Публичный прототип уже открыт по адресу https://bonecheck-ai.onrender.com/
-
-Его API: https://bonecheck-backend.onrender.com
-
-Описание API: https://bonecheck-backend.onrender.com/api/docs
-
-Адреса `localhost` в этом документе - локальный Docker на вашей машине, не публичный стенд.
-
-## Публичный интерфейс на Render
-
-Интерфейс - статический сайт Vite. Маршруты `/`, `/history` и `/history/:id` разбирает React Router в браузере. На хосте для любого пути без файла должен отдаваться `index.html`, иначе прямой заход и обновление «Истории» возвращают 404.
-
-Правило Render Static Site, действие Rewrite:
-
-| Поле | Значение |
-| --- | --- |
-| Source | `/*` |
-| Destination | `/index.html` |
-| Action | Rewrite |
-
-Файлы сборки при этом не подменяются: если путь существует (`/assets/*`, `/favicon.svg`), Render отдаёт файл.
-
-Правило задаётся в Dashboard уже работающего сервиса: Settings → Redirects/Rewrites.
-
-Локальные `npm run dev` и `npm run preview` такой rewrite не требуют: сервер Vite сам отдаёт `index.html`.
-
-## Docker
+# Docker
 
 Запуск BoneCheck AI одной командой из корня репозитория.
 

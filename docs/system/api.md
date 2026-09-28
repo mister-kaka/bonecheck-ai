@@ -4,13 +4,9 @@
 
 Оглавление: [README.md](../README.md).
 
-Публичный API: `https://bonecheck-backend.onrender.com`
+Базовый адрес при локальном запуске: `http://localhost:3000`.
 
-Описание методов публичного стенда: https://bonecheck-backend.onrender.com/api/docs
-
-Базовый адрес при локальном запуске на вашей машине: `http://localhost:3000`.
-
-Локальное описание: http://localhost:3000/api/docs
+Живое описание: http://localhost:3000/api/docs
 
 Префикс `/api` есть у методов исследований. Проверка работоспособности остаётся на `/health`.
 
@@ -74,8 +70,6 @@
 | --- | --- | --- |
 | `file` | да | DICOM: `.dcm`, `.dicom` или тип `application/dicom` / `application/x-dicom` |
 | `session_id` | нет | строка до 128 символов после обрезки пробелов |
-
-Пример для локального API на вашей машине:
 
 ```bash
 curl -X POST http://localhost:3000/api/studies -F "file=@spine.dcm" -F "session_id=6f1c2a40-9b3e-4d7a-8c11-2e5b7a9d0c44"
@@ -284,8 +278,6 @@ curl -X POST http://localhost:3000/api/studies -F "file=@spine.dcm" -F "session_
 ## GET /api/studies/:id/file
 
 DICOM этого исследования. Путь на диске в ответ не входит.
-
-Отдельной авторизации нет. Кто знает идентификатор, может запросить файл. На публичном стенде это тот же API, что принимает загрузки. После загрузки файл остаётся доступен по этому методу, пока его не удалят с сервера.
 
 Ответ 200: тело файла, `Content-Type: application/dicom`.
 

@@ -32,7 +32,7 @@ describe('XLSX и ZIP (сквозные тесты)', () => {
   let previousDatabasePath: string | undefined;
 
   beforeAll(async () => {
-    uploadDir = mkdtempSync(path.join(os.tmpdir(), 'ruen-package-'));
+    uploadDir = mkdtempSync(path.join(os.tmpdir(), 'bonecheck-package-'));
     previousDatabasePath = process.env.DATABASE_PATH;
     process.env.UPLOAD_DIR = uploadDir;
     process.env.DATABASE_PATH = path.join(uploadDir, 'bonecheck.sqlite');
@@ -243,7 +243,7 @@ describe('XLSX и ZIP (сквозные тесты)', () => {
   it('swagger описывает выгрузку и пакет', () => {
     const document = SwaggerModule.createDocument(
       app,
-      new DocumentBuilder().setTitle('RUEN API').setVersion('0.4.0').build(),
+      new DocumentBuilder().setTitle('BoneCheck AI').setVersion('0.4.0').build(),
     );
     expect(document.paths['/api/studies/export']).toBeDefined();
     expect(document.paths['/api/studies/packages']).toBeDefined();

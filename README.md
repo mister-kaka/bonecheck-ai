@@ -1,158 +1,81 @@
-# BoneCheck AI (RUEN)
-# AI-сервис оценки качества DICOM-исследований плотности костей
+# BoneCheck AI
+
+Сервис оценки качества укладки DXA-исследований.
+
+ЛЦТ 2026, направление «Город». Постановщик — Департамент здравоохранения Москвы, Центр диагностики и телемедицины.
 
 Репозиторий: https://github.com/mister-kaka/bonecheck-ai
 
-В репозитории есть API, UI, mock ML и Docker. Реальная модель не подключена: анализ на backend выполняет MockMlClient.
+BoneCheck AI проверяет, пригоден ли снимок плотности кости по качеству укладки и полноте визуализации области. Система не ставит диагноз и не измеряет минеральную плотность кости.
 
-Хакатон ЛЦТ 2026, направление «Город», постановщик - Департамент здравоохранения Москвы / Центр диагностики и телемедицины.
+## Для кого
 
-Документация описывает **состояние репозитория на текущий момент**, а не финальную сдачу.
+Для врача-рентгенолога и сотрудника диагностического отделения, которому нужно увидеть результат проверки укладки до использования исследования.
 
----
+## Что анализируется
 
-## О проекте
+DXA-снимки двух областей:
 
-**BoneCheck AI** (в коде и Swagger также **RUEN**) оценивает **качество укладки** исследования плотности костей. Сервис **не** ставит клинический диагноз.
+- поясничный отдел позвоночника;
+- проксимальный отдел бедра.
 
-| | |
+Входной файл — DICOM.
+
+## Основной сценарий
+
+1. Открыть раздел «Анализ».
+2. Загрузить один DICOM или один ZIP.
+3. Дождаться проверки.
+4. Посмотреть результат: укладка корректна или найдено нарушение.
+5. Открыть снимок, перейти в историю или выгрузить XLSX.
+
+Каждый снимок в архиве проверяется отдельно. Подробнее: [docs/scenario.md](docs/scenario.md).
+
+## Входные данные
+
+| Формат | Ограничение |
 | --- | --- |
-| Вход | один DICOM-файл (`.dcm` / `.dicom`) |
-| Что делает система | принимает файл, сохраняет его, запускает анализ, отдаёт статус и результат |
-| Результат | `quality_class`, `violation_type`, обязательный `anatomical_region`; опционально `quality_prob` |
+| `.dcm`, `.dicom` | один файл, до 50 МБ |
+| `.zip` | один архив, до 50 МБ; внутри только DICOM |
 
-Сейчас анализ выполняет **mock ML** внутри backend. Реальная модель ещё не подключена.
+## Что получает пользователь
 
----
+- класс качества: корректная укладка или нарушение;
+- анатомическая область;
+- список найденных нарушений;
+- вероятность нарушения, если она есть в результате;
+- просмотр снимка;
+- файл XLSX.
 
-## Текущий статус
+## Возможности
 
-Дата фиксации: 2026-09-27.
+- загрузка DICOM и ZIP;
+- проверка файла до начала анализа;
+- статус обработки;
+- результат по закрытому списку нарушений;
+- просмотр снимка;
+- история «Мои» и «Все» с поиском, фильтрами и страницами;
+- карточка исследования;
+- экспорт XLSX;
+- сообщения об ошибках файла и анализа.
 
-| Слой | Статус | Что есть в репозитории |
-| --- | --- | --- |
-| Backend | CONFIRMED, работает | NestJS REST: health, загрузка DICOM, список, статус, результат, Swagger, mock ML, файлы на диске, SQLite |
-| Frontend | CONFIRMED, UI на моках | React + Vite, маршруты `/` и `/history`. Главная принимает один DICOM и показывает результат локальным моком. История - таблица на мок-данных. При старте создаётся `session_id` в `localStorage`. Страницы API не вызывают |
-| ML | CONFIRMED, каркас | Python-процесс-заглушка, пустые пакеты, Docker-контейнер без HTTP и без модели |
-| Docker | CONFIRMED | `docker-compose.yml`: frontend, backend, ml-service (dev-сборка) |
-| Метаданные | SQLite | файл `DATABASE_PATH`, не PostgreSQL |
-| Auth | не входит в MVP | нет пользователей, JWT и ролей |
-| Документация | CONFIRMED | этот README и файлы в `docs/` |
-
----
-
-## Архитектура
-
-Целевая схема (три сервиса). Стрелка Backend -> ML пока **не реализована** в коде.
-
-```text
-Frontend (React, Vite)
-   |
-   v  REST
-Backend (NestJS)
-   |
-   v  PLANNED: HTTP к ML-сервису
-ML (Python)
-```
-
-Фактический поток сегодня:
-
-```text
-Пользователь / curl / Swagger
-   |
-   v
-Backend
-   |-- сохраняет DICOM на диск (UPLOAD_DIR)
-   |-- метаданные в SQLite (DATABASE_PATH)
-   |-- MockMlClient (задержка, фиксированный ответ)
-   v
-Результат JSON
-```
-
-Метаданные - локальный файл SQLite, не PostgreSQL и не отдельный контейнер. Подробности: [docs/architecture.md](docs/architecture.md), [docs/database.md](docs/database.md).
-
----
-
-## Стек
-
-| Слой | Технологии (как в репозитории) |
-| --- | --- |
-| Frontend | React 19, TypeScript, Vite 7 |
-| Backend | NestJS 11, TypeScript, REST, Swagger, Multer |
-| ML | Python 3.12 в Docker; локально достаточно stdlib для заглушки |
-| Runtime | Docker Compose (dev-команды внутри контейнеров) |
-
----
-
-## Структура проекта
-
-Корень репозитория: `bonecheck-ai/` (не `ruen-ai-densitometry`).
-
-```text
-bonecheck-ai/
-├── backend/                 # NestJS API
-│   ├── src/
-│   │   ├── main.ts
-│   │   ├── configure-app.ts
-│   │   ├── app.module.ts
-│   │   ├── common/filters/
-│   │   └── modules/
-│   │       ├── health/
-│   │       ├── ml/          # интерфейс MlClient + MockMlClient
-│   │       └── studies/     # загрузка, статус, результат
-│   ├── test/                # e2e: health, studies
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── api/                  # session_id, fetch-клиент, mapStudyResult
-│   │   ├── pages/Home/           # загрузка одного DICOM, локальный мок анализа
-│   │   ├── pages/HistoryPage/    # фильтры и таблица на мок-данных
-│   │   ├── components/           # хедер и блоки экранов
-│   │   ├── mocks/                # история до подключения API
-│   │   ├── styles/               # tokens.css, global.css
-│   │   ├── App.tsx               # хедер и маршруты
-│   │   └── main.tsx
-│   └── Dockerfile
-├── ml/
-│   ├── src/
-│   │   ├── app.py           # бесконечный sleep, без HTTP
-│   │   ├── preprocessing/
-│   │   ├── training/
-│   │   ├── inference/
-│   │   └── utils/
-│   ├── models/              # пусто, веса не коммитятся
-│   ├── notebooks/
-│   ├── requirements.txt     # зависимости для будущего обучения
-│   └── Dockerfile
-├── docs/
-├── deployment/README.md
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
-```
-
-Датасет DICOM и веса моделей в git **не входят**.
-
----
+Описание продукта: [docs/product.md](docs/product.md).
 
 ## Запуск
 
-Требования: Node.js 20+, npm. Python нужен только если запускаете ML-заглушку локально.
+Нужны Node.js 20 и npm. Для запуска одной командой — Docker.
 
-1. Скопируйте переменные окружения из корня репозитория:
-
-```bash
-cp .env.example .env
-```
-
-Windows (PowerShell):
+Локально, из корня репозитория:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-### Backend
+```bash
+cp .env.example .env
+```
+
+API:
 
 ```bash
 cd backend
@@ -160,14 +83,7 @@ npm install
 npm run start:dev
 ```
 
-- API: http://localhost:3000
-- Health: http://localhost:3000/health
-- Swagger: http://localhost:3000/api/docs
-- Контракт: [docs/api.md](docs/api.md)
-
-Метаданные исследований пишутся в SQLite. Путь: `DATABASE_PATH` или `backend/data/bonecheck.sqlite`, если переменная не задана и процесс запущен из `backend/`. Перезапуск backend записи не стирает. Файлы DICOM пишутся в `UPLOAD_DIR` (по умолчанию `./uploads` относительно cwd backend).
-
-### Frontend
+Интерфейс, во втором терминале:
 
 ```bash
 cd frontend
@@ -175,79 +91,37 @@ npm install
 npm run dev
 ```
 
-- UI: http://localhost:5173
-- Маршруты: `/` (главная) и `/history` (история). Главная принимает один DICOM и показывает локальный мок анализа. История - таблица на мок-данных. Запросы к API со страниц не уходят.
+- интерфейс: http://localhost:5173
+- API: http://localhost:3000/health
+- описание API: http://localhost:3000/api/docs
 
-### ML
-
-```bash
-cd ml
-python src/app.py
-```
-
-Процесс печатает сообщение и спит. HTTP-сервера нет, порт 8000 контейнер **не слушает** приложением. `pip install -r requirements.txt` для заглушки не обязателен (в образе зависимости не ставятся).
-
-### Docker Compose
-
-Из корня репозитория:
+Docker, из корня репозитория:
 
 ```bash
 docker compose up --build
 ```
 
-- frontend: http://localhost:5173
-- backend: http://localhost:3000
-- ml-service: контейнер-заглушка, порт хоста 8000 проброшен, но процесс внутри HTTP не поднимает
-
-Compose **не** соединяет backend с ml-service. Отдельного сервиса БД нет: SQLite - файл в volume `./backend/data`.
-
-```bash
-docker compose down
-```
-
-Заметки по развёртыванию: [deployment/README.md](deployment/README.md).
-
----
-
-## API
-
-Живой OpenAPI: http://localhost:3000/api/docs (при запущенном backend).
-
-Реализованные endpoint'ы:
-
-| Метод | Путь | Назначение |
-| --- | --- | --- |
-| GET | `/health` | liveness |
-| POST | `/api/studies` | загрузить один DICOM, создать запись, запустить анализ |
-| GET | `/api/studies` | история; `?session_id=` оставляет исследования этой сессии |
-| GET | `/api/studies/:id` | статус |
-| GET | `/api/studies/:id/result` | результат в формате полей ТЗ |
-
-Полное описание: [docs/api.md](docs/api.md).
-
----
+Полная инструкция: [docs/running.md](docs/running.md). Контейнеры: [deployment/README.md](deployment/README.md).
 
 ## Документация
 
-| Файл | Содержание |
+| Документ | О чём |
 | --- | --- |
-| [docs/task-analysis.md](docs/task-analysis.md) | понимание ТЗ |
-| [docs/architecture.md](docs/architecture.md) | архитектура на текущем этапе |
-| [docs/decisions.md](docs/decisions.md) | технические решения |
-| [docs/api.md](docs/api.md) | контракт API для frontend |
-| [docs/database.md](docs/database.md) | хранение данных |
-| [docs/ml.md](docs/ml.md) | ML-слой |
-| [docs/frontend.md](docs/frontend.md) | frontend |
-| [deployment/README.md](deployment/README.md) | Docker / деплой |
-
----
-
-## Что не реализовано
-
-- реальный inference и HTTP ML-сервиса;
-- авторизация (в MVP не входит);
-- экран переключателя «Мои / Все» (API списка и `session_id` уже есть);
-- UI загрузки и отображения результата;
-- пакетная загрузка нескольких файлов;
-- веса модели и датасет в репозитории;
-- production-сборка (nginx, `node dist/main`).
+| [docs/product.md](docs/product.md) | назначение, аудитория, возможности |
+| [docs/scenario.md](docs/scenario.md) | путь пользователя |
+| [docs/results.md](docs/results.md) | классы качества и нарушения |
+| [docs/files.md](docs/files.md) | DICOM и ZIP |
+| [docs/interface.md](docs/interface.md) | экраны |
+| [docs/architecture.md](docs/architecture.md) | устройство системы |
+| [docs/api.md](docs/api.md) | HTTP API |
+| [docs/data.md](docs/data.md) | что хранится |
+| [docs/running.md](docs/running.md) | установка и запуск |
+| [deployment/README.md](deployment/README.md) | Docker |
+| [docs/testing.md](docs/testing.md) | проверки |
+| [docs/errors.md](docs/errors.md) | ошибки |
+| [docs/limitations.md](docs/limitations.md) | границы продукта |
+| [docs/requirements.md](docs/requirements.md) | соответствие задаче |
+| [docs/faq.md](docs/faq.md) | короткие ответы |
+| [docs/submission.md](docs/submission.md) | комплект сдачи |
+| [docs/team.md](docs/team.md) | команда |
+| [docs/ml/README.md](docs/ml/README.md) | ML-компонент |

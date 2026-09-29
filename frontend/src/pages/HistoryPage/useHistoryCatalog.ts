@@ -93,7 +93,6 @@ export function useHistoryCatalog(scope: HistoryScope) {
               throw error;
             }
           });
-        );
         if (!active) return;
 
         const missingIds = new Set(

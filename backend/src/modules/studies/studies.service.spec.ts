@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 import { PayloadTooLargeException } from '@nestjs/common';
+import path from 'path';
 import { strFromU8, unzipSync } from 'fflate';
 import { MAX_FILE_SIZE_BYTES } from './storage/file-validation';
 import { StudyRecord, StudyRepository, StudyStatus } from './types/study.types';
@@ -78,6 +79,7 @@ function createService(analyze?: (input: unknown) => Promise<unknown>) {
   };
   const fileStorage = {
     save: jest.fn(async () => '/tmp/uploads/spine.dcm'),
+    read: jest.fn(async (): Promise<Buffer | null> => null),
   };
 
   const service = new StudiesService(
@@ -252,6 +254,40 @@ describe('StudiesService', () => {
     await expect(service.getResult(id)).rejects.toMatchObject({
       response: { code: 'STUDY_NOT_FOUND' },
     });
+    await expect(service.getHeatmap(id)).rejects.toMatchObject({
+      response: { code: 'STUDY_NOT_FOUND' },
+    });
+  });
+
+  it('keeps a completed result when the heatmap file is missing', async () => {
+    const { service, fileStorage } = createService();
+    const created = await service.create(file);
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    await expect(service.getHeatmap(created.id)).rejects.toMatchObject({
+      response: { code: 'HEATMAP_NOT_FOUND' },
+    });
+    expect(fileStorage.read).toHaveBeenCalledWith(
+      path.join(path.dirname('/tmp/uploads/spine.dcm'), 'heatmap.png'),
+    );
+
+    const result = await service.getResult(created.id);
+    expect(result.quality_class).toBe(0);
+    expect(result.violation_type).toBe('');
+  });
+
+  it('returns heatmap bytes without changing the stored result', async () => {
+    const { service, fileStorage } = createService();
+    fileStorage.read.mockResolvedValue(Buffer.from('png-bytes'));
+    const created = await service.create(file);
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    await expect(service.getHeatmap(created.id)).resolves.toEqual({
+      body: Buffer.from('png-bytes'),
+    });
+    const result = await service.getResult(created.id);
+    expect(result.quality_class).toBe(0);
+    expect(result.anatomical_region).toBe('Поясничный отдел позвоночника');
   });
 
   it('marks study as error when ML returns missing quality_class', async () => {

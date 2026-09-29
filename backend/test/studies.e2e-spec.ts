@@ -1,7 +1,13 @@
 /// <reference types="jest" />
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { mkdtempSync, rmSync } from 'fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+
+function readBinary(res: any, callback: (err: Error | null, body: Buffer) => void): void {
+  const chunks: Buffer[] = [];
+  res.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
+  res.on('end', () => callback(null, Buffer.concat(chunks)));
+}
 import os from 'os';
 import path from 'path';
 import request from 'supertest';
@@ -18,6 +24,7 @@ describe('Исследования (сквозные тесты)', () => {
     previousDatabasePath = process.env.DATABASE_PATH;
     process.env.UPLOAD_DIR = uploadDir;
     process.env.DATABASE_PATH = path.join(uploadDir, 'bonecheck.sqlite');
+    process.env.ML_CLIENT = 'mock';
     process.env.ML_MOCK_DELAY_MS = '0';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -231,5 +238,46 @@ describe('Исследования (сквозные тесты)', () => {
     expect(status.body.status).toBe('completed');
     expect(status.body.sessionId).toBe('A');
     expect(status.body.hasResult).toBe(true);
+  });
+
+  it('не отдаёт тепловую карту, пока png нет, и не стирает результат', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/studies')
+      .attach('file', Buffer.from('dicom-bytes'), 'spine.dcm')
+      .expect(201);
+
+    await waitForCompleted(created.body.id);
+
+    await request(app.getHttpServer())
+      .head(`/api/studies/${created.body.id}/heatmap`)
+      .expect(404);
+
+    const missing = await request(app.getHttpServer())
+      .get(`/api/studies/${created.body.id}/heatmap`)
+      .expect(404);
+    expect(missing.body.code).toBe('HEATMAP_NOT_FOUND');
+
+    const result = await request(app.getHttpServer())
+      .get(`/api/studies/${created.body.id}/result`)
+      .expect(200);
+    expect(result.body.quality_class).toBe(0);
+
+    const dicom = await request(app.getHttpServer())
+      .get(`/api/studies/${created.body.id}/file`)
+      .expect(200);
+    expect(dicom.headers['content-type']).toContain('application/dicom');
+
+    writeFileSync(path.join(uploadDir, created.body.id, 'heatmap.png'), Buffer.from('png'));
+    await request(app.getHttpServer())
+      .head(`/api/studies/${created.body.id}/heatmap`)
+      .expect(200);
+    const heatmap = await request(app.getHttpServer())
+      .get(`/api/studies/${created.body.id}/heatmap`)
+      .buffer(true)
+      .parse(readBinary)
+      .expect(200);
+    expect(heatmap.headers['content-type']).toContain('image/png');
+    expect(Buffer.isBuffer(heatmap.body)).toBe(true);
+    expect(heatmap.body.equals(Buffer.from('png'))).toBe(true);
   });
 });

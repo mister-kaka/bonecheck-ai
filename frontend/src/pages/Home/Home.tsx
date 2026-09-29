@@ -14,6 +14,7 @@ import { PackageOutcome } from "../../components/Home/status/PackageOutcome";
 import { PageIntro } from "../../components/layout/PageIntro";
 import { Icon } from "../../components/ui/Icon";
 import { mapStudyResult } from "../../api/mapStudyResult";
+import { useHeatmapUrls } from "../../api/useHeatmapUrls";
 import { useXlsxDownload } from "../../api/useXlsxDownload";
 import { useStudyFlow } from "./useStudyFlow";
 
@@ -73,6 +74,7 @@ function Home() {
     view.kind === "uploading" || view.kind === "processing" || view.kind === "still-running";
   const processStage = view.kind === "uploading" ? "uploading" : "processing";
   const resultView = view.kind === "result" ? mapStudyResult(view.result) : null;
+  const heatmapUrls = useHeatmapUrls(view.kind === "result" ? view.studyId : undefined);
 
   return (
     <div className={styles.page} data-home-state={view.kind}>
@@ -235,6 +237,7 @@ function Home() {
               criteria={resultView.criteria}
               fileName={view.fileName}
               description={resultView.summary}
+              heatmapUrls={heatmapUrls}
               emptyLabel={
                 view.notice || "Снимок недоступен для просмотра."
               }

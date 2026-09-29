@@ -14,7 +14,7 @@ docker compose up --build
 | --- | --- | --- | --- | --- |
 | `frontend` | `frontend/Dockerfile` | веб-интерфейс | `FRONTEND_PORT`, по умолчанию 5173 | 5173 |
 | `backend` | `backend/Dockerfile` | API | `BACKEND_PORT`, по умолчанию 3000 | 3000 |
-| `ml-service` | `ml/Dockerfile` | заглушка, HTTP не слушает | `ML_SERVICE_PORT`, по умолчанию 8000 | 8000 |
+| `ml-service` | `ml/Dockerfile` | `site_prediction`, модели один раз при старте | `ML_SERVICE_PORT`, по умолчанию 8000 | 8000 |
 
 Интерфейс стартует после API. Образы интерфейса и API основаны на Node.js 20. Образ `ml-service` основан на Python 3.12.
 
@@ -37,7 +37,7 @@ docker compose down
 
 Это порты хоста при значениях по умолчанию. Внутри контейнеров процессы слушают 5173 и 3000. Браузер ходит в API по `VITE_API_BASE_URL` (`http://localhost:3000`), то есть на порт хоста, а не на имя сервиса в сети Compose.
 
-Порт 8000 опубликован для `ml-service`, но открывать его не нужно: процесс внутри не принимает HTTP, API к нему не обращается.
+Порт 8000 опубликован для `ml-service`. Его открывает API внутри сети Compose (`http://ml-service:8000`), не браузер. `GET /health` отвечает после загрузки моделей. Каталог `backend/uploads` смонтирован в API и в ML по пути `/app/uploads`.
 
 ## Переменные
 
@@ -51,8 +51,11 @@ API внутри контейнера получает:
 | --- | --- |
 | `BACKEND_PORT` | `3000` |
 | `BACKEND_HOST` | `0.0.0.0` |
-| `DATABASE_PATH` | `/app/data/bonecheck.sqlite` |
+| `DATABASE_PATH` | `/app/data/bonecheck-docker.sqlite` |
 | `UPLOAD_DIR` | `/app/uploads` |
+| `ML_SERVICE_URL` | `http://ml-service:8000` |
+| `ML_TIMEOUT_MS` | `180000` |
+| `SQLITE_JOURNAL_MODE` | `DELETE`. На bind-mount Docker Desktop режим WAL не создаёт `-shm` и API не стартует |
 
 Путь базы из `.env` в контейнер не подставляется. Так локальный путь Windows не попадает внутрь Linux-контейнера.
 
@@ -61,7 +64,7 @@ API внутри контейнера получает:
 | На машине | В контейнере | Что хранится |
 | --- | --- | --- |
 | `backend/data` | `/app/data` | файл метаданных исследований |
-| `backend/uploads` | `/app/uploads` | загруженные DICOM |
+| `backend/uploads` | `/app/uploads` в API и в ML | загруженные DICOM и `heatmap.png` |
 
 Оба каталога переживают `docker compose down` и следующий `up`.
 

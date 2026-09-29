@@ -620,8 +620,10 @@ def save_heatmap_png(file_path: str, output_path: str) -> str:
     rgb = heatmap_rgb(pydicom.dcmread(file_path).pixel_array)
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    if not cv2.imwrite(str(path), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)):
-        raise OSError(f"Не удалось записать {path}")
+    ok, encoded = cv2.imencode(".png", cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
+    if not ok:
+        raise OSError(f"Не удалось закодировать PNG для {path}")
+    path.write_bytes(encoded.tobytes())
     return str(path.resolve())
 
 

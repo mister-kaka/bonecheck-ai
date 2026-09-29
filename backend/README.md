@@ -1,6 +1,6 @@
 # Backend
 
-API BoneCheck AI. Принимает DICOM и ZIP, хранит исследования и отдаёт статус, результат и XLSX.
+API BoneCheck AI. Принимает DICOM и ZIP, хранит исследования и отдаёт статус, результат, журнал XLSX и файл submission.
 
 ## Запуск
 

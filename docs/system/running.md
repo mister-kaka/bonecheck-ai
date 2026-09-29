@@ -9,7 +9,8 @@
 Локальный запуск:
 
 - Node.js 20;
-- npm.
+- npm;
+- Python 3.12 и pip, как в образе `ml-service`.
 
 Запуск через Docker:
 
@@ -17,6 +18,12 @@
 - Docker Compose.
 
 Команды ниже выполняются из корня репозитория `bonecheck-ai`, если не сказано иное.
+
+Целевая конфигурация финального теста организатора: 2 × H200 141 GB, flavor GPU-44-256-H200-1 (44 CPU, 256 GB RAM, 141 GB VRAM). Время на этой конфигурации в репозитории не измерено.
+
+Образ `ml-service` ставит CPU-сборки PyTorch из `ml/requirements.txt`. Видеокарта, в том числе H200, этим образом не используется и в Compose не пробрасывается.
+
+Наблюдение локального Docker на CPU, не на H200, 29.09.2026: после загрузки весов контейнер `ml-service` занимал около 2,8 ГиБ. Тёплый разбор поясничного снимка занял около 2 с, проксимального бедра - около 8 с. Файлы весов на диске - около 640 МБ. Отдельный подбор минимума не проводился. Для этого образа нужен CPU, оперативная память с запасом над этими 2,8 ГиБ и место под образ Docker, веса и загруженные DICOM. API и интерфейс к объёму ML добавляются отдельно.
 
 ## Настройка
 
@@ -52,16 +59,29 @@ cp .env.example .env
 
 Три терминала. Сначала ML, затем API и интерфейс.
 
-ML, из каталога `ml/`, после установки зависимостей из `requirements.txt` и размещения весов в `ml/models/`:
+ML, из каталога `ml/`. Зависимости ставятся из `requirements.txt`, веса уже лежат в `ml/models/`:
 
 ```bash
 cd ml
 pip install -r requirements.txt
-set PYTHONPATH=src
+mkdir -p ../backend/uploads
+export PYTHONPATH=src
+export UPLOAD_DIR="$(cd ../backend/uploads && pwd)"
 python -m inference.server
 ```
 
-В PowerShell вместо `set` используется `$env:PYTHONPATH = "src"`. Процесс остаётся запущенным. `GET http://127.0.0.1:8000/health` отвечает `{"status":"ok"}` после загрузки моделей.
+В PowerShell:
+
+```powershell
+cd ml
+pip install -r requirements.txt
+New-Item -ItemType Directory -Force -Path ..\backend\uploads | Out-Null
+$env:PYTHONPATH = "src"
+$env:UPLOAD_DIR = (Resolve-Path ..\backend\uploads).Path
+python -m inference.server
+```
+
+`UPLOAD_DIR` должен совпадать с каталогом, куда API пишет DICOM. Без него процесс ML не стартует: так нельзя передать произвольный путь к файлу. Процесс остаётся запущенным. `GET http://127.0.0.1:8000/health` отвечает `{"status":"ok"}` после загрузки моделей.
 
 API:
 
@@ -81,7 +101,7 @@ npm run dev
 
 API перезапускается при изменении кода. Интерфейс открывается на http://localhost:5173.
 
-Остановка - `Ctrl+C` в каждом терминале. Если ML не запущен или в `ml/models/` нет весов, API не падает: конкретное исследование получает статус «Ошибка анализа».
+Остановка - `Ctrl+C` в каждом терминале. Если ML не запущен, API не падает: конкретное исследование получает статус «Ошибка анализа».
 
 ## Проверка
 
@@ -122,7 +142,7 @@ npm run start:prod
 docker compose up --build
 ```
 
-Поднимаются интерфейс, API и долгоживущий `ml-service`. Общий каталог загрузок — `backend/uploads`, внутри контейнеров это `/app/uploads`.
+Поднимаются интерфейс, API и долгоживущий `ml-service`. API ждёт, пока ML ответит на проверку здоровья. Общий каталог загрузок - `backend/uploads`, внутри контейнеров это `/app/uploads`. Веса - `ml/models`, внутри ML это `/app/models`.
 
 | Что открыть | Адрес |
 | --- | --- |

@@ -232,15 +232,14 @@ curl -X POST http://localhost:3000/api/studies -F "file=@spine.dcm" -F "session_
 }
 ```
 
-Пример нарушения. Поле `quality_prob` есть только если оно сохранено:
+Пример нарушения. Текущий ML-сервис поле `quality_prob` не присылает:
 
 ```json
 {
   "studyId": "3b2a1c90-7d4e-4f1a-9c2b-8e6d5f4a3b21",
   "quality_class": 1,
-  "violation_type": "Некорректная укладка;Не выравнена ось позвоночника",
-  "anatomical_region": "Поясничный отдел позвоночника",
-  "quality_prob": 0.86
+  "violation_type": "Не выравнена ось позвоночника;Некорректная укладка",
+  "anatomical_region": "Поясничный отдел позвоночника"
 }
 ```
 
@@ -250,7 +249,7 @@ curl -X POST http://localhost:3000/api/studies -F "file=@spine.dcm" -F "session_
 | `quality_class` | `0` или `1` |
 | `violation_type` | нарушения через `;`, либо `""` |
 | `anatomical_region` | одна из двух областей |
-| `quality_prob` | необязательно, число от 0 до 1 |
+| `quality_prob` | необязательно. Если сохранено - число от 0 до 1. Текущий ML его не передаёт |
 
 Словарь значений: [results.md](../product/results.md).
 
@@ -329,6 +328,55 @@ PNG тепловой карты, записанный рядом с DICOM.
 | HTTP | code | Когда |
 | --- | --- | --- |
 | 400 | `BAD_REQUEST` | пустой `ids`, больше 200 идентификаторов, не UUID, неизвестный query-параметр |
+| 400 | `INVALID_SESSION_ID` | сессия не строка или длиннее 128 символов |
+| 404 | `STUDY_NOT_FOUND` | одного из `ids` нет |
+
+---
+
+## GET /api/studies/submission
+
+Файл результата по разделу 2.5 ТЗ. Это не журнал `GET /api/studies/export`.
+
+| Параметр | Обязательно | Описание |
+| --- | --- | --- |
+| `ids` | нет | UUID v4 через запятую, не больше 200. Если параметр задан, `session_id` выборку не фильтрует |
+| `session_id` | нет | сессия «Мои», если `ids` нет |
+| `format` | нет | `xlsx` по умолчанию или `csv` |
+
+Одна строка - одно изображение. Колонки, в этом порядке:
+
+`path_to_study`, `study_uid`, `image_uid`, `anatomical_region`, `quality_class`, `violation_type`, `processing_status`, `time_of_processing`.
+
+`study_uid` - `StudyInstanceUID` из DICOM. `image_uid` - `SOPInstanceUID`. Это не UUID исследования в API.
+
+`path_to_study` в ответе API - исходное имя файла, без каталога. Это не путь на диске сервера и не UUID исследования.
+
+`quality_class` - целое `0` или `1`, когда проверка успешно завершена. `time_of_processing` при успехе - секунды inference из ответа ML. При ошибке - секунды до отказа, которые посчитал API. `processing_status` - `Success` или `Failure`.
+
+`Success` ставится только готовому исследованию с читаемым результатом. Ошибка анализа, ещё идущая проверка и исследование без результата попадают в файл как `Failure`: класс, область и UID пустые.
+
+Имя файла: `bonecheck-submission.xlsx` или `bonecheck-submission.csv`. Кнопка в интерфейсе скачивает XLSX. CSV запрашивается тем же адресом с `format=csv`.
+
+Пакет через API: `POST /api/studies/packages`, дождаться статуса каждого снимка, затем `GET /api/studies/submission?ids=...`. У ZIP в API есть пределы: 50 МБ на архив, не больше 30 DICOM, не больше 200 МБ после распаковки.
+
+Каталог без этих пределов. Команда обходит папку и вложенные каталоги и берёт файлы с расширением `.dcm`, без учёта регистра. Файлы `.dicom` она пропускает:
+
+```bash
+cd ml
+PYTHONPATH=src python -m inference.pipeline --input /path/to/dicoms --output submission.csv --base models
+```
+
+```powershell
+cd ml
+$env:PYTHONPATH = "src"
+python -m inference.pipeline --input C:\path\to\dicoms --output submission.csv --base models
+```
+
+В `path_to_study` этой команды записывается путь к файлу. Колонки те же восемь. Служебные scores в файл не пишутся. Расширение `.csv` собирается пакетами из `ml/requirements.txt`. Расширение `.xlsx` у этой команды требует `openpyxl`, которого в зависимостях нет. Файл `.xlsx` для сдачи отдаёт метод выше.
+
+| HTTP | code | Когда |
+| --- | --- | --- |
+| 400 | `BAD_REQUEST` | пустой `ids`, больше 200 идентификаторов, не UUID, `format` не `xlsx` и не `csv`, неизвестный query-параметр |
 | 400 | `INVALID_SESSION_ID` | сессия не строка или длиннее 128 символов |
 | 404 | `STUDY_NOT_FOUND` | одного из `ids` нет |
 

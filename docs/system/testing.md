@@ -76,4 +76,21 @@ docker compose config
 
 Команды выше процент покрытия не выводят.
 
+## Проверки ML
+
+Из каталога `ml/`, после установки `requirements.txt`:
+
+```bash
+cd ml
+PYTHONPATH=src python -m unittest utils.test_contract inference.server_test
+```
+
+```powershell
+cd ml
+$env:PYTHONPATH = "src"
+python -m unittest utils.test_contract inference.server_test
+```
+
+`utils.test_contract` проверяет ширину кадра, названия нарушений, шаг пикселя и границу высоты бедра. `inference.server_test` проверяет HTTP-обёртку без загрузки весов. Разбор снимка эти тесты не запускают.
+
 Дальше: [материалы сдачи](../submission/submission.md).

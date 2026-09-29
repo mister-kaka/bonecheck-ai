@@ -19,6 +19,9 @@ type StudyRow = {
   quality_prob: number | null;
   violation_type: string | null;
   anatomical_region: string | null;
+  study_uid: string | null;
+  image_uid: string | null;
+  time_of_processing: number | null;
 };
 
 type StudyParams = {
@@ -34,6 +37,9 @@ type StudyParams = {
   quality_prob: number | null;
   violation_type: string | null;
   anatomical_region: string | null;
+  study_uid: string | null;
+  image_uid: string | null;
+  time_of_processing: number | null;
 };
 
 const SCHEMA_SQL = `
@@ -49,7 +55,10 @@ CREATE TABLE IF NOT EXISTS studies (
   quality_class INTEGER CHECK (quality_class IS NULL OR quality_class IN (0, 1)),
   quality_prob REAL,
   violation_type TEXT,
-  anatomical_region TEXT
+  anatomical_region TEXT,
+  study_uid TEXT,
+  image_uid TEXT,
+  time_of_processing REAL
 );
 
 CREATE INDEX IF NOT EXISTS idx_studies_session_id ON studies (session_id);
@@ -74,6 +83,9 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
     this.db.pragma('synchronous = FULL');
     this.db.pragma('busy_timeout = 5000');
     this.db.exec(SCHEMA_SQL);
+    ensureColumn(this.db, 'study_uid', 'TEXT');
+    ensureColumn(this.db, 'image_uid', 'TEXT');
+    ensureColumn(this.db, 'time_of_processing', 'REAL');
 
     this.upsert = this.db.prepare<StudyParams>(`
       INSERT INTO studies (
@@ -88,7 +100,10 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
         quality_class,
         quality_prob,
         violation_type,
-        anatomical_region
+        anatomical_region,
+        study_uid,
+        image_uid,
+        time_of_processing
       ) VALUES (
         @id,
         @session_id,
@@ -101,7 +116,10 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
         @quality_class,
         @quality_prob,
         @violation_type,
-        @anatomical_region
+        @anatomical_region,
+        @study_uid,
+        @image_uid,
+        @time_of_processing
       )
       ON CONFLICT(id) DO UPDATE SET
         status = excluded.status,
@@ -110,7 +128,10 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
         quality_class = excluded.quality_class,
         quality_prob = excluded.quality_prob,
         violation_type = excluded.violation_type,
-        anatomical_region = excluded.anatomical_region
+        anatomical_region = excluded.anatomical_region,
+        study_uid = excluded.study_uid,
+        image_uid = excluded.image_uid,
+        time_of_processing = excluded.time_of_processing
     `);
     this.finishProcessing = this.db.prepare<StudyParams>(`
       UPDATE studies SET
@@ -120,7 +141,10 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
         quality_class = @quality_class,
         quality_prob = @quality_prob,
         violation_type = @violation_type,
-        anatomical_region = @anatomical_region
+        anatomical_region = @anatomical_region,
+        study_uid = @study_uid,
+        image_uid = @image_uid,
+        time_of_processing = @time_of_processing
       WHERE id = @id AND status = 'processing'
     `);
     this.selectById = this.db.prepare<[string], StudyRow>(
@@ -186,6 +210,9 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
           : null,
       violation_type: study.result ? study.result.violation_type : null,
       anatomical_region: study.result?.anatomical_region ?? null,
+      study_uid: study.studyUid ?? null,
+      image_uid: study.imageUid ?? null,
+      time_of_processing: study.processingSeconds ?? null,
     };
   }
 
@@ -200,6 +227,9 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
       updatedAt: row.updated_at,
       error: row.error,
       result: this.toResult(row),
+      studyUid: row.study_uid,
+      imageUid: row.image_uid,
+      processingSeconds: row.time_of_processing,
     };
   }
 
@@ -224,6 +254,20 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
 
     return result;
   }
+}
+
+function ensureColumn(
+  db: Database.Database,
+  name: string,
+  type: string,
+): void {
+  const columns = db.prepare('PRAGMA table_info(studies)').all() as Array<{
+    name: string;
+  }>;
+  if (columns.some((column) => column.name === name)) {
+    return;
+  }
+  db.exec(`ALTER TABLE studies ADD COLUMN ${name} ${type}`);
 }
 
 function sqliteJournalMode(): 'WAL' | 'DELETE' {

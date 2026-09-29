@@ -17,6 +17,9 @@ export type StudyRecord = {
   updatedAt: string;
   error: string | null;
   result: MlPrediction | null;
+  studyUid?: string | null;
+  imageUid?: string | null;
+  processingSeconds?: number | null;
 };
 
 export const STUDY_REPOSITORY = Symbol('STUDY_REPOSITORY');

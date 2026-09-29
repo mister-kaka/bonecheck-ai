@@ -26,9 +26,21 @@ import {
   StudyResultResponseDto,
   StudyStatusResponseDto,
 } from './dto/study-responses.dto';
-import { ExportStudiesQueryDto } from './dto/study-requests.dto';
+import {
+  ExportStudiesQueryDto,
+  SubmissionQueryDto,
+} from './dto/study-requests.dto';
 import { formatMoscowDateTime } from './export/moscow-time';
-import { buildXlsx, XLSX_HEADERS, xlsxDownloadName } from './export/xlsx-workbook';
+import {
+  buildSubmissionCsv,
+  buildTypedXlsx,
+  buildXlsx,
+  SheetCell,
+  SUBMISSION_HEADERS,
+  XLSX_CONTENT_TYPE,
+  XLSX_HEADERS,
+  xlsxDownloadName,
+} from './export/xlsx-workbook';
 import { readZipPackage, ZipPackageError } from './archive/zip-package';
 
 type ValidMlPrediction = MlPrediction & {
@@ -137,6 +149,31 @@ export class StudiesService implements OnModuleInit {
     return {
       filename: xlsxDownloadName(studies.map((study) => study.originalFileName)),
       body: buildXlsx(rows),
+    };
+  }
+
+  async exportSubmission(
+    query: SubmissionQueryDto,
+  ): Promise<XlsxFile & { contentType: string }> {
+    const studies = await this.studiesForExport(query);
+    const rows = [
+      SUBMISSION_HEADERS.map((header) => ({ kind: 'text' as const, value: header })),
+      ...studies.map((study) => this.toSubmissionRow(study)),
+    ];
+    const format = query.format ?? 'xlsx';
+
+    if (format === 'csv') {
+      return {
+        filename: 'bonecheck-submission.csv',
+        contentType: 'text/csv; charset=utf-8',
+        body: buildSubmissionCsv(rows),
+      };
+    }
+
+    return {
+      filename: 'bonecheck-submission.xlsx',
+      contentType: XLSX_CONTENT_TYPE,
+      body: buildTypedXlsx(rows),
     };
   }
 
@@ -334,6 +371,26 @@ export class StudiesService implements OnModuleInit {
     ];
   }
 
+  private toSubmissionRow(study: StudyRecord): SheetCell[] {
+    const result = this.isReadableResult(study.result) ? study.result : null;
+    const success = study.status === StudyStatus.Completed && result !== null;
+
+    return [
+      { kind: 'text', value: study.originalFileName },
+      { kind: 'text', value: study.studyUid ?? '' },
+      { kind: 'text', value: study.imageUid ?? '' },
+      { kind: 'text', value: result?.anatomical_region ?? '' },
+      success
+        ? { kind: 'number', value: result.quality_class }
+        : { kind: 'text', value: '' },
+      { kind: 'text', value: result?.violation_type ?? '' },
+      { kind: 'text', value: success ? 'Success' : 'Failure' },
+      typeof study.processingSeconds === 'number'
+        ? { kind: 'number', value: study.processingSeconds }
+        : { kind: 'text', value: '' },
+    ];
+  }
+
   private assertZipFile(
     file: UploadedFile | undefined,
   ): asserts file is UploadedFile {
@@ -497,6 +554,7 @@ export class StudiesService implements OnModuleInit {
         return;
       }
 
+      const started = Date.now();
       try {
         const result = await this.mlClient.analyze({
           studyId: study.id,
@@ -507,6 +565,12 @@ export class StudiesService implements OnModuleInit {
         this.validateMlResult(result);
 
         study.result = result;
+        study.studyUid = result.study_uid ?? null;
+        study.imageUid = result.image_uid ?? null;
+        study.processingSeconds =
+          typeof result.time_of_processing === 'number'
+            ? result.time_of_processing
+            : roundSeconds((Date.now() - started) / 1000);
         study.status = StudyStatus.Completed;
         study.error = null;
       } catch (error) {
@@ -520,6 +584,9 @@ export class StudiesService implements OnModuleInit {
         study.status = StudyStatus.Error;
         study.error = 'Не удалось проверить качество укладки.';
         study.result = null;
+        study.studyUid = null;
+        study.imageUid = null;
+        study.processingSeconds = roundSeconds((Date.now() - started) / 1000);
       }
 
       study.updatedAt = new Date().toISOString();
@@ -628,6 +695,10 @@ export class StudiesService implements OnModuleInit {
       seen.add(violation);
     }
   }
+}
+
+function roundSeconds(value: number): number {
+  return Math.round(value * 1000) / 1000;
 }
 
 function isZipUpload(originalName: string, mimeType: string): boolean {

@@ -117,6 +117,24 @@ describe('XLSX и ZIP (сквозные тесты)', () => {
     expect(oneXml).not.toContain(' UTC');
     expect(oneXml).not.toContain('hip.dcm');
 
+    const submission = await request(app.getHttpServer())
+      .get('/api/studies/submission')
+      .query({ ids: spine.body.id })
+      .buffer(true)
+      .parse(readBinary)
+      .expect(200);
+    expect(submission.headers['content-disposition']).toContain(
+      'bonecheck-submission.xlsx',
+    );
+    const submissionXml = Buffer.from(
+      unzipSync(submission.body)['xl/worksheets/sheet1.xml'],
+    ).toString('utf8');
+    expect(submissionXml).toContain('path_to_study');
+    expect(submissionXml).toContain('processing_status');
+    expect(submissionXml).toContain('Success');
+    expect(submissionXml).toContain('<v>0</v>');
+    expect(submissionXml).not.toContain('Корректно');
+
     const file = await request(app.getHttpServer())
       .get(`/api/studies/${spine.body.id}/file`)
       .buffer(true)
@@ -246,6 +264,7 @@ describe('XLSX и ZIP (сквозные тесты)', () => {
       app,
       new DocumentBuilder().setTitle('BoneCheck AI').setVersion('0.4.0').build(),
     );
+    expect(document.paths['/api/studies/submission']).toBeDefined();
     expect(document.paths['/api/studies/export']).toBeDefined();
     expect(document.paths['/api/studies/packages']).toBeDefined();
     expect(document.paths['/api/studies/export']?.get?.responses?.['200']).toBeDefined();

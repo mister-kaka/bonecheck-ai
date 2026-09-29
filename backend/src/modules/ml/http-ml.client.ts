@@ -66,11 +66,30 @@ export class HttpMlClient implements MlClient {
       throw new Error('ML service returned an invalid result');
     }
 
-    return {
+    const prediction: MlPrediction = {
       quality_class,
       violation_type,
       anatomical_region,
     };
+
+    if (typeof body.study_uid === 'string') {
+      prediction.study_uid = body.study_uid;
+    }
+    if (typeof body.image_uid === 'string') {
+      prediction.image_uid = body.image_uid;
+    }
+    if (
+      typeof body.time_of_processing === 'number' &&
+      Number.isFinite(body.time_of_processing) &&
+      body.time_of_processing >= 0
+    ) {
+      prediction.time_of_processing = body.time_of_processing;
+    }
+    if (body.processing_status === 'Success' || body.processing_status === 'Failure') {
+      prediction.processing_status = body.processing_status;
+    }
+
+    return prediction;
   }
 }
 

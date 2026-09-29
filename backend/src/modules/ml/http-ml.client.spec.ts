@@ -57,6 +57,34 @@ describe('HttpMlClient', () => {
     });
   });
 
+  it('keeps DICOM identifiers and processing time from the ML response', async () => {
+    global.fetch = jest.fn(async () =>
+      Response.json({
+        quality_class: 0,
+        violation_type: '',
+        anatomical_region: 'Поясничный отдел позвоночника',
+        study_uid: '1.2.3',
+        image_uid: '1.2.3.4',
+        time_of_processing: 1.25,
+        processing_status: 'Success',
+        femur_side: 'L',
+      }),
+    ) as unknown as typeof fetch;
+
+    const result = await new HttpMlClient().analyze(input);
+
+    expect(result).toEqual({
+      quality_class: 0,
+      violation_type: '',
+      anatomical_region: 'Поясничный отдел позвоночника',
+      study_uid: '1.2.3',
+      image_uid: '1.2.3.4',
+      time_of_processing: 1.25,
+      processing_status: 'Success',
+    });
+    expect(result).not.toHaveProperty('femur_side');
+  });
+
   it('rejects a transport failure without throwing outside the client', async () => {
     global.fetch = jest.fn(async () => {
       throw new Error('connect ECONNREFUSED');

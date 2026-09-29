@@ -13,6 +13,21 @@ export const XLSX_HEADERS = [
   'Статус',
 ] as const;
 
+export const SUBMISSION_HEADERS = [
+  'path_to_study',
+  'study_uid',
+  'image_uid',
+  'anatomical_region',
+  'quality_class',
+  'violation_type',
+  'processing_status',
+  'time_of_processing',
+] as const;
+
+export type SheetCell =
+  | { kind: 'text'; value: string }
+  | { kind: 'number'; value: number };
+
 export function xlsxDownloadName(fileNames: string[]): string {
   if (fileNames.length !== 1) {
     return 'bonecheck-history.xlsx';
@@ -29,6 +44,21 @@ export function xlsxDownloadName(fileNames: string[]): string {
 }
 
 export function buildXlsx(rows: string[][]): Buffer {
+  return buildSheet(
+    rows.map((row) => row.map((value) => ({ kind: 'text' as const, value }))),
+  );
+}
+
+export function buildTypedXlsx(rows: SheetCell[][]): Buffer {
+  return buildSheet(rows, 'result');
+}
+
+export function buildSubmissionCsv(rows: SheetCell[][]): Buffer {
+  const lines = rows.map((row) => row.map(csvCell).join(','));
+  return Buffer.from(`${lines.join('\r\n')}\r\n`, 'utf8');
+}
+
+function buildSheet(rows: SheetCell[][], sheetName = 'Исследования'): Buffer {
   const sheetRows = rows
     .map((row, rowIndex) => {
       const cells = row
@@ -52,7 +82,7 @@ export function buildXlsx(rows: string[][]): Buffer {
     ),
     'xl/workbook.xml': strToU8(
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Исследования" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${escapeXml(sheetName)}" sheetId="1" r:id="rId1"/></sheets></workbook>`,
     ),
     'xl/_rels/workbook.xml.rels': strToU8(
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -64,9 +94,30 @@ export function buildXlsx(rows: string[][]): Buffer {
   return Buffer.from(zipped);
 }
 
-function cellXml(columnIndex: number, rowNumber: number, value: string): string {
+function cellXml(columnIndex: number, rowNumber: number, cell: SheetCell): string {
   const ref = `${columnName(columnIndex)}${rowNumber}`;
-  return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value)}</t></is></c>`;
+  if (cell.kind === 'number') {
+    return `<c r="${ref}"><v>${formatNumber(cell.value)}</v></c>`;
+  }
+  return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(cell.value)}</t></is></c>`;
+}
+
+function csvCell(cell: SheetCell): string {
+  const text = cell.kind === 'number' ? formatNumber(cell.value) : cell.value;
+  if (/[",\r\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function formatNumber(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '0';
+  }
+  if (Number.isInteger(value)) {
+    return String(value);
+  }
+  return String(Math.round(value * 1000) / 1000);
 }
 
 function columnName(index: number): string {

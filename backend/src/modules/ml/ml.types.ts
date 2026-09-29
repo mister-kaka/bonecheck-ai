@@ -5,6 +5,10 @@ export type MlPrediction = {
   violation_type: string;
   quality_prob?: number;
   anatomical_region: string;
+  study_uid?: string;
+  image_uid?: string;
+  time_of_processing?: number;
+  processing_status?: 'Success' | 'Failure';
 };
 
 export type MlAnalyzeInput = {

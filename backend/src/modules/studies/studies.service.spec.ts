@@ -652,4 +652,43 @@ describe('StudiesService', () => {
       response: { code: 'STUDY_NOT_FOUND' },
     });
   });
+
+  it('exports the TZ submission table with numeric quality_class', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 1,
+      violation_type: 'Некорректная укладка;Не выравнена ось позвоночника',
+      anatomical_region: 'Поясничный отдел позвоночника',
+      study_uid: '1.2.840.1',
+      image_uid: '1.2.840.2',
+      time_of_processing: 2.5,
+      processing_status: 'Success',
+      femur_side: 'L',
+    }));
+    const created = await service.create(file);
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    const xlsx = await service.exportSubmission({ ids: created.id });
+    expect(xlsx.filename).toBe('bonecheck-submission.xlsx');
+    const sheet = sheetText(xlsx.body);
+    expect(sheet).toContain('path_to_study');
+    expect(sheet).toContain('study_uid');
+    expect(sheet).toContain('time_of_processing');
+    expect(sheet).toContain('spine.dcm');
+    expect(sheet).toContain('1.2.840.1');
+    expect(sheet).toContain('1.2.840.2');
+    expect(sheet).toContain('Некорректная укладка;Не выравнена ось позвоночника');
+    expect(sheet).toContain('Success');
+    expect(sheet).toContain('<v>1</v>');
+    expect(sheet).toContain('<v>2.5</v>');
+    expect(sheet).not.toContain('Корректно');
+    expect(sheet).not.toContain('femur_side');
+
+    const csv = await service.exportSubmission({ ids: created.id, format: 'csv' });
+    expect(csv.filename).toBe('bonecheck-submission.csv');
+    const text = csv.body.toString('utf8');
+    expect(text.split('\r\n')[0]).toBe(
+      'path_to_study,study_uid,image_uid,anatomical_region,quality_class,violation_type,processing_status,time_of_processing',
+    );
+    expect(text).toContain('spine.dcm,1.2.840.1,1.2.840.2,Поясничный отдел позвоночника,1,Некорректная укладка;Не выравнена ось позвоночника,Success,2.5');
+  });
 });

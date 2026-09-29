@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useXlsxDownload } from "../../api/useXlsxDownload";
 import { PageIntro } from "../../components/layout/PageIntro";
 import { Button } from "../../components/ui/Button";
+import { ExportMenu } from "../../components/ui/ExportMenu";
 import { HistoryFilters } from "../../components/HistoryPage/HistoryFilters";
 import { HistoryTable } from "../../components/HistoryPage/HistoryTable";
 import { Icon } from "../../components/ui/Icon";
@@ -122,22 +123,14 @@ export function HistoryPage() {
         />
         <div className={styles.headerAside}>
           <div className={styles.exportActions}>
-            <Button
-              variant="secondary"
+            <ExportMenu
               size="sm"
-              disabled={xlsx.exporting || load.status !== "ready"}
-              onClick={() => exportSelection("history")}
-            >
-              {xlsx.exporting ? "Выгрузка..." : "Экспорт истории"}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={xlsx.exporting || load.status !== "ready"}
-              onClick={() => exportSelection("submission")}
-            >
-              {xlsx.exporting ? "Выгрузка..." : "Скачать submission"}
-            </Button>
+              align="end"
+              busy={xlsx.exporting}
+              disabled={load.status !== "ready"}
+              onJournal={() => exportSelection("history")}
+              onSubmission={() => exportSelection("submission")}
+            />
           </div>
           {xlsx.exportError && (
             <p className={styles.exportError} role="alert">

@@ -150,9 +150,6 @@ export function StudyPage() {
           onExport={() => {
             void xlsx.download({ ids: [apiStudy.id] });
           }}
-          onDownloadSubmission={() => {
-            void xlsx.downloadSubmission({ ids: [apiStudy.id] });
-          }}
           onNewStudy={() => navigate("/")}
         />
       )}

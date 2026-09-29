@@ -155,6 +155,15 @@
   padding-top: var(--space-2);
 }
 
+.exportSlot {
+  flex: 1;
+  min-width: 160px;
+}
+
+.exportSlot > * {
+  width: 100%;
+}
+
 .actions > button {
   flex: 1;
 }
@@ -170,7 +179,8 @@
     flex-direction: column;
   }
 
-  .actions > button {
+  .actions > button,
+  .exportSlot {
     width: 100%;
   }
 }

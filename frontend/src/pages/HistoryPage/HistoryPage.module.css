@@ -14,6 +14,8 @@
 }
 
 .header {
+  position: relative;
+  z-index: 20;
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
@@ -193,6 +195,14 @@
     align-items: stretch;
     text-align: left;
     justify-content: flex-start;
+  }
+
+  .exportActions > * {
+    width: 100%;
+  }
+
+  .exportActions button {
+    width: 100%;
   }
 
   .footer {

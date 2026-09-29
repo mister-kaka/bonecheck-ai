@@ -12,6 +12,7 @@ import type { HistoryRecord, HistoryScope } from "../../history/queryHistory";
 import type { StudyListItem, StudyResultPayload } from "../../types/study";
 
 const HISTORY_POLL_MS = 1000;
+const RESULT_FETCH_LIMIT = 4;
 
 export type HistoryLoad =
   | { status: "loading" }
@@ -46,12 +47,12 @@ export function useHistoryCatalog(scope: HistoryScope) {
 
     void (async () => {
       try {
-        const response = await listStudies(
+        const response = await listStudiesRetrying(
           scope === "mine" ? sessionId : undefined,
           controller.signal,
         );
-        const items = await Promise.all(
-          response.items.map((study) => toHistoryRecord(study, controller.signal)),
+        const items = await mapWithLimit(response.items, RESULT_FETCH_LIMIT, (study) =>
+          toHistoryRecord(study, controller.signal),
         );
         if (active) setLoad({ status: "ready", items });
       } catch (error) {
@@ -81,8 +82,7 @@ export function useHistoryCatalog(scope: HistoryScope) {
       if (inFlight) return;
       inFlight = true;
       try {
-        const settled = await Promise.all(
-          processingIds.map(async (id) => {
+        const settled = await mapWithLimit(processingIds, RESULT_FETCH_LIMIT, async (id) => {
             try {
               return { id, study: await getStudy(id, controller.signal) };
             } catch (error) {
@@ -92,7 +92,7 @@ export function useHistoryCatalog(scope: HistoryScope) {
               }
               throw error;
             }
-          }),
+          });
         );
         if (!active) return;
 
@@ -104,8 +104,8 @@ export function useHistoryCatalog(scope: HistoryScope) {
         );
         if (missingIds.size === 0 && changed.length === 0) return;
 
-        const resolved = await Promise.all(
-          changed.map((study) => toHistoryRecord(study, controller.signal)),
+        const resolved = await mapWithLimit(changed, RESULT_FETCH_LIMIT, (study) =>
+          toHistoryRecord(study, controller.signal),
         );
         if (!active) return;
 
@@ -153,4 +153,39 @@ export function useHistoryCatalog(scope: HistoryScope) {
     sessionId,
     reload: () => setReloadKey((value) => value + 1),
   };
+}
+
+async function listStudiesRetrying(sessionId: string | undefined, signal: AbortSignal) {
+  try {
+    return await listStudies(sessionId, signal);
+  } catch (error) {
+    if (isAbort(error) || signal.aborted) throw error;
+    const retryable =
+      error instanceof ApiRequestError &&
+      (error.code === "TIMEOUT" || error.code === "NETWORK");
+    if (!retryable) throw error;
+    return listStudies(sessionId, signal);
+  }
+}
+
+async function mapWithLimit<T, R>(
+  items: T[],
+  limit: number,
+  mapItem: (item: T) => Promise<R>,
+): Promise<R[]> {
+  if (items.length === 0) return [];
+  const results = new Array<R>(items.length);
+  let next = 0;
+
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      results[index] = await mapItem(items[index]);
+    }
+  };
+
+  const workers = Array.from({ length: Math.min(limit, items.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
 }

@@ -44,7 +44,7 @@ npm run test:e2e
 - наличие методов выгрузки и пакета в описании API;
 - `GET /api/studies/:id/heatmap`: 404 без PNG и 200, когда файл лежит рядом с DICOM.
 
-Сквозные тесты API ставят `ML_CLIENT=mock`, чтобы не требовать веса и Python. Рабочий запуск эту переменную не задаёт и вызывает HTTP-клиент ML.
+Сквозные тесты API ставят `ML_CLIENT=mock`, чтобы не требовать веса и Python. Локальный запуск и Docker Compose без `ML_CLIENT=mock` вызывают HTTP-клиент. На Render платформа задаёт `RENDER=true`, и без `ML_CLIENT=http` API берёт заглушку.
 
 ## Сборка интерфейса
 

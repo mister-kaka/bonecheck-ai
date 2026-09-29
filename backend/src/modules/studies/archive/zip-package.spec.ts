@@ -18,13 +18,13 @@ function expectCode(error: unknown, code: string): void {
 }
 
 describe('readZipPackage', () => {
-  it('читает один и несколько DICOM, в том числе из вложенной папки', () => {
-    const one = readZipPackage(zipOf({ 'spine.dcm': 'dicom-a' }));
+  it('читает один и несколько DICOM, в том числе из вложенной папки', async () => {
+    const one = await readZipPackage(zipOf({ 'spine.dcm': 'dicom-a' }));
     expect(one).toEqual([
       { originalName: 'spine.dcm', buffer: Buffer.from('dicom-a') },
     ]);
 
-    const nested = readZipPackage(
+    const nested = await readZipPackage(
       zipOf({
         'study/images/spine.dcm': 'dicom-a',
         'study/hip.dicom': 'dicom-b',
@@ -37,49 +37,22 @@ describe('readZipPackage', () => {
     expect(nested[0].buffer.toString()).toBe('dicom-a');
   });
 
-  it('отклоняет пустой, повреждённый и слишком большой архив', () => {
-    expect(() => readZipPackage(Buffer.alloc(0))).toThrow(ZipPackageError);
-    try {
-      readZipPackage(Buffer.alloc(0));
-    } catch (error) {
-      expectCode(error, 'ZIP_EMPTY');
-    }
-
-    expect(() => readZipPackage(zipOf({}))).toThrow(ZipPackageError);
-    try {
-      readZipPackage(zipOf({}));
-    } catch (error) {
-      expectCode(error, 'ZIP_EMPTY');
-    }
-
-    try {
-      readZipPackage(Buffer.from('this is not a zip'));
-    } catch (error) {
-      expectCode(error, 'INVALID_ZIP');
-    }
-
-    try {
-      readZipPackage(Buffer.alloc(MAX_FILE_SIZE_BYTES + 1));
-    } catch (error) {
-      expectCode(error, 'FILE_TOO_LARGE');
-    }
+  it('отклоняет пустой, повреждённый и слишком большой архив', async () => {
+    await expectCodeAsync(Buffer.alloc(0), 'ZIP_EMPTY');
+    await expectCodeAsync(zipOf({}), 'ZIP_EMPTY');
+    await expectCodeAsync(Buffer.from('this is not a zip'), 'INVALID_ZIP');
+    await expectCodeAsync(Buffer.alloc(MAX_FILE_SIZE_BYTES + 1), 'FILE_TOO_LARGE');
   });
 
-  it('отклоняет архив без DICOM и архив с посторонним файлом', () => {
-    try {
-      readZipPackage(zipOf({ 'notes.txt': 'hello' }));
-    } catch (error) {
-      expectCode(error, 'ZIP_NO_DICOM');
-    }
-
-    try {
-      readZipPackage(zipOf({ 'spine.dcm': 'dicom', 'notes.txt': 'hello' }));
-    } catch (error) {
-      expectCode(error, 'ZIP_UNSUPPORTED_FILE');
-    }
+  it('отклоняет архив без DICOM и архив с посторонним файлом', async () => {
+    await expectCodeAsync(zipOf({ 'notes.txt': 'hello' }), 'ZIP_NO_DICOM');
+    await expectCodeAsync(
+      zipOf({ 'spine.dcm': 'dicom', 'notes.txt': 'hello' }),
+      'ZIP_UNSUPPORTED_FILE',
+    );
   });
 
-  it('отклоняет path traversal, абсолютные пути и дубликаты', () => {
+  it('отклоняет path traversal, абсолютные пути и дубликаты', async () => {
     const unsafe = [
       '../spine.dcm',
       'nested/../../spine.dcm',
@@ -89,53 +62,37 @@ describe('readZipPackage', () => {
     ];
 
     for (const name of unsafe) {
-      try {
-        readZipPackage(zipOf({ [name]: 'dicom' }));
-        throw new Error(`путь принят: ${name}`);
-      } catch (error) {
-        expectCode(error, 'ZIP_PATH_TRAVERSAL');
-      }
+      await expectCodeAsync(zipOf({ [name]: 'dicom' }), 'ZIP_PATH_TRAVERSAL');
     }
 
-    try {
-      readZipPackage(
-        zipOf({
-          'a/spine.dcm': 'one',
-          'b/spine.dcm': 'two',
-        }),
-      );
-    } catch (error) {
-      expectCode(error, 'ZIP_DUPLICATE');
-    }
+    await expectCodeAsync(
+      zipOf({
+        'a/spine.dcm': 'one',
+        'b/spine.dcm': 'two',
+      }),
+      'ZIP_DUPLICATE',
+    );
   });
 
-  it('отклоняет слишком большой файл внутри и слишком много записей', () => {
+  it('отклоняет слишком большой файл внутри и слишком много записей', async () => {
     const small = zipOf({ 'spine.dcm': 'dicom' });
     const central = small.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
     expect(central).toBeGreaterThanOrEqual(0);
     const patched = Buffer.from(small);
     patched.writeUInt32LE(MAX_FILE_SIZE_BYTES + 1, central + 24);
 
-    try {
-      readZipPackage(patched);
-    } catch (error) {
-      expectCode(error, 'FILE_TOO_LARGE');
-    }
+    await expectCodeAsync(patched, 'FILE_TOO_LARGE');
 
     const many: Record<string, string> = {};
     for (let index = 0; index < MAX_ZIP_ENTRIES + 1; index += 1) {
       many[`file-${index}.dcm`] = 'x';
     }
 
-    try {
-      readZipPackage(zipOf(many));
-    } catch (error) {
-      expectCode(error, 'ZIP_TOO_MANY_FILES');
-    }
+    await expectCodeAsync(zipOf(many), 'ZIP_TOO_MANY_FILES');
   });
 
-  it('декодирует имя по флагу ZIP: UTF-8, CP866 и ASCII', () => {
-    const utf8 = readZipPackage(zipOf({ 'ПОП.dcm': 'dicom-utf8' }));
+  it('декодирует имя по флагу ZIP: UTF-8, CP866 и ASCII', async () => {
+    const utf8 = await readZipPackage(zipOf({ 'ПОП.dcm': 'dicom-utf8' }));
     expect(utf8.map((file) => file.originalName)).toEqual(['ПОП.dcm']);
     expect(utf8[0].buffer.toString()).toBe('dicom-utf8');
 
@@ -144,21 +101,31 @@ describe('readZipPackage', () => {
       Buffer.from([0x8f, 0x8e, 0x8f]),
       Buffer.from('.dcm'),
     ]);
-    const legacy = readZipPackage(storedZip(cp866Name, Buffer.from('dicom-cp866'), false));
+    const legacy = await readZipPackage(storedZip(cp866Name, Buffer.from('dicom-cp866'), false));
     expect(legacy).toEqual([
       { originalName: 'CR000000_ПОП.dcm', buffer: Buffer.from('dicom-cp866') },
     ]);
 
     const nestedCp866 = Buffer.concat([Buffer.from('study/'), cp866Name]);
-    const nested = readZipPackage(
+    const nested = await readZipPackage(
       storedZip(nestedCp866, Buffer.from('dicom-nested'), false),
     );
     expect(nested.map((file) => file.originalName)).toEqual(['CR000000_ПОП.dcm']);
 
-    const ascii = readZipPackage(storedZip(Buffer.from('spine.dcm'), Buffer.from('dicom-ascii'), false));
+    const ascii = await readZipPackage(storedZip(Buffer.from('spine.dcm'), Buffer.from('dicom-ascii'), false));
     expect(ascii.map((file) => file.originalName)).toEqual(['spine.dcm']);
   });
 });
+
+async function expectCodeAsync(buffer: Buffer, code: string): Promise<void> {
+  try {
+    await readZipPackage(buffer);
+  } catch (error) {
+    expectCode(error, code);
+    return;
+  }
+  throw new Error(`архив принят, ожидался код ${code}`);
+}
 
 function storedZip(name: Buffer, data: Buffer, utf8: boolean): Buffer {
   const crc = crc32(data) >>> 0;

@@ -107,7 +107,7 @@ export class StudiesService implements OnModuleInit {
 
     let entries;
     try {
-      entries = readZipPackage(file.buffer);
+      entries = await readZipPackage(file.buffer);
     } catch (error) {
       if (error instanceof ZipPackageError) {
         this.raiseZipError(error);

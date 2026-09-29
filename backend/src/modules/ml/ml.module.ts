@@ -3,19 +3,31 @@ import { HttpMlClient } from './http-ml.client';
 import { ML_CLIENT } from './ml.types';
 import { MockMlClient } from './mock-ml.client';
 
-// Рабочий путь — HttpMlClient. MockMlClient остаётся только для тестов: ML_CLIENT=mock.
+// ML_CLIENT=http - сервис по ML_SERVICE_URL. ML_CLIENT=mock - заглушка.
+// Без переменной: заглушка на Render (RENDER=true), иначе HTTP.
+export function selectMlClient<T>(
+  mockClient: T,
+  httpClient: T,
+  env: NodeJS.ProcessEnv = process.env,
+): T {
+  const mode = env.ML_CLIENT?.trim();
+  if (mode === 'http') {
+    return httpClient;
+  }
+  if (mode === 'mock' || env.RENDER === 'true') {
+    return mockClient;
+  }
+  return httpClient;
+}
+
 @Module({
   providers: [
     MockMlClient,
     HttpMlClient,
     {
       provide: ML_CLIENT,
-      useFactory: (mockClient: MockMlClient, httpClient: HttpMlClient) => {
-        if (process.env.ML_CLIENT === 'mock') {
-          return mockClient;
-        }
-        return httpClient;
-      },
+      useFactory: (mockClient: MockMlClient, httpClient: HttpMlClient) =>
+        selectMlClient(mockClient, httpClient),
       inject: [MockMlClient, HttpMlClient],
     },
   ],

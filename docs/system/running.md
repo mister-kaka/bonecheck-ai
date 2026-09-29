@@ -64,9 +64,7 @@ ML, из каталога `ml/`. Зависимости ставятся из `r
 ```bash
 cd ml
 pip install -r requirements.txt
-mkdir -p ../backend/uploads
 export PYTHONPATH=src
-export UPLOAD_DIR="$(cd ../backend/uploads && pwd)"
 python -m inference.server
 ```
 
@@ -75,13 +73,11 @@ python -m inference.server
 ```powershell
 cd ml
 pip install -r requirements.txt
-New-Item -ItemType Directory -Force -Path ..\backend\uploads | Out-Null
 $env:PYTHONPATH = "src"
-$env:UPLOAD_DIR = (Resolve-Path ..\backend\uploads).Path
 python -m inference.server
 ```
 
-`UPLOAD_DIR` должен совпадать с каталогом, куда API пишет DICOM. Без него процесс ML не стартует: так нельзя передать произвольный путь к файлу. Процесс остаётся запущенным. `GET http://127.0.0.1:8000/health` отвечает `{"status":"ok"}` после загрузки моделей.
+Каталог загрузок API для старта ML не нужен: DICOM приходит по HTTP. Процесс остаётся запущенным. `GET http://127.0.0.1:8000/health` отвечает `{"status":"ok"}` после загрузки моделей.
 
 API:
 
@@ -101,7 +97,7 @@ npm run dev
 
 API перезапускается при изменении кода. Интерфейс открывается на http://localhost:5173.
 
-Остановка - `Ctrl+C` в каждом терминале. Если ML не запущен, API не падает: конкретное исследование получает статус «Ошибка анализа».
+Остановка - `Ctrl+C` в каждом терминале. Если ML не запущен, API не падает: конкретное исследование получает статус «Ошибка анализа». На Render заглушка выбирается сама, потому что платформа задаёт `RENDER=true`. Чтобы снова вызывать Python ML, задайте `ML_CLIENT=http` и `ML_SERVICE_URL`.
 
 ## Проверка
 
@@ -142,7 +138,7 @@ npm run start:prod
 docker compose up --build
 ```
 
-Поднимаются интерфейс, API и долгоживущий `ml-service`. API ждёт, пока ML ответит на проверку здоровья. Общий каталог загрузок - `backend/uploads`, внутри контейнеров это `/app/uploads`. Веса - `ml/models`, внутри ML это `/app/models`.
+Поднимаются интерфейс, API и долгоживущий `ml-service`. API ждёт, пока ML ответит на проверку здоровья. DICOM API передаёт в ML по HTTP. Каталог `backend/uploads` смонтирован только в API, внутри контейнера это `/app/uploads`. Веса - `ml/models`, внутри ML это `/app/models`.
 
 | Что открыть | Адрес |
 | --- | --- |

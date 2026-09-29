@@ -16,11 +16,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${BACKEND_PORT:-3000}:3000"
+    command: npm run start:dev
     environment:
       BACKEND_PORT: 3000
       BACKEND_HOST: 0.0.0.0
       DATABASE_PATH: /app/data/bonecheck-docker.sqlite
       UPLOAD_DIR: /app/uploads
+      ML_CLIENT: http
       ML_SERVICE_URL: http://ml-service:8000
       ML_TIMEOUT_MS: "180000"
       SQLITE_JOURNAL_MODE: DELETE

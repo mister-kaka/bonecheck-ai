@@ -37,7 +37,7 @@ docker compose down
 
 Это порты хоста при значениях по умолчанию. Внутри контейнеров процессы слушают 5173 и 3000. Браузер ходит в API по `VITE_API_BASE_URL` (`http://localhost:3000`), то есть на порт хоста, а не на имя сервиса в сети Compose.
 
-Порт 8000 опубликован для `ml-service`. Его открывает API внутри сети Compose (`http://ml-service:8000`), не браузер. `GET /health` отвечает после загрузки моделей. API стартует после этой проверки. Каталог `backend/uploads` смонтирован в API и в ML по пути `/app/uploads`. ML читает и пишет файлы только внутри `UPLOAD_DIR` (`/app/uploads`). Каталог `ml/models` смонтирован в ML как `/app/models` только для чтения.
+Порт 8000 опубликован для `ml-service`. Его открывает API внутри сети Compose (`http://ml-service:8000`), не браузер. `GET /health` отвечает после загрузки моделей. API стартует после этой проверки. DICOM уходит в ML по HTTP, `multipart/form-data`. Общего каталога загрузок с ML нет. Каталог `ml/models` смонтирован в ML как `/app/models` только для чтения. Тепловая карта возвращается как base64 `heatmap_png`, API сохраняет `heatmap.png` в своём `backend/uploads`.
 
 ## Переменные
 
@@ -53,6 +53,7 @@ API внутри контейнера получает:
 | `BACKEND_HOST` | `0.0.0.0` |
 | `DATABASE_PATH` | `/app/data/bonecheck-docker.sqlite` |
 | `UPLOAD_DIR` | `/app/uploads` |
+| `ML_CLIENT` | `http`. Заглушка на Render выбирается отдельно, когда эта переменная не равна `http` |
 | `ML_SERVICE_URL` | `http://ml-service:8000` |
 | `ML_TIMEOUT_MS` | `180000` |
 | `SQLITE_JOURNAL_MODE` | `DELETE`. На bind-mount Docker Desktop режим WAL не создаёт `-shm` и API не стартует |
@@ -64,7 +65,7 @@ API внутри контейнера получает:
 | На машине | В контейнере | Что хранится |
 | --- | --- | --- |
 | `backend/data` | `/app/data` | файл метаданных исследований |
-| `backend/uploads` | `/app/uploads` в API и в ML | загруженные DICOM и `heatmap.png` |
+| `backend/uploads` | `/app/uploads` только в API | загруженные DICOM и `heatmap.png` |
 | `ml/models` | `/app/models` в ML, только чтение | веса из репозитория |
 
 Оба каталога переживают `docker compose down` и следующий `up`.

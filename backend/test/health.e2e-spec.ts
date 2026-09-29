@@ -18,6 +18,7 @@ describe('Проверка работоспособности (сквозные 
     previousDatabasePath = process.env.DATABASE_PATH;
     process.env.UPLOAD_DIR = uploadDir;
     process.env.DATABASE_PATH = path.join(uploadDir, 'health.sqlite');
+    process.env.ML_CLIENT = 'mock';
     process.env.ML_MOCK_DELAY_MS = '0';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({

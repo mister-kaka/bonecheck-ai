@@ -323,10 +323,13 @@ describe('study persistence (sqlite)', () => {
       analyze: async () => {
         await gate;
         return {
-          quality_class: 0,
-          violation_type: '',
-          quality_prob: 0.05,
-          anatomical_region: 'Поясничный отдел позвоночника',
+          prediction: {
+            quality_class: 0,
+            violation_type: '',
+            quality_prob: 0.05,
+            anatomical_region: 'Поясничный отдел позвоночника',
+          },
+          heatmapPng: null,
         };
       },
     });
@@ -379,9 +382,12 @@ describe('study persistence (sqlite)', () => {
   it('stores an invalid ML response as error and does not retry it after restart', async () => {
     const first = openService({
       analyze: async () => ({
-        quality_class: 0,
-        violation_type: '',
-        anatomical_region: 'Другой регион',
+        prediction: {
+          quality_class: 0,
+          violation_type: '',
+          anatomical_region: 'Другой регион',
+        },
+        heatmapPng: null,
       }),
     });
     const created = await first.service.create(file, 'A');
@@ -497,9 +503,12 @@ describe('study persistence (sqlite)', () => {
   it('omits quality_prob in the API when the column is null', async () => {
     const { service } = openService({
       analyze: async () => ({
-        quality_class: 0,
-        violation_type: '',
-        anatomical_region: 'Поясничный отдел позвоночника',
+        prediction: {
+          quality_class: 0,
+          violation_type: '',
+          anatomical_region: 'Поясничный отдел позвоночника',
+        },
+        heatmapPng: null,
       }),
     });
     const created = await service.create(file, 'A');
@@ -514,10 +523,13 @@ describe('study persistence (sqlite)', () => {
   it('keeps quality_prob 0', async () => {
     const { service } = openService({
       analyze: async () => ({
-        quality_class: 0,
-        violation_type: '',
-        anatomical_region: 'Проксимальный отдел бедра',
-        quality_prob: 0,
+        prediction: {
+          quality_class: 0,
+          violation_type: '',
+          anatomical_region: 'Проксимальный отдел бедра',
+          quality_prob: 0,
+        },
+        heatmapPng: null,
       }),
     });
     const created = await service.create(file, 'A');

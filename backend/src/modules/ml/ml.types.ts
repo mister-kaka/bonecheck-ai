@@ -17,8 +17,13 @@ export type MlAnalyzeInput = {
   originalFileName: string;
 };
 
+export type MlAnalyzeResult = {
+  prediction: MlPrediction;
+  heatmapPng: Buffer | null;
+};
+
 export interface MlClient {
-  analyze(input: MlAnalyzeInput): Promise<MlPrediction>;
+  analyze(input: MlAnalyzeInput): Promise<MlAnalyzeResult>;
 }
 
 export const ML_CLIENT = Symbol('ML_CLIENT');

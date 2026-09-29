@@ -99,18 +99,30 @@ function createService(analyze?: (input: unknown) => Promise<unknown>) {
         }));
     }),
   };
+  const rawAnalyze =
+    analyze ??
+    (async () => ({
+      ...validSpine,
+      quality_prob: 0.1,
+    }));
   const mlClient = {
-    analyze: jest.fn(
-      analyze ??
-        (async () => ({
-          ...validSpine,
-          quality_prob: 0.1,
-        })),
-    ),
+    analyze: jest.fn(async (input: unknown) => {
+      const value = await rawAnalyze(input);
+      if (
+        value !== null &&
+        typeof value === 'object' &&
+        'prediction' in value &&
+        'heatmapPng' in value
+      ) {
+        return value;
+      }
+      return { prediction: value, heatmapPng: null };
+    }),
   };
   const fileStorage = {
     save: jest.fn(async () => '/tmp/uploads/spine.dcm'),
     read: jest.fn(async (): Promise<Buffer | null> => null),
+    write: jest.fn(async () => undefined),
   };
 
   const service = new StudiesService(
@@ -318,6 +330,41 @@ describe('StudiesService', () => {
     });
     const result = await service.getResult(created.id);
     expect(result.quality_class).toBe(0);
+    expect(result.anatomical_region).toBe('Поясничный отдел позвоночника');
+  });
+
+  it('stores the heatmap beside the dicom when ML returns png bytes', async () => {
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1]);
+    const { service, fileStorage } = createService(async () => ({
+      prediction: { ...validSpine },
+      heatmapPng: png,
+    }));
+    const created = await service.create(file);
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    expect(fileStorage.write).toHaveBeenCalledWith(
+      path.join(path.dirname('/tmp/uploads/spine.dcm'), 'heatmap.png'),
+      png,
+    );
+    const result = await service.getResult(created.id);
+    expect(result.quality_class).toBe(0);
+    expect(result).not.toHaveProperty('heatmapPng');
+    expect(result).not.toHaveProperty('heatmap_png');
+  });
+
+  it('keeps a completed result when saving the heatmap fails', async () => {
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const { service, fileStorage } = createService(async () => ({
+      prediction: { ...validSpine },
+      heatmapPng: png,
+    }));
+    fileStorage.write.mockRejectedValue(new Error('disk full'));
+    const created = await service.create(file);
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    const result = await service.getResult(created.id);
+    expect(result.quality_class).toBe(0);
+    expect(result.violation_type).toBe('');
     expect(result.anatomical_region).toBe('Поясничный отдел позвоночника');
   });
 

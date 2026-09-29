@@ -1,25 +1,29 @@
 import { Injectable, Logger } from '@nestjs/common';
-import path from 'path';
-import { MlAnalyzeInput, MlClient, MlPrediction } from './ml.types';
+import { readFile } from 'fs/promises';
+import { MlAnalyzeInput, MlAnalyzeResult, MlClient, MlPrediction } from './ml.types';
+
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 @Injectable()
 export class HttpMlClient implements MlClient {
   private readonly logger = new Logger(HttpMlClient.name);
 
-  async analyze(input: MlAnalyzeInput): Promise<MlPrediction> {
+  async analyze(input: MlAnalyzeInput): Promise<MlAnalyzeResult> {
     const timeoutMs = positiveInt(process.env.ML_TIMEOUT_MS, 180_000);
     const url = `${this.baseUrl()}/analyze`;
-    const heatmapPath = path.join(path.dirname(input.filePath), 'heatmap.png');
+    const bytes = await this.readDicom(input);
+    const form = new FormData();
+    form.append(
+      'file',
+      new Blob([new Uint8Array(bytes)], { type: 'application/dicom' }),
+      'study.dcm',
+    );
 
     let response: Response;
     try {
       response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dicom_path: input.filePath,
-          heatmap_path: heatmapPath,
-        }),
+        body: form,
         signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (error) {
@@ -43,12 +47,42 @@ export class HttpMlClient implements MlClient {
       throw new Error('ML service returned invalid JSON');
     }
 
-    return this.toPrediction(parsed);
+    const prediction = this.toPrediction(parsed);
+    return {
+      prediction,
+      heatmapPng: this.readHeatmap(parsed as Record<string, unknown>, input.studyId),
+    };
+  }
+
+  private async readDicom(input: MlAnalyzeInput): Promise<Buffer> {
+    try {
+      const bytes = await readFile(input.filePath);
+      if (bytes.length === 0) {
+        throw new Error('file is empty');
+      }
+      return bytes;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`DICOM is unreadable for ${input.studyId}: ${message}`);
+      throw new Error(`DICOM is unreadable: ${message}`);
+    }
   }
 
   private baseUrl(): string {
     const configured = process.env.ML_SERVICE_URL ?? 'http://127.0.0.1:8000';
     return configured.replace(/\/+$/, '');
+  }
+
+  private readHeatmap(body: Record<string, unknown>, studyId: string): Buffer | null {
+    if (!Object.prototype.hasOwnProperty.call(body, 'heatmap_png') || body.heatmap_png == null) {
+      return null;
+    }
+    const decoded = decodePngBase64(body.heatmap_png);
+    if (!decoded) {
+      this.logger.error(`ML heatmap is unusable for ${studyId}`);
+      return null;
+    }
+    return decoded;
   }
 
   private toPrediction(value: unknown): MlPrediction {
@@ -99,6 +133,24 @@ function positiveInt(value: string | undefined, fallback: number): number {
     return fallback;
   }
   return parsed;
+}
+
+function decodePngBase64(value: unknown): Buffer | null {
+  if (typeof value !== 'string' || value.length === 0) {
+    return null;
+  }
+  const compact = value.replace(/\s+/g, '');
+  if (compact.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(compact)) {
+    return null;
+  }
+  const decoded = Buffer.from(compact, 'base64');
+  if (decoded.toString('base64') !== compact) {
+    return null;
+  }
+  if (decoded.length < PNG_SIGNATURE.length || !decoded.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE)) {
+    return null;
+  }
+  return decoded;
 }
 
 function messageFromMl(status: number, raw: string): string {

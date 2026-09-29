@@ -39,11 +39,9 @@ services:
       - "${ML_SERVICE_PORT:-8000}:8000"
     environment:
       MODEL_DIR: /app/models
-      UPLOAD_DIR: /app/uploads
       ML_HOST: 0.0.0.0
       ML_PORT: "8000"
     volumes:
-      - ./backend/uploads:/app/uploads
       - ./ml/models:/app/models:ro
     healthcheck:
       test:

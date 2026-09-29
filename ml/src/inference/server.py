@@ -1,36 +1,34 @@
 """Долгоживущий HTTP-инференс для BoneCheck.
 
 Модели загружаются один раз в main(), до приёма запросов.
-Каждый запрос вызывает site_prediction и затем save_heatmap_png.
+Каждый запрос принимает DICOM как multipart, вызывает site_prediction
+и затем save_heatmap_png во временном каталоге процесса.
 Пакетный process_directory и visualize_dicom здесь не используются.
 """
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import os
+import re
+import shutil
+import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 logger = logging.getLogger("bonecheck.ml")
 
-MAX_BODY_BYTES = 64 * 1024
+# 50 МиБ - потолок DICOM в API. 64 КиБ остаются на boundary и заголовки multipart.
+MAX_BODY_BYTES = 50 * 1024 * 1024 + 64 * 1024
 RESULT_KEYS = ("quality_class", "violation_type", "anatomical_region")
 SUBMISSION_TEXT_KEYS = ("study_uid", "image_uid", "processing_status")
-
-
-def _assert_inside_uploads(path: str) -> Path:
-    """Путь к DICOM и heatmap приходит от API. Чужой путь не читаем и не пишем."""
-    root = os.environ.get("UPLOAD_DIR", "").strip()
-    if not root:
-        raise ValueError("UPLOAD_DIR is not configured")
-    root_path = Path(root).resolve()
-    candidate = Path(path).resolve()
-    if not candidate.is_relative_to(root_path):
-        raise ValueError("path is outside the uploads directory")
-    return candidate
+_BOUNDARY_RE = re.compile(
+    r"""boundary\s*=\s*(?:"([^"]+)"|'([^']+)'|([^;\s]+))""",
+    re.IGNORECASE,
+)
 
 
 def _public_result(result: dict) -> dict:
@@ -46,6 +44,71 @@ def _public_result(result: dict) -> dict:
     if isinstance(elapsed, (int, float)) and not isinstance(elapsed, bool):
         body["time_of_processing"] = float(elapsed)
     return body
+
+
+def _content_length(raw_length: str, max_bytes: int = MAX_BODY_BYTES) -> int:
+    try:
+        length = int(raw_length)
+    except ValueError as exc:
+        raise ValueError("invalid Content-Length") from exc
+    if length <= 0 or length > max_bytes:
+        raise ValueError("invalid body")
+    return length
+
+
+def _boundary(content_type: str) -> str:
+    media = content_type.split(";", 1)[0].strip().lower()
+    if media != "multipart/form-data":
+        raise ValueError("multipart file is required")
+    match = _BOUNDARY_RE.search(content_type)
+    if not match:
+        raise ValueError("invalid multipart body")
+    boundary = next(group for group in match.groups() if group)
+    if not boundary or "\r" in boundary or "\n" in boundary:
+        raise ValueError("invalid multipart body")
+    try:
+        boundary.encode("ascii")
+    except UnicodeEncodeError as exc:
+        raise ValueError("invalid multipart body") from exc
+    return boundary
+
+
+def _disposition_name(header_blob: str) -> str | None:
+    for line in header_blob.split("\r\n"):
+        name, separator, value = line.partition(":")
+        if not separator or name.strip().lower() != "content-disposition":
+            continue
+        for piece in value.split(";"):
+            key, eq, field = piece.strip().partition("=")
+            if not eq or key.lower() != "name":
+                continue
+            field = field.strip()
+            if len(field) >= 2 and field[0] == field[-1] and field[0] in "\"'":
+                field = field[1:-1]
+            return field
+    return None
+
+
+def _extract_file(body: bytes, boundary: str) -> bytes:
+    marker = b"--" + boundary.encode("ascii")
+    for chunk in body.split(marker)[1:]:
+        if chunk.startswith(b"--"):
+            continue
+        if chunk.startswith(b"\r\n"):
+            chunk = chunk[2:]
+        header_end = chunk.find(b"\r\n\r\n")
+        if header_end < 0:
+            continue
+        header_blob = chunk[:header_end].decode("iso-8859-1", errors="replace")
+        if _disposition_name(header_blob) != "file":
+            continue
+        content = chunk[header_end + 4 :]
+        if content.endswith(b"\r\n"):
+            content = content[:-2]
+        if not content:
+            raise ValueError("file is required")
+        return content
+    raise ValueError("file is required")
 
 
 def make_handler(predict, save_heatmap, lock: threading.Lock):
@@ -67,64 +130,57 @@ def make_handler(predict, save_heatmap, lock: threading.Lock):
                 return
 
             try:
-                payload = self._read_json()
+                dicom = self._read_dicom()
             except ValueError as exc:
                 self._send(400, {"error": str(exc)})
                 return
 
-            dicom_path = payload.get("dicom_path")
-            heatmap_path = payload.get("heatmap_path")
-            if not isinstance(dicom_path, str) or not dicom_path.strip():
-                self._send(400, {"error": "dicom_path is required"})
-                return
-
+            directory = tempfile.mkdtemp(prefix="bonecheck-ml-")
+            dicom_path = str(Path(directory) / "study.dcm")
+            heatmap_path = str(Path(directory) / "heatmap.png")
             try:
-                dicom_resolved = _assert_inside_uploads(dicom_path)
-                if isinstance(heatmap_path, str) and heatmap_path.strip():
-                    heatmap_resolved = _assert_inside_uploads(heatmap_path)
-                    if heatmap_resolved.parent != dicom_resolved.parent:
-                        raise ValueError("heatmap path must stay beside the DICOM")
-            except ValueError as exc:
-                self._send(400, {"error": str(exc)})
-                return
-
-            try:
+                Path(dicom_path).write_bytes(dicom)
                 with lock:
                     result = predict(dicom_path)
-                    self._save_heatmap(dicom_path, heatmap_path, save_heatmap)
+                    heatmap = self._heatmap_bytes(
+                        dicom_path, heatmap_path, save_heatmap
+                    )
                 body = _public_result(result)
+                if heatmap:
+                    body["heatmap_png"] = base64.b64encode(heatmap).decode("ascii")
             except Exception as exc:
-                logger.exception("inference failed for %s", dicom_path)
-                self._send(500, {"error": f"{type(exc).__name__}: {exc}"})
-                return
+                logger.exception("inference failed")
+                body = None
+                error = exc
+            else:
+                error = None
+            finally:
+                shutil.rmtree(directory, ignore_errors=True)
 
+            if error is not None:
+                self._send(500, {"error": f"{type(error).__name__}: {error}"})
+                return
             self._send(200, body)
 
-        def _save_heatmap(self, dicom_path: str, heatmap_path, save_heatmap) -> None:
-            if not isinstance(heatmap_path, str) or not heatmap_path.strip():
-                logger.error("heatmap path is missing for %s", dicom_path)
-                return
+        def _heatmap_bytes(self, dicom_path: str, heatmap_path: str, save_heatmap):
             try:
                 save_heatmap(dicom_path, heatmap_path)
+                data = Path(heatmap_path).read_bytes()
             except Exception:
-                logger.exception("heatmap was not saved for %s", dicom_path)
+                logger.exception("heatmap was not saved")
+                return None
+            if not data:
+                logger.error("heatmap was empty")
+                return None
+            return data
 
-        def _read_json(self) -> dict:
-            raw_length = self.headers.get("Content-Length", "0")
-            try:
-                length = int(raw_length)
-            except ValueError as exc:
-                raise ValueError("invalid Content-Length") from exc
-            if length <= 0 or length > MAX_BODY_BYTES:
-                raise ValueError("invalid body")
+        def _read_dicom(self) -> bytes:
+            length = _content_length(self.headers.get("Content-Length", "0"))
             raw = self.rfile.read(length)
-            try:
-                payload = json.loads(raw.decode("utf-8"))
-            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-                raise ValueError("invalid json") from exc
-            if not isinstance(payload, dict):
-                raise ValueError("json object required")
-            return payload
+            if len(raw) != length:
+                raise ValueError("invalid body")
+            boundary = _boundary(self.headers.get("Content-Type", ""))
+            return _extract_file(raw, boundary)
 
         def _send(self, status: int, payload: dict) -> None:
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -144,8 +200,6 @@ def build_server(host: str, port: int, predict, save_heatmap) -> ThreadingHTTPSe
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
-    if not os.environ.get("UPLOAD_DIR", "").strip():
-        raise SystemExit("UPLOAD_DIR is required")
     from inference.pipeline import load_models, save_heatmap_png, site_prediction
 
     model_dir = os.environ.get("MODEL_DIR") or None

@@ -32,7 +32,7 @@ import pydicom
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
-from torchvision.models import ResNet18_Weights, resnet18
+from torchvision.models import resnet18
 
 from utils import dxa_utils as U
 
@@ -47,9 +47,8 @@ FEMUR_HYBRID_WEIGHT = 0.3
 # Порог кандидата V5 (blend 70/30). Не брать thresholds.json["femur_lay"]:
 # там остался старый порог femur_lay_cnn, 0.1525.
 FEMUR_LAY_THRESHOLD = 0.193505
-# Операционная точка ROI-ноутбука: Rows <= 210 → height_mm <= 220.5.
-# Короткий кадр, не длинный. На полной выборке это 5/7 позитивов и 2 ложных.
-FEMUR_ROI_MAX_ROWS = 210
+# Та же операционная точка, что в ROI-ноутбуке: высота кадра <= 210 * 1.05 мм.
+# Это не поля 3 см и 2 см вокруг большого вертела: его координаты не размечены.
 
 # Пороги позвоночника до дедупа по исследованию. Если json всё ещё такой,
 # новые чекпоинты с ним запускать нельзя.
@@ -76,6 +75,17 @@ GEOM_NAMES = [
     "bright_bbox_x1",
     "bright_bbox_y0",
     "bright_bbox_y1",
+]
+
+SUBMISSION_COLUMNS = [
+    "path_to_study",
+    "study_uid",
+    "image_uid",
+    "anatomical_region",
+    "quality_class",
+    "violation_type",
+    "processing_status",
+    "time_of_processing",
 ]
 
 OUTPUT_COLUMNS = [
@@ -214,14 +224,15 @@ def femur_geometry_features(arr_u8: np.ndarray) -> np.ndarray:
 
 
 def femur_roi_bad(arr: np.ndarray) -> bool:
-    """Короткий кадр: Rows <= 210, как в ROI-ноутбуке."""
-    return int(arr.shape[0]) <= FEMUR_ROI_MAX_ROWS
+    """Короткий кадр по высоте в миллиметрах фиксированного пикселя."""
+    return U.roi_violation(U.frame_height_mm(arr))
 
 
 class FemurHybridModel(nn.Module):
     def __init__(self, n_geom: int):
         super().__init__()
-        backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+        # Чекпоинт hybrid - полный state_dict. ImageNet здесь только скачивал бы лишний файл.
+        backbone = resnet18(weights=None)
         backbone.fc = nn.Identity()
         self.backbone = backbone
         self.geom_head = nn.Sequential(
@@ -243,13 +254,13 @@ class FemurHybridModel(nn.Module):
 
 
 def build_spine_model() -> nn.Module:
-    model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+    model = resnet18(weights=None)
     model.fc = nn.Linear(model.fc.in_features, 2)
     return model
 
 
 def build_femur_image_model() -> nn.Module:
-    model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+    model = resnet18(weights=None)
     model.fc = nn.Linear(model.fc.in_features, 1)
     return model
 
@@ -373,7 +384,7 @@ def load_models(base_dir: Path | str | None = None) -> None:
     )
     print(
         f"Femur blend: {FEMUR_IMAGE_WEIGHT} image + {FEMUR_HYBRID_WEIGHT} hybrid; "
-        f"threshold={FEMUR_LAY_THRESHOLD}; ROI rows <= {FEMUR_ROI_MAX_ROWS}"
+        f"threshold={FEMUR_LAY_THRESHOLD}; ROI height <= {U.FEMUR_ROI_MAX_HEIGHT_MM} mm"
     )
     print("DEVICE:", DEVICE)
 
@@ -535,18 +546,28 @@ def process_directory(input_dir: str, output_path: str = "submission.csv") -> pd
                 failed["error"] = f"{type(exc).__name__}: {exc}"
                 rows.append(failed)
                 print("FAIL", path, failed["error"])
-    out = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
-    if str(output_path).lower().endswith(".xlsx"):
-        out.to_excel(output_path, index=False)
+    table = pd.DataFrame(rows)
+    if len(table) == 0:
+        table = pd.DataFrame(columns=SUBMISSION_COLUMNS)
     else:
-        out.to_csv(output_path, index=False)
+        table = table.reindex(columns=SUBMISSION_COLUMNS)
+    if str(output_path).lower().endswith(".xlsx"):
+        table.to_excel(output_path, index=False)
+    else:
+        table.to_csv(output_path, index=False)
+    out = table
     failures = int((out["processing_status"] != "Success").sum()) if len(out) else 0
     print(f"Processed {len(out)} files; failures={failures}")
     return out
 
 
 def site_prediction(file_path: str) -> dict:
-    """Ответ для BoneCheck. Лишних полей нет, quality_prob не заполняется."""
+    """Ответ для BoneCheck.
+
+    Клинические поля — quality_class, violation_type, anatomical_region.
+    Рядом с ними идентификаторы DICOM и время обработки для файла сдачи.
+    quality_prob и внутренние scores сюда не входят.
+    """
     row = predict_single_dicom(file_path)
     if row.get("processing_status") != "Success":
         raise RuntimeError(row.get("error") or "Не удалось проверить качество укладки.")
@@ -554,6 +575,10 @@ def site_prediction(file_path: str) -> dict:
         "quality_class": int(row["quality_class"]),
         "violation_type": str(row["violation_type"]),
         "anatomical_region": str(row["anatomical_region"]),
+        "study_uid": str(row.get("study_uid") or ""),
+        "image_uid": str(row.get("image_uid") or ""),
+        "time_of_processing": float(row["time_of_processing"]),
+        "processing_status": "Success",
     }
 
 

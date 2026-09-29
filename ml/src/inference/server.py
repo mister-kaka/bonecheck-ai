@@ -12,19 +12,40 @@ import logging
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 logger = logging.getLogger("bonecheck.ml")
 
 MAX_BODY_BYTES = 64 * 1024
 RESULT_KEYS = ("quality_class", "violation_type", "anatomical_region")
+SUBMISSION_TEXT_KEYS = ("study_uid", "image_uid", "processing_status")
+
+
+def _assert_inside_uploads(path: str) -> Path:
+    """Путь к DICOM и heatmap приходит от API. Чужой путь не читаем и не пишем."""
+    root = os.environ.get("UPLOAD_DIR", "").strip()
+    if not root:
+        raise ValueError("UPLOAD_DIR is not configured")
+    root_path = Path(root).resolve()
+    candidate = Path(path).resolve()
+    if not candidate.is_relative_to(root_path):
+        raise ValueError("path is outside the uploads directory")
+    return candidate
 
 
 def _public_result(result: dict) -> dict:
-    return {
+    body = {
         "quality_class": int(result["quality_class"]),
         "violation_type": str(result["violation_type"]),
         "anatomical_region": str(result["anatomical_region"]),
     }
+    for key in SUBMISSION_TEXT_KEYS:
+        if key in result and result[key] is not None:
+            body[key] = str(result[key])
+    elapsed = result.get("time_of_processing")
+    if isinstance(elapsed, (int, float)) and not isinstance(elapsed, bool):
+        body["time_of_processing"] = float(elapsed)
+    return body
 
 
 def make_handler(predict, save_heatmap, lock: threading.Lock):
@@ -55,6 +76,16 @@ def make_handler(predict, save_heatmap, lock: threading.Lock):
             heatmap_path = payload.get("heatmap_path")
             if not isinstance(dicom_path, str) or not dicom_path.strip():
                 self._send(400, {"error": "dicom_path is required"})
+                return
+
+            try:
+                dicom_resolved = _assert_inside_uploads(dicom_path)
+                if isinstance(heatmap_path, str) and heatmap_path.strip():
+                    heatmap_resolved = _assert_inside_uploads(heatmap_path)
+                    if heatmap_resolved.parent != dicom_resolved.parent:
+                        raise ValueError("heatmap path must stay beside the DICOM")
+            except ValueError as exc:
+                self._send(400, {"error": str(exc)})
                 return
 
             try:
@@ -113,6 +144,8 @@ def build_server(host: str, port: int, predict, save_heatmap) -> ThreadingHTTPSe
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
+    if not os.environ.get("UPLOAD_DIR", "").strip():
+        raise SystemExit("UPLOAD_DIR is required")
     from inference.pipeline import load_models, save_heatmap_png, site_prediction
 
     model_dir = os.environ.get("MODEL_DIR") or None

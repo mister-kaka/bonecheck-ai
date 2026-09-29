@@ -1,6 +1,8 @@
 torch
+torchvision
 pydicom
 opencv-python
 numpy
 pandas
 scikit-learn
+joblib

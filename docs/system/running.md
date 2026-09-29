@@ -36,19 +36,32 @@ cp .env.example .env
 | `BACKEND_HOST` | адрес, на котором слушает API | `0.0.0.0` |
 | `FRONTEND_PORT` | порт интерфейса на хосте в Docker: левая часть проброса на порт 5173 внутри контейнера. Локальный `npm run dev` всегда слушает 5173 | `5173` |
 | `VITE_API_BASE_URL` | адрес API, который вызывает браузер. Должен совпадать с портом API на хосте | `http://localhost:3000` |
-| `ML_SERVICE_PORT` | порт хоста в пробросе на порт 8000 контейнера `ml-service`. Заглушка HTTP не слушает, в браузере этот порт не открывают | `8000` |
+| `ML_SERVICE_PORT` | порт хоста в пробросе на порт 8000 контейнера `ml-service`. Браузер его не открывает | `8000` |
+| `ML_SERVICE_URL` | адрес inference для API вне Docker | `http://127.0.0.1:8000` |
+| `ML_TIMEOUT_MS` | таймаут одного анализа | `180000` |
 | `UPLOAD_DIR` | каталог DICOM при локальном запуске API | `./uploads` |
 | `DATABASE_PATH` | файл метаданных при локальном запуске API | `./data/bonecheck.sqlite` |
 
 Пути `UPLOAD_DIR` и `DATABASE_PATH` считаются от каталога, из которого запущена команда API. При `npm run start:dev` из `backend/` это `backend/uploads` и `backend/data/bonecheck.sqlite`.
 
-В Docker Compose пути внутри контейнера заданы отдельно: `/app/uploads` и `/app/data/bonecheck.sqlite`. Каталоги на машине - `backend/uploads` и `backend/data`.
+В Docker Compose пути внутри контейнера заданы отдельно: `/app/uploads` и `/app/data/bonecheck-docker.sqlite`. Каталоги на машине - `backend/uploads` и `backend/data`. Файл Docker не совпадает с локальным `bonecheck.sqlite`: тот уже в режиме WAL, а bind-mount Docker Desktop не открывает его `-shm`.
 
 Лимит 50 МБ задан в API, отдельной переменной его нет.
 
 ## Локальный запуск
 
-Два терминала.
+Три терминала. Сначала ML, затем API и интерфейс.
+
+ML, из каталога `ml/`, после установки зависимостей из `requirements.txt` и размещения весов в `ml/models/`:
+
+```bash
+cd ml
+pip install -r requirements.txt
+set PYTHONPATH=src
+python -m inference.server
+```
+
+В PowerShell вместо `set` используется `$env:PYTHONPATH = "src"`. Процесс остаётся запущенным. `GET http://127.0.0.1:8000/health` отвечает `{"status":"ok"}` после загрузки моделей.
 
 API:
 
@@ -68,7 +81,7 @@ npm run dev
 
 API перезапускается при изменении кода. Интерфейс открывается на http://localhost:5173.
 
-Остановка - `Ctrl+C` в каждом терминале.
+Остановка - `Ctrl+C` в каждом терминале. Если ML не запущен или в `ml/models/` нет весов, API не падает: конкретное исследование получает статус «Ошибка анализа».
 
 ## Проверка
 
@@ -109,7 +122,7 @@ npm run start:prod
 docker compose up --build
 ```
 
-Поднимаются интерфейс, API и контейнер-заглушка `ml-service`.
+Поднимаются интерфейс, API и долгоживущий `ml-service`. Общий каталог загрузок — `backend/uploads`, внутри контейнеров это `/app/uploads`.
 
 | Что открыть | Адрес |
 | --- | --- |
@@ -117,7 +130,7 @@ docker compose up --build
 | Проверка API | http://localhost:3000/health |
 | Описание API | http://localhost:3000/api/docs |
 
-Проброс: хост → контейнер. По умолчанию `5173 → 5173` у интерфейса, `3000 → 3000` у API, `8000 → 8000` у `ml-service`. Внутри контейнера API слушает 3000, интерфейс — 5173. Заглушка на 8000 запросы не принимает, API к ней не обращается.
+Проброс: хост → контейнер. По умолчанию `5173 → 5173` у интерфейса, `3000 → 3000` у API, `8000 → 8000` у `ml-service`. Внутри контейнера API слушает 3000 и вызывает `http://ml-service:8000`. Интерфейс слушает 5173. Порт 8000 в браузере не открывают.
 
 Остановка:
 
@@ -131,6 +144,6 @@ docker compose down
 
 История и загруженные DICOM сохраняются. После `docker compose down` каталоги `backend/data` и `backend/uploads` остаются.
 
-Пустая история: остановить API и удалить `backend/data/bonecheck.sqlite`. Рядом могут лежать `bonecheck.sqlite-wal` и `bonecheck.sqlite-shm`, их тоже удаляют. Каталог `backend/uploads` очищается отдельно.
+Пустая история локального API: остановить API и удалить `backend/data/bonecheck.sqlite`. Рядом могут лежать `bonecheck.sqlite-wal` и `bonecheck.sqlite-shm`, их тоже удаляют. Для Docker удаляют `backend/data/bonecheck-docker.sqlite`. Каталог `backend/uploads` очищается отдельно.
 
 Дальше: [тестирование](testing.md).

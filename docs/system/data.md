@@ -63,8 +63,9 @@
 | --- | --- |
 | Метаданные | файл SQLite, переменная `DATABASE_PATH` |
 | Локально, если переменная не задана | `data/bonecheck.sqlite` относительно каталога запуска API |
-| В Docker | `/app/data/bonecheck.sqlite`, каталог `backend/data` на машине |
+| В Docker | `/app/data/bonecheck-docker.sqlite`, каталог `backend/data` на машине |
 | DICOM | `UPLOAD_DIR/<id>/<имя файла>` |
+| Тепловая карта | `UPLOAD_DIR/<id>/heatmap.png`, если ML смог её записать |
 | Локально, если переменная не задана | `uploads/` относительно каталога запуска API |
 | В Docker | `/app/uploads`, каталог `backend/uploads` на машине |
 

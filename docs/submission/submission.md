@@ -20,7 +20,7 @@
 | Документация | https://drive.google.com/drive/folders/1Kmc9kUhgRQJAQj1I4TXELsZ0TAhWphzD?usp=sharing |
 | Дополнительные материалы | https://drive.google.com/drive/folders/1IpQ52A42A0EOxw_bs1yTRJ9V7IUtbRfm?usp=sharing |
 
-Исходный код интерфейса и API лежит в репозитории. Личные пароли для доступа не используются. В текущей версии модель не подключена: [limitations.md](../product/limitations.md), [ml/README.md](../ml/README.md).
+Исходный код интерфейса, API и ML-сервиса лежит в репозитории. Личные пароли для доступа не используются. Веса модели в git не входят: [ml/README.md](../ml/README.md), [limitations.md](../product/limitations.md).
 
 Медицинские изображения в репозиторий не входят.
 

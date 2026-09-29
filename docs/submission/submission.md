@@ -64,7 +64,7 @@
 2. Открыть http://localhost:5173
 3. Загрузить DICOM или ZIP.
 4. Открыть результат, снимок и «Историю».
-5. «Экспорт истории» скачивает журнал. «Скачать submission» скачивает `bonecheck-submission.xlsx`. Тот же файл: `GET http://localhost:3000/api/studies/submission?ids=<uuid>`. Формат CSV: тот же адрес с `format=csv`. В колонке `path_to_study` у этого файла - исходное имя снимка.
+5. «Экспорт» открывает меню. «Журнал» скачивает русскую таблицу. «Итоговый файл» скачивает `bonecheck-submission.xlsx`. Тот же файл: `GET http://localhost:3000/api/studies/submission?ids=<uuid>`. Формат CSV: тот же адрес с `format=csv`. В колонке `path_to_study` у этого файла - исходное имя снимка.
 6. Каталог без лимитов ZIP, только `.dcm`: из `ml/` команда `PYTHONPATH=src python -m inference.pipeline --input <каталог> --output submission.csv --base models`. Вложенные папки входят в обход, `.dicom` пропускаются. В `path_to_study` записывается путь к файлу. XLSX этой командой при зафиксированных зависимостях не собирается.
 
 Проверка API: http://localhost:3000/health и http://localhost:3000/api/docs.

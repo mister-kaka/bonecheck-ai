@@ -34,8 +34,7 @@ BoneCheck AI предназначен для проверки качества �
 - статус обработки и карточка исследования;
 - просмотр снимка;
 - история «Мои» и «Все»;
-- журнал истории, кнопка «Экспорт истории»: файл, дата, область, результат словами, тип нарушения и статус. Колонка вероятности в журнале есть, текущая модель её не заполняет;
-- файл сдачи, кнопка «Скачать submission»: `bonecheck-submission.xlsx` с колонками `path_to_study`, `study_uid`, `image_uid`, `anatomical_region`, `quality_class`, `violation_type`, `processing_status`, `time_of_processing`. CSV с теми же колонками отдаёт API с `format=csv`.
+- кнопка «Экспорт» на результате и в истории, с двумя пунктами. «Журнал»: файл, дата, область, результат словами, тип нарушения и статус. «Итоговый файл»: `bonecheck-submission.xlsx` с колонками `path_to_study`, `study_uid`, `image_uid`, `anatomical_region`, `quality_class`, `violation_type`, `processing_status`, `time_of_processing`. CSV с теми же колонками отдаёт API с `format=csv`. В карточке исследования кнопка «Экспорт XLSX» скачивает журнал этой записи.
 
 ## Ограничения
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { resolveUploadDir } from '../persistence/database-path';
 
 @Injectable()
 export class FileStorageService {
@@ -92,7 +93,7 @@ export class FileStorageService {
   }
 
   private rootDir(): string {
-    return process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads');
+    return resolveUploadDir();
   }
 
   private safeFileName(originalFileName: string): string {

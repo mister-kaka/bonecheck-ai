@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Head,
   HttpCode,
   HttpStatus,
   Param,
@@ -258,6 +259,48 @@ export class StudiesController {
     const file = await this.studiesService.getFile(id);
     res.setHeader('Content-Type', 'application/dicom');
     res.setHeader('Content-Disposition', contentDisposition(file.filename));
+    return new StreamableFile(file.body);
+  }
+
+  @Head(':id/heatmap')
+  @ApiOperation({ summary: 'Проверить, что тепловая карта есть' })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  async headHeatmap(
+    @Param('id', studyIdPipe) id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const file = await this.studiesService.getHeatmap(id);
+    res.status(HttpStatus.OK);
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', String(file.body.length));
+    res.setHeader('Cache-Control', 'no-store');
+    res.end();
+  }
+
+  @Get(':id/heatmap')
+  @ApiOperation({
+    summary: 'Получить тепловую карту исследования',
+    description:
+      'PNG, сохранённый рядом с DICOM. Если файла нет, исследование и текстовый результат не меняются.',
+  })
+  @ApiOkResponse({
+    description: 'PNG тепловой карты',
+    content: {
+      'image/png': {
+        schema: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  async getHeatmap(
+    @Param('id', studyIdPipe) id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const file = await this.studiesService.getHeatmap(id);
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-store');
     return new StreamableFile(file.body);
   }
 }

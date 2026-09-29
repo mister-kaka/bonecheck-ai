@@ -8,6 +8,7 @@ import { ErrorBlock } from "../../components/Home/status/ErrorBlock";
 import { ResultBlock } from "../../components/Home/result/ResultBlock";
 import { StatusBadge } from "../../components/HistoryPage/StatusBadge";
 import { mapStudyResult } from "../../api/mapStudyResult";
+import { useHeatmapUrls } from "../../api/useHeatmapUrls";
 import { formatDate } from "../../history/formatDate";
 import styles from "../HistoryPage/HistoryPage.module.css";
 import { useStudyCard } from "./useStudyCard";
@@ -33,6 +34,9 @@ export function StudyPage() {
   const apiStudy = loaded.source === "api" ? loaded.study : null;
   const resultView =
     loaded.source === "api" && loaded.result ? mapStudyResult(loaded.result) : null;
+  const heatmapUrls = useHeatmapUrls(
+    apiStudy?.status === "completed" && resultView ? apiStudy.id : undefined,
+  );
   const fileName = apiStudy?.originalFileName ?? "Исследование не найдено";
   const status = apiStudy?.status;
   const createdAt = apiStudy?.createdAt;
@@ -139,6 +143,7 @@ export function StudyPage() {
           criteria={resultView.criteria}
           fileName={apiStudy.originalFileName}
           description={resultView.summary}
+          heatmapUrls={heatmapUrls}
           emptyLabel={snapshotState === "missing" ? FILE_MISSING : FILE_LOADING}
           exporting={xlsx.exporting}
           exportError={xlsx.exportError}

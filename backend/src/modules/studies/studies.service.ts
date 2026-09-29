@@ -9,6 +9,7 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import path from 'path';
 import { FileStorageService } from './storage/file-storage.service';
 import { isAllowedDicomUpload, MAX_FILE_SIZE_BYTES } from './storage/file-validation';
 import { ML_CLIENT, MlClient, MlPrediction } from '../ml/ml.types';
@@ -201,6 +202,20 @@ export class StudiesService implements OnModuleInit {
       body,
       filename: study.originalFileName,
     };
+  }
+
+  async getHeatmap(id: string): Promise<{ body: Buffer }> {
+    const study = await this.requireStudy(id);
+    const heatmapPath = path.join(path.dirname(study.storedFilePath), 'heatmap.png');
+    const body = await this.fileStorage.read(heatmapPath);
+    if (!body) {
+      throw new NotFoundException({
+        code: 'HEATMAP_NOT_FOUND',
+        message: 'Тепловая карта для этого исследования не найдена.',
+      });
+    }
+
+    return { body };
   }
 
   private async persistStudy(

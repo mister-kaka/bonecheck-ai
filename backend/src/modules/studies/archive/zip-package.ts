@@ -1,4 +1,4 @@
-import { unzipSync, type UnzipFileInfo } from 'fflate';
+import { unzip, type UnzipFileInfo } from 'fflate';
 import { MAX_FILE_SIZE_BYTES } from '../storage/file-validation';
 
 export const MAX_ZIP_ENTRIES = 30;
@@ -29,7 +29,7 @@ const DICOM_EXTENSIONS = new Set(['.dcm', '.dicom']);
  * Имена записей архива не соединяются с каталогом исследования:
  * на диск уходит уже отдельный buffer и одно имя файла без пути.
  */
-export function readZipPackage(buffer: Buffer): ZipDicomFile[] {
+export async function readZipPackage(buffer: Buffer): Promise<ZipDicomFile[]> {
   if (buffer.length === 0) {
     throw new ZipPackageError('ZIP_EMPTY', 'Архив пустой.', 400);
   }
@@ -42,7 +42,7 @@ export function readZipPackage(buffer: Buffer): ZipDicomFile[] {
     );
   }
 
-  const listed = listZipEntries(buffer);
+  const listed = await listZipEntries(buffer);
   if (listed.length === 0) {
     throw new ZipPackageError('ZIP_EMPTY', 'Архив пустой.', 400);
   }
@@ -148,10 +148,14 @@ export function readZipPackage(buffer: Buffer): ZipDicomFile[] {
     wanted.set(key, { archiveName: entry.archiveName, base });
   }
 
+  const extracted = await inflateWanted(
+    buffer,
+    [...wanted.values()].map((entry) => entry.archiveName),
+  );
   const files: ZipDicomFile[] = [];
   let actualUncompressed = 0;
   for (const [key, entry] of wanted) {
-    const bytes = inflateZipEntry(buffer, entry.archiveName);
+    const bytes = extracted[entry.archiveName];
     if (!bytes || bytes.length === 0) {
       throw new ZipPackageError('FILE_REQUIRED', 'Файл исследования пустой.', 400);
     }
@@ -181,42 +185,60 @@ export function readZipPackage(buffer: Buffer): ZipDicomFile[] {
   return files;
 }
 
-function inflateZipEntry(buffer: Buffer, archiveName: string): Uint8Array | undefined {
-  let extracted: Record<string, Uint8Array>;
+async function inflateWanted(
+  buffer: Buffer,
+  archiveNames: string[],
+): Promise<Record<string, Uint8Array>> {
+  const names = new Set(archiveNames);
   try {
-    extracted = unzipSync(new Uint8Array(buffer), {
-      filter: (file) => file.name === archiveName,
-    });
-  } catch {
+    return await unzipAsync(new Uint8Array(buffer), (file) => names.has(file.name));
+  } catch (error) {
+    if (error instanceof ZipPackageError) {
+      throw error;
+    }
     throw new ZipPackageError(
       'INVALID_ZIP',
       'Архив повреждён или не является ZIP.',
       400,
     );
   }
+}
 
-  return extracted[archiveName];
+function unzipAsync(
+  data: Uint8Array,
+  filter: (file: UnzipFileInfo) => boolean,
+): Promise<Record<string, Uint8Array>> {
+  return new Promise((resolve, reject) => {
+    unzip(data, { filter }, (error, result) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(result);
+    });
+  });
 }
 
 type ListedZipEntry = UnzipFileInfo & {
   archiveName: string;
 };
 
-function listZipEntries(buffer: Buffer): ListedZipEntry[] {
+async function listZipEntries(buffer: Buffer): Promise<ListedZipEntry[]> {
   const listed: UnzipFileInfo[] = [];
   try {
-    unzipSync(new Uint8Array(buffer), {
-      filter: (file) => {
-        listed.push({
-          name: file.name,
-          size: file.size,
-          originalSize: file.originalSize,
-          compression: file.compression,
-        });
-        return false;
-      },
+    await unzipAsync(new Uint8Array(buffer), (file) => {
+      listed.push({
+        name: file.name,
+        size: file.size,
+        originalSize: file.originalSize,
+        compression: file.compression,
+      });
+      return false;
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZipPackageError) {
+      throw error;
+    }
     throw new ZipPackageError(
       'INVALID_ZIP',
       'Архив повреждён или не является ZIP.',

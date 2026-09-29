@@ -15,7 +15,7 @@
 | Материал | Адрес |
 | --- | --- |
 | Репозиторий | https://github.com/mister-kaka/bonecheck-ai |
-| Прототип | https://bonecheck-ai.onrender.com/ |
+| Прототип (Backend + Frontend) | https://bonecheck-ai.onrender.com/ |
 | Презентация | https://drive.google.com/drive/folders/1zlEBlKHtzzT_uzwYWin5M9-7FRvxSmvV?usp=sharing |
 | Документация | https://drive.google.com/drive/folders/1Kmc9kUhgRQJAQj1I4TXELsZ0TAhWphzD?usp=sharing |
 | Дополнительные материалы | https://drive.google.com/drive/folders/1IpQ52A42A0EOxw_bs1yTRJ9V7IUtbRfm?usp=sharing |
@@ -56,7 +56,7 @@
 
 ## Прототип
 
-Прототип: https://bonecheck-ai.onrender.com/
+Публичный прототип (Backend + Frontend): https://bonecheck-ai.onrender.com/
 
 ## Локальная проверка
 

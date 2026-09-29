@@ -6,7 +6,7 @@
 
 Репозиторий: https://github.com/mister-kaka/bonecheck-ai
 
-Прототип: https://bonecheck-ai.onrender.com/
+Прототип (Backend + Frontend): https://bonecheck-ai.onrender.com/
 
 | Участник | Зона ответственности |
 | --- | --- |

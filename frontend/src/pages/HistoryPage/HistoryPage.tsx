@@ -89,19 +89,20 @@ export function HistoryPage() {
     });
   };
 
-  const exportHistory = () => {
+  const exportSelection = (kind: "history" | "submission") => {
     if (load.status !== "ready") return;
+    const request = kind === "history" ? xlsx.download : xlsx.downloadSubmission;
     if (filtered.length === 0) {
       if (narrowing) {
         xlsx.report(EMPTY_EXPORT_MESSAGE);
         return;
       }
-      void xlsx.download({
+      void request({
         sessionId: query.scope === "mine" ? sessionId : undefined,
       });
       return;
     }
-    void xlsx.download({ ids: filtered.map((item) => item.study.id) });
+    void request({ ids: filtered.map((item) => item.study.id) });
   };
 
   const goToPage = (page: number) => {
@@ -120,14 +121,24 @@ export function HistoryPage() {
           subtitle="Мои - ваши загрузки. Все - общая история."
         />
         <div className={styles.headerAside}>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={xlsx.exporting || load.status !== "ready"}
-            onClick={exportHistory}
-          >
-            {xlsx.exporting ? "Выгрузка..." : "Экспорт XLSX"}
-          </Button>
+          <div className={styles.exportActions}>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={xlsx.exporting || load.status !== "ready"}
+              onClick={() => exportSelection("history")}
+            >
+              {xlsx.exporting ? "Выгрузка..." : "Экспорт истории"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={xlsx.exporting || load.status !== "ready"}
+              onClick={() => exportSelection("submission")}
+            >
+              {xlsx.exporting ? "Выгрузка..." : "Скачать submission"}
+            </Button>
+          </div>
           {xlsx.exportError && (
             <p className={styles.exportError} role="alert">
               {xlsx.exportError}

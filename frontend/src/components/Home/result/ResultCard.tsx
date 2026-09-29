@@ -13,6 +13,7 @@ interface ResultCardProps {
   fileName?: string;
   description?: string;
   onExport?: () => void;
+  onDownloadSubmission?: () => void;
   onOpenHistory?: () => void;
   onNewStudy?: () => void;
   exporting?: boolean;
@@ -28,6 +29,7 @@ export function ResultCard({
   fileName,
   description,
   onExport,
+  onDownloadSubmission,
   onOpenHistory,
   onNewStudy,
   exporting = false,
@@ -108,7 +110,12 @@ export function ResultCard({
       <div className={styles.actions}>
         {onExport && (
           <Button variant="secondary" onClick={onExport} disabled={exporting}>
-            {exporting ? "Выгрузка..." : "Экспорт XLSX"}
+            {exporting ? "Выгрузка..." : "Экспорт истории"}
+          </Button>
+        )}
+        {onDownloadSubmission && (
+          <Button variant="secondary" onClick={onDownloadSubmission} disabled={exporting}>
+            {exporting ? "Выгрузка..." : "Скачать submission"}
           </Button>
         )}
         {onOpenHistory && (

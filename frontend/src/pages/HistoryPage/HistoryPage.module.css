@@ -29,6 +29,13 @@
   flex-shrink: 0;
 }
 
+.exportActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
 .exportError {
   margin: 0;
   max-width: 280px;
@@ -181,9 +188,11 @@
   }
 
   .headerAside,
+  .exportActions,
   .exportError {
     align-items: stretch;
     text-align: left;
+    justify-content: flex-start;
   }
 
   .footer {

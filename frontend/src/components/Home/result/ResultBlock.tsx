@@ -26,6 +26,7 @@ interface ResultBlockProps {
   keypoints?: Keypoint[];
   emptyLabel?: string;
   onExport?: () => void;
+  onDownloadSubmission?: () => void;
   onOpenHistory?: () => void;
   onNewStudy?: () => void;
   exporting?: boolean;
@@ -46,6 +47,7 @@ export function ResultBlock({
   keypoints,
   emptyLabel,
   onExport,
+  onDownloadSubmission,
   onOpenHistory,
   onNewStudy,
   exporting,
@@ -95,6 +97,7 @@ export function ResultBlock({
           fileName={fileName}
           description={description}
           onExport={onExport}
+          onDownloadSubmission={onDownloadSubmission}
           onOpenHistory={onOpenHistory}
           onNewStudy={onNewStudy}
           exporting={exporting}

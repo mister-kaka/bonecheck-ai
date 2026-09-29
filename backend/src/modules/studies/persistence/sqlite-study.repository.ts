@@ -70,7 +70,7 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
     const filePath = resolveDatabasePath();
     mkdirSync(path.dirname(filePath), { recursive: true });
     this.db = new Database(filePath);
-    this.db.pragma('journal_mode = WAL');
+    this.db.pragma(`journal_mode = ${sqliteJournalMode()}`);
     this.db.pragma('synchronous = FULL');
     this.db.pragma('busy_timeout = 5000');
     this.db.exec(SCHEMA_SQL);
@@ -224,4 +224,12 @@ export class SqliteStudyRepository implements StudyRepository, OnModuleDestroy {
 
     return result;
   }
+}
+
+function sqliteJournalMode(): 'WAL' | 'DELETE' {
+  const configured = process.env.SQLITE_JOURNAL_MODE ?? 'WAL';
+  if (configured === 'WAL' || configured === 'DELETE') {
+    return configured;
+  }
+  return 'WAL';
 }

@@ -21,14 +21,14 @@ venv/
 .pytest_cache/
 .mypy_cache/
 
-# Артефакты ML (не часть каркаса)
-ml/models/**
-!ml/models/.gitkeep
+# Чекпоинты вне ml/models не коммитить. Веса в ml/models входят в репозиторий.
 *.pt
 *.pth
 *.onnx
 *.ckpt
 *.h5
+!ml/models/**/*.pt
+!ml/models/**/*.pth
 
 # Датасеты (медицинские данные не коммитить)
 data/

@@ -246,6 +246,9 @@ function Home() {
               onExport={() => {
                 void xlsx.download({ ids: [view.studyId] });
               }}
+              onDownloadSubmission={() => {
+                void xlsx.downloadSubmission({ ids: [view.studyId] });
+              }}
               onOpenHistory={() => openHistory(`/history/${view.studyId}`)}
               onNewStudy={returnToUpload}
             />

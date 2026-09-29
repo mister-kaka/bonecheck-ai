@@ -35,6 +35,7 @@ import { memoryStorage } from 'multer';
 import {
   ExportStudiesQueryDto,
   ListStudiesQueryDto,
+  SubmissionQueryDto,
 } from './dto/study-requests.dto';
 import {
   ApiErrorResponseDto,
@@ -100,6 +101,7 @@ export class StudiesController {
     FileInterceptor('file', {
       storage: memoryStorage(),
       limits: { fileSize: MAX_FILE_SIZE_BYTES },
+      defParamCharset: 'utf8',
     }),
   )
   create(
@@ -146,6 +148,7 @@ export class StudiesController {
     FileInterceptor('file', {
       storage: memoryStorage(),
       limits: { fileSize: MAX_FILE_SIZE_BYTES },
+      defParamCharset: 'utf8',
     }),
   )
   createPackage(
@@ -206,6 +209,54 @@ export class StudiesController {
   ): Promise<StreamableFile> {
     const file = await this.studiesService.exportXlsx(query);
     res.setHeader('Content-Type', XLSX_CONTENT_TYPE);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${file.filename}"`,
+    );
+    return new StreamableFile(file.body);
+  }
+
+  @Get('submission')
+  @ApiOperation({
+    summary: 'Файл результата по контракту ТЗ',
+    description:
+      'Одна строка — одно изображение. Колонки: path_to_study, study_uid, image_uid, anatomical_region, quality_class, violation_type, processing_status, time_of_processing. Это не журнал истории.',
+  })
+  @ApiQuery({
+    name: 'ids',
+    required: false,
+    description: 'UUID v4 через запятую. Если параметр задан, session_id выборку не фильтрует.',
+  })
+  @ApiQuery({
+    name: 'session_id',
+    required: false,
+    description: 'Сессия «Мои», если ids не передан.',
+  })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    description: 'xlsx по умолчанию или csv.',
+    enum: ['xlsx', 'csv'],
+  })
+  @ApiOkResponse({
+    description: 'Файл .xlsx или .csv',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: { type: 'string', format: 'binary' },
+      },
+      'text/csv': {
+        schema: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({ type: ApiErrorResponseDto })
+  async exportSubmission(
+    @Query() query: SubmissionQueryDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const file = await this.studiesService.exportSubmission(query);
+    res.setHeader('Content-Type', file.contentType);
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="${file.filename}"`,

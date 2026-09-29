@@ -338,6 +338,11 @@ def roi_score_from_height(h_mm):
 
 
 def roi_violation(h_mm, threshold_mm=FEMUR_ROI_MAX_HEIGHT_MM):
+    """Короткий кадр: высота не больше 210 строк при шаге 1.05 мм.
+
+    Это операционная точка по высоте кадра, не измерение полей
+    3 см сверху и снизу и 2 см слева и справа от большого вертела.
+    """
     return bool(float(h_mm) <= float(threshold_mm))
 
 

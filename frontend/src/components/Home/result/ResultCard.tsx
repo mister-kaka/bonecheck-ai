@@ -1,6 +1,7 @@
 import type { CriterionRow } from "../../../api/layoutCriteria";
 import { Badge } from "../../ui/Badge";
 import { Button } from "../../ui/Button";
+import { ExportMenu } from "../../ui/ExportMenu";
 import { CheckDetail } from "./CheckDetail";
 import styles from "./ResultCard.module.css";
 
@@ -13,6 +14,7 @@ interface ResultCardProps {
   fileName?: string;
   description?: string;
   onExport?: () => void;
+  onDownloadSubmission?: () => void;
   onOpenHistory?: () => void;
   onNewStudy?: () => void;
   exporting?: boolean;
@@ -28,6 +30,7 @@ export function ResultCard({
   fileName,
   description,
   onExport,
+  onDownloadSubmission,
   onOpenHistory,
   onNewStudy,
   exporting = false,
@@ -106,9 +109,19 @@ export function ResultCard({
       {description && <p className={styles.description}>{description}</p>}
 
       <div className={styles.actions}>
-        {onExport && (
+        {onExport && onDownloadSubmission && (
+          <div className={styles.exportSlot}>
+            <ExportMenu
+              busy={exporting}
+              placement="above"
+              onJournal={onExport}
+              onSubmission={onDownloadSubmission}
+            />
+          </div>
+        )}
+        {onExport && !onDownloadSubmission && (
           <Button variant="secondary" onClick={onExport} disabled={exporting}>
-            {exporting ? "Выгрузка..." : "Экспорт XLSX"}
+            {exporting ? "Экспорт..." : "Экспорт XLSX"}
           </Button>
         )}
         {onOpenHistory && (

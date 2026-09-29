@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useXlsxDownload } from "../../api/useXlsxDownload";
 import { PageIntro } from "../../components/layout/PageIntro";
 import { Button } from "../../components/ui/Button";
+import { ExportMenu } from "../../components/ui/ExportMenu";
 import { HistoryFilters } from "../../components/HistoryPage/HistoryFilters";
 import { HistoryTable } from "../../components/HistoryPage/HistoryTable";
 import { Icon } from "../../components/ui/Icon";
@@ -89,19 +90,20 @@ export function HistoryPage() {
     });
   };
 
-  const exportHistory = () => {
+  const exportSelection = (kind: "history" | "submission") => {
     if (load.status !== "ready") return;
+    const request = kind === "history" ? xlsx.download : xlsx.downloadSubmission;
     if (filtered.length === 0) {
       if (narrowing) {
         xlsx.report(EMPTY_EXPORT_MESSAGE);
         return;
       }
-      void xlsx.download({
+      void request({
         sessionId: query.scope === "mine" ? sessionId : undefined,
       });
       return;
     }
-    void xlsx.download({ ids: filtered.map((item) => item.study.id) });
+    void request({ ids: filtered.map((item) => item.study.id) });
   };
 
   const goToPage = (page: number) => {
@@ -120,14 +122,16 @@ export function HistoryPage() {
           subtitle="Мои - ваши загрузки. Все - общая история."
         />
         <div className={styles.headerAside}>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={xlsx.exporting || load.status !== "ready"}
-            onClick={exportHistory}
-          >
-            {xlsx.exporting ? "Выгрузка..." : "Экспорт XLSX"}
-          </Button>
+          <div className={styles.exportActions}>
+            <ExportMenu
+              size="sm"
+              align="end"
+              busy={xlsx.exporting}
+              disabled={load.status !== "ready"}
+              onJournal={() => exportSelection("history")}
+              onSubmission={() => exportSelection("submission")}
+            />
+          </div>
           {xlsx.exportError && (
             <p className={styles.exportError} role="alert">
               {xlsx.exportError}

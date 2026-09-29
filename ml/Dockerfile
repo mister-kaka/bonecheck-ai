@@ -8,10 +8,9 @@ RUN apt-get update \
 
 COPY requirements.txt .
 
-# CPU-колёса PyTorch. Повторная установка torch из PyPI заменила бы их на тяжёлый CUDA-пакет.
+# Версии зафиксированы в requirements.txt. Torch ставится CPU-колёсами, без CUDA.
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch torchvision \
-    && pip install --no-cache-dir pydicom opencv-python numpy pandas scikit-learn joblib
+    && pip install --no-cache-dir -r requirements.txt
 
 COPY src ./src
 COPY models ./models

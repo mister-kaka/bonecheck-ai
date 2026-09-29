@@ -20,7 +20,7 @@
 | Документация | https://drive.google.com/drive/folders/1Kmc9kUhgRQJAQj1I4TXELsZ0TAhWphzD?usp=sharing |
 | Дополнительные материалы | https://drive.google.com/drive/folders/1IpQ52A42A0EOxw_bs1yTRJ9V7IUtbRfm?usp=sharing |
 
-Исходный код интерфейса, API и ML-сервиса лежит в репозитории. Личные пароли для доступа не используются. Веса модели в git не входят: [ml/README.md](../ml/README.md), [limitations.md](../product/limitations.md).
+Исходный код интерфейса, API и ML-сервиса лежит в репозитории. Личные пароли для доступа не используются. Веса лежат в [ml/models](../../ml/models) и входят в репозиторий.
 
 Медицинские изображения в репозиторий не входят.
 
@@ -42,12 +42,17 @@
 | Модель | [ml/README.md](../ml/README.md) |
 | Ограничения | [limitations.md](../product/limitations.md) |
 | Короткие ответы | [faq.md](../product/faq.md) |
+| Ошибки | [errors.md](../product/errors.md) |
+| Входные файлы | [files.md](../product/files.md) |
+| Хранение | [data.md](../system/data.md) |
+
+Руководство пользователя - сценарий и интерфейс. Руководство по развёртыванию - запуск и Docker. Обучение и дообучение кратко описаны в документе модели.
 
 ## Презентация
 
 Папка презентации: https://drive.google.com/drive/folders/1zlEBlKHtzzT_uzwYWin5M9-7FRvxSmvV?usp=sharing
 
-Презентация в репозиторий не входит. За неё отвечает Саша. По формату защиты: около 5 минут презентации и ответы на вопросы. Защищаются команды после первичной верификации.
+Презентация в репозиторий не входит, она лежит по ссылке выше. За неё отвечает Александра Москалева. По формату защиты: около 5 минут презентации и ответы на вопросы. Защищаются команды после первичной верификации.
 
 ## Прототип
 
@@ -58,7 +63,9 @@
 1. Запустить систему по [running.md](../system/running.md).
 2. Открыть http://localhost:5173
 3. Загрузить DICOM или ZIP.
-4. Открыть результат, снимок, «Историю» и XLSX.
+4. Открыть результат, снимок и «Историю».
+5. «Экспорт» открывает меню. «Журнал» скачивает русскую таблицу. «Итоговый файл» скачивает `bonecheck-submission.xlsx`. Тот же файл: `GET http://localhost:3000/api/studies/submission?ids=<uuid>`. Формат CSV: тот же адрес с `format=csv`. В колонке `path_to_study` у этого файла - исходное имя снимка.
+6. Каталог без лимитов ZIP, только `.dcm`: из `ml/` команда `PYTHONPATH=src python -m inference.pipeline --input <каталог> --output submission.csv --base models`. Вложенные папки входят в обход, `.dicom` пропускаются. В `path_to_study` записывается путь к файлу. XLSX этой командой при зафиксированных зависимостях не собирается.
 
 Проверка API: http://localhost:3000/health и http://localhost:3000/api/docs.
 

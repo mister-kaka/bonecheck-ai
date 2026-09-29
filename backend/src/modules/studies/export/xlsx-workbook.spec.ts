@@ -19,7 +19,6 @@ describe('buildXlsx', () => {
         'Поясничный отдел позвоночника',
         'Корректно',
         '',
-        '5%',
         'Готово',
       ],
       [
@@ -28,7 +27,6 @@ describe('buildXlsx', () => {
         'Проксимальный отдел бедра',
         'Нарушение',
         'Некорректная укладка',
-        '',
         'Готово',
       ],
     ]);
@@ -39,14 +37,16 @@ describe('buildXlsx', () => {
     expect(xml).toContain('hip.dcm');
     expect(xml).toContain('Поясничный отдел позвоночника');
     expect(xml).toContain('Некорректная укладка');
-    expect(xml).toContain('5%');
+    expect(xml).not.toContain('Вероятность');
     expect(xml).toContain('<row r="1">');
     expect(xml).toContain('<row r="3">');
   });
 
   it('для пустой выборки оставляет только заголовки', () => {
     const xml = sheetXml(buildXlsx([[...XLSX_HEADERS]]));
-    expect(xml).toContain('Вероятность нарушения');
+    expect(xml).toContain('Тип нарушения');
+    expect(xml).toContain('Статус');
+    expect(xml).not.toContain('Вероятность');
     expect(xml).toContain('<row r="1">');
     expect(xml).not.toContain('<row r="2">');
   });

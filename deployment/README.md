@@ -16,7 +16,7 @@ docker compose up --build
 | `backend` | `backend/Dockerfile` | API | `BACKEND_PORT`, по умолчанию 3000 | 3000 |
 | `ml-service` | `ml/Dockerfile` | `site_prediction`, модели один раз при старте | `ML_SERVICE_PORT`, по умолчанию 8000 | 8000 |
 
-Интерфейс стартует после API. Образы интерфейса и API основаны на Node.js 20. Образ `ml-service` основан на Python 3.12.
+Интерфейс стартует после контейнера API. Образы интерфейса и API основаны на Node.js 20. Образ `ml-service` основан на Python 3.12 и CPU-сборках PyTorch. Видеокарта в контейнер не пробрасывается.
 
 Остановка:
 
@@ -37,7 +37,7 @@ docker compose down
 
 Это порты хоста при значениях по умолчанию. Внутри контейнеров процессы слушают 5173 и 3000. Браузер ходит в API по `VITE_API_BASE_URL` (`http://localhost:3000`), то есть на порт хоста, а не на имя сервиса в сети Compose.
 
-Порт 8000 опубликован для `ml-service`. Его открывает API внутри сети Compose (`http://ml-service:8000`), не браузер. `GET /health` отвечает после загрузки моделей. Каталог `backend/uploads` смонтирован в API и в ML по пути `/app/uploads`.
+Порт 8000 опубликован для `ml-service`. Его открывает API внутри сети Compose (`http://ml-service:8000`), не браузер. `GET /health` отвечает после загрузки моделей. API стартует после этой проверки. Каталог `backend/uploads` смонтирован в API и в ML по пути `/app/uploads`. ML читает и пишет файлы только внутри `UPLOAD_DIR` (`/app/uploads`). Каталог `ml/models` смонтирован в ML как `/app/models` только для чтения.
 
 ## Переменные
 
@@ -65,6 +65,7 @@ API внутри контейнера получает:
 | --- | --- | --- |
 | `backend/data` | `/app/data` | файл метаданных исследований |
 | `backend/uploads` | `/app/uploads` в API и в ML | загруженные DICOM и `heatmap.png` |
+| `ml/models` | `/app/models` в ML, только чтение | веса из репозитория |
 
 Оба каталога переживают `docker compose down` и следующий `up`.
 

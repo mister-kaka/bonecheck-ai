@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { mkdtempSync, readFileSync, rmSync } from 'fs';
+import { mkdtempSync, mkdirSync, promises as fsp, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import { FileStorageService } from './file-storage.service';
@@ -61,5 +61,49 @@ describe('FileStorageService', () => {
     await expect(service.read(stored)).resolves.toEqual(Buffer.from('dicom'));
     await expect(service.read(path.join(directory, 'missing', 'spine.dcm'))).resolves.toBeNull();
     await expect(service.read(path.join(directory, '..', 'secret.dcm'))).resolves.toBeNull();
+  });
+
+  it('не отдаёт файл, если реальный путь выходит из каталога загрузок', async () => {
+    const service = new FileStorageService();
+    const outside = path.resolve(directory, '..', 'secret.dcm');
+    const spy = jest.spyOn(fsp, 'realpath').mockImplementation(async (target) => {
+      if (path.resolve(String(target)) === path.resolve(directory)) {
+        return path.resolve(directory);
+      }
+      return outside;
+    });
+
+    try {
+      await expect(service.read(path.join(directory, 'study-1', 'spine.dcm'))).resolves.toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('не читает symlink, который ведёт за пределы каталога загрузок', async () => {
+    const outside = mkdtempSync(path.join(os.tmpdir(), 'bonecheck-outside-'));
+    const secret = path.join(outside, 'secret.dcm');
+    writeFileSync(secret, 'secret');
+    const linkDir = path.join(directory, 'study-link');
+    mkdirSync(linkDir);
+    const link = path.join(linkDir, 'spine.dcm');
+
+    try {
+      symlinkSync(secret, link);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      rmSync(outside, { recursive: true, force: true });
+      if (code === 'EPERM' || code === 'EACCES') {
+        return;
+      }
+      throw error;
+    }
+
+    try {
+      const service = new FileStorageService();
+      await expect(service.read(link)).resolves.toBeNull();
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
   });
 });

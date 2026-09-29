@@ -1,8 +1,12 @@
-torch
-torchvision
-pydicom
-opencv-python
-numpy
-pandas
-scikit-learn
-joblib
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.6.0+cpu
+torchvision==0.21.0+cpu
+pydicom==3.0.2
+opencv-python==4.10.0.84
+numpy==2.1.1
+pandas==2.2.2
+# spine_axis_model.joblib сохранён sklearn 1.7.2.
+scikit-learn==1.7.2
+joblib==1.6.0
+pillow==10.4.0

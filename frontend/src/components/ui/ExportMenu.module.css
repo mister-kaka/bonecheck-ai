@@ -1,0 +1,68 @@
+.root {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  min-width: 260px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 4px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.alignEnd .menu {
+  left: auto;
+  right: 0;
+}
+
+.above .menu {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:hover,
+.option:focus-visible {
+  background: var(--color-bg-soft);
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.optionTitle {
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.optionText {
+  font-size: var(--fs-tiny);
+  line-height: var(--lh-loose);
+  color: var(--color-text-secondary);
+}

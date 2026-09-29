@@ -4,6 +4,7 @@ import path from 'path';
 import { strFromU8, unzipSync } from 'fflate';
 import { MAX_FILE_SIZE_BYTES } from './storage/file-validation';
 import { StudyRecord, StudyRepository, StudyStatus } from './types/study.types';
+import { formatMoscowDateTime } from './export/moscow-time';
 import { StudiesService } from './studies.service';
 
 const file = {
@@ -22,6 +23,36 @@ const validSpine = {
 function sheetText(body: Buffer): string {
   const files = unzipSync(new Uint8Array(body));
   return strFromU8(files['xl/worksheets/sheet1.xml']);
+}
+
+function sheetRows(body: Buffer): string[][] {
+  const xml = sheetText(body);
+  const rows: string[][] = [];
+  const rowPattern = /<row r="\d+">([\s\S]*?)<\/row>/g;
+  const cellPattern =
+    /<c r="([A-Z]+)\d+"[^>]*>(?:<v>([^<]*)<\/v>|<is><t[^>]*>([^<]*)<\/t><\/is>)<\/c>/g;
+
+  for (const rowMatch of xml.matchAll(rowPattern)) {
+    const byColumn = new Map<number, string>();
+    for (const cellMatch of rowMatch[1].matchAll(cellPattern)) {
+      const column = cellMatch[1].charCodeAt(0) - 65;
+      const raw = cellMatch[2] ?? cellMatch[3] ?? '';
+      byColumn.set(
+        column,
+        raw
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"'),
+      );
+    }
+    const width = Math.max(-1, ...byColumn.keys());
+    rows.push(
+      Array.from({ length: width + 1 }, (_, index) => byColumn.get(index) ?? ''),
+    );
+  }
+
+  return rows;
 }
 
 function createService(analyze?: (input: unknown) => Promise<unknown>) {
@@ -616,10 +647,25 @@ describe('StudiesService', () => {
     const one = await service.exportXlsx({ ids: created.id });
     expect(one.filename).toBe('bonecheck-spine.xlsx');
     expect(one.body.subarray(0, 2).toString()).toBe('PK');
-    const oneSheet = sheetText(one.body);
-    expect(oneSheet).toContain('spine.dcm');
-    expect(oneSheet).toContain('Корректно');
-    expect(oneSheet).toContain('10%');
+    const oneRows = sheetRows(one.body);
+    expect(oneRows[0]).toEqual([
+      'Файл',
+      'Дата',
+      'Анатомическая область',
+      'Результат',
+      'Тип нарушения',
+      'Статус',
+    ]);
+    expect(oneRows[1]).toEqual([
+      'spine.dcm',
+      formatMoscowDateTime(created.createdAt),
+      'Поясничный отдел позвоночника',
+      'Корректно',
+      '',
+      'Готово',
+    ]);
+    expect(sheetText(one.body)).not.toContain('10%');
+    expect(sheetText(one.body)).not.toContain('Вероятность');
 
     const empty = await service.exportXlsx({ session_id: 'nobody' });
     expect(empty.filename).toBe('bonecheck-history.xlsx');
@@ -651,5 +697,142 @@ describe('StudiesService', () => {
     ).rejects.toMatchObject({
       response: { code: 'STUDY_NOT_FOUND' },
     });
+  });
+
+  it('exports the TZ submission table with numeric quality_class', async () => {
+    const { service } = createService(async () => ({
+      quality_class: 1,
+      violation_type: 'Некорректная укладка;Не выравнена ось позвоночника',
+      anatomical_region: 'Поясничный отдел позвоночника',
+      study_uid: '1.2.840.1',
+      image_uid: '1.2.840.2',
+      time_of_processing: 2.5,
+      processing_status: 'Success',
+      femur_side: 'L',
+    }));
+    const created = await service.create(file);
+    await waitForStatus(service, created.id, StudyStatus.Completed);
+
+    const xlsx = await service.exportSubmission({ ids: created.id });
+    expect(xlsx.filename).toBe('bonecheck-submission.xlsx');
+    const sheet = sheetText(xlsx.body);
+    expect(sheet).toContain('path_to_study');
+    expect(sheet).toContain('study_uid');
+    expect(sheet).toContain('time_of_processing');
+    expect(sheet).toContain('spine.dcm');
+    expect(sheet).toContain('1.2.840.1');
+    expect(sheet).toContain('1.2.840.2');
+    expect(sheet).toContain('Некорректная укладка;Не выравнена ось позвоночника');
+    expect(sheet).toContain('Success');
+    expect(sheet).toContain('<v>1</v>');
+    expect(sheet).toContain('<v>2.5</v>');
+    expect(sheet).not.toContain('Корректно');
+    expect(sheet).not.toContain('femur_side');
+
+    const csv = await service.exportSubmission({ ids: created.id, format: 'csv' });
+    expect(csv.filename).toBe('bonecheck-submission.csv');
+    const text = csv.body.toString('utf8');
+    expect(text.split('\r\n')[0]).toBe(
+      'path_to_study,study_uid,image_uid,anatomical_region,quality_class,violation_type,processing_status,time_of_processing',
+    );
+    expect(text).toContain('spine.dcm,1.2.840.1,1.2.840.2,Поясничный отдел позвоночника,1,Некорректная укладка;Не выравнена ось позвоночника,Success,2.5');
+    expect(sheetRows(xlsx.body)[1]).toEqual([
+      'spine.dcm',
+      '1.2.840.1',
+      '1.2.840.2',
+      'Поясничный отдел позвоночника',
+      '1',
+      'Некорректная укладка;Не выравнена ось позвоночника',
+      'Success',
+      '2.5',
+    ]);
+
+    const journal = await service.exportXlsx({ ids: created.id });
+    expect(sheetRows(journal.body)[1]).toEqual([
+      'spine.dcm',
+      formatMoscowDateTime(created.createdAt),
+      'Поясничный отдел позвоночника',
+      'Нарушение',
+      'Некорректная укладка;Не выравнена ось позвоночника',
+      'Готово',
+    ]);
+    expect(sheetText(journal.body)).not.toContain('42%');
+  });
+
+  it('fills failure rows in both exports and leaves clinical cells empty', async () => {
+    const { service } = createService(async (input: unknown) => {
+      const name = (input as { originalFileName?: string }).originalFileName;
+      if (name === 'broken.dcm') {
+        throw new Error('boom');
+      }
+      return {
+        quality_class: 0,
+        violation_type: '',
+        anatomical_region: 'Проксимальный отдел бедра',
+        quality_prob: 0.42,
+        study_uid: '9.9.9',
+        image_uid: '8.8.8',
+        time_of_processing: 0.5,
+      };
+    });
+
+    const ok = await service.create(
+      { ...file, originalname: 'hip.dcm' },
+      'session-fields',
+    );
+    const failed = await service.create(
+      { ...file, originalname: 'broken.dcm' },
+      'session-fields',
+    );
+    await waitForStatus(service, ok.id, StudyStatus.Completed);
+    await waitForStatus(service, failed.id, StudyStatus.Error);
+
+    const journalFile = await service.exportXlsx({ ids: `${ok.id},${failed.id}` });
+    const journal = sheetRows(journalFile.body);
+    expect(journal[1]).toEqual([
+      'hip.dcm',
+      formatMoscowDateTime(ok.createdAt),
+      'Проксимальный отдел бедра',
+      'Корректно',
+      '',
+      'Готово',
+    ]);
+    expect(journal[2]).toEqual([
+      'broken.dcm',
+      formatMoscowDateTime(failed.createdAt),
+      '',
+      '',
+      '',
+      'Ошибка анализа',
+    ]);
+    expect(journal.flat().join(' ')).not.toContain('42%');
+
+    const submission = sheetRows(
+      (await service.exportSubmission({ ids: `${ok.id},${failed.id}` })).body,
+    );
+    expect(submission[0]).toEqual([
+      'path_to_study',
+      'study_uid',
+      'image_uid',
+      'anatomical_region',
+      'quality_class',
+      'violation_type',
+      'processing_status',
+      'time_of_processing',
+    ]);
+    expect(submission[1]).toEqual([
+      'hip.dcm',
+      '9.9.9',
+      '8.8.8',
+      'Проксимальный отдел бедра',
+      '0',
+      '',
+      'Success',
+      '0.5',
+    ]);
+    expect(submission[2][0]).toBe('broken.dcm');
+    expect(submission[2].slice(1, 6)).toEqual(['', '', '', '', '']);
+    expect(submission[2][6]).toBe('Failure');
+    expect(submission[2][7]).toMatch(/^\d+(\.\d+)?$/);
   });
 });

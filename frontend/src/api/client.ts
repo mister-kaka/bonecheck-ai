@@ -279,6 +279,21 @@ export async function downloadStudiesXlsx(options: {
   ids?: string[];
   sessionId?: string;
 }): Promise<void> {
+  await downloadAttachment("/api/studies/export", options, "bonecheck-history.xlsx");
+}
+
+export async function downloadSubmission(options: {
+  ids?: string[];
+  sessionId?: string;
+}): Promise<void> {
+  await downloadAttachment("/api/studies/submission", options, "bonecheck-submission.xlsx");
+}
+
+async function downloadAttachment(
+  path: string,
+  options: { ids?: string[]; sessionId?: string },
+  fallbackName: string,
+): Promise<void> {
   const params = new URLSearchParams();
   if (options.ids && options.ids.length > 0) {
     params.set("ids", options.ids.join(","));
@@ -292,7 +307,7 @@ export async function downloadStudiesXlsx(options: {
   let response: Response;
   try {
     response = await fetch(
-      `${API_BASE_URL}/api/studies/export${query ? `?${query}` : ""}`,
+      `${API_BASE_URL}${path}${query ? `?${query}` : ""}`,
       { signal: timeout },
     );
   } catch (error) {
@@ -308,7 +323,10 @@ export async function downloadStudiesXlsx(options: {
   }
 
   const blob = await response.blob();
-  const filename = filenameFromDisposition(response.headers.get("Content-Disposition"));
+  const filename = filenameFromDisposition(
+    response.headers.get("Content-Disposition"),
+    fallbackName,
+  );
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -319,7 +337,7 @@ export async function downloadStudiesXlsx(options: {
   URL.revokeObjectURL(url);
 }
 
-function filenameFromDisposition(header: string | null): string {
+function filenameFromDisposition(header: string | null, fallbackName: string): string {
   const match = header ? /filename="([^"]+)"/.exec(header) : null;
-  return match?.[1] || "bonecheck-history.xlsx";
+  return match?.[1] || fallbackName;
 }

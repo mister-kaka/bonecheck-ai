@@ -15,15 +15,39 @@ export class FileStorageService {
   }
 
   async read(storedFilePath: string): Promise<Buffer | null> {
-    const root = path.resolve(this.rootDir());
-    const resolved = path.resolve(storedFilePath);
+    const located = await this.locate(storedFilePath);
+    if (!located) {
+      return null;
+    }
+
+    try {
+      return await fs.readFile(located);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  private async locate(storedFilePath: string): Promise<string | null> {
+    const root = await this.realDir(this.rootDir());
+    const resolved = await this.realDir(storedFilePath);
+    if (!root || !resolved) {
+      return null;
+    }
+
     const relative = path.relative(root, resolved);
     if (relative.startsWith('..') || path.isAbsolute(relative)) {
       return null;
     }
 
+    return resolved;
+  }
+
+  private async realDir(target: string): Promise<string | null> {
     try {
-      return await fs.readFile(resolved);
+      return await fs.realpath(target);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         return null;

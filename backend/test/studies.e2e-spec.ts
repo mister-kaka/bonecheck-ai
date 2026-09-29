@@ -113,6 +113,16 @@ describe('Исследования (сквозные тесты)', () => {
     expect(status.body.quality_class).toBeUndefined();
   });
 
+  it('сохраняет кириллическое имя DICOM', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/studies')
+      .attach('file', Buffer.from('dicom-bytes'), 'CR000000_ПОП.dcm')
+      .expect(201);
+
+    const status = await waitForCompleted(created.body.id);
+    expect(status.originalFileName).toBe('CR000000_ПОП.dcm');
+  });
+
   it('фильтрует историю по session_id и отдаёт все исследования без фильтра', async () => {
     const studyA = await request(app.getHttpServer())
       .post('/api/studies')

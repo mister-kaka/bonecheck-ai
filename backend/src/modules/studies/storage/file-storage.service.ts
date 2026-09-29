@@ -14,6 +14,15 @@ export class FileStorageService {
     return filePath;
   }
 
+  async write(storedFilePath: string, buffer: Buffer): Promise<void> {
+    const destination = await this.destination(storedFilePath);
+    const existing = await this.realDir(destination);
+    if (existing && !this.isInside(await this.requireRoot(), existing)) {
+      throw new Error('Путь вне каталога загрузок');
+    }
+    await fs.writeFile(destination, buffer);
+  }
+
   async read(storedFilePath: string): Promise<Buffer | null> {
     const located = await this.locate(storedFilePath);
     if (!located) {
@@ -33,16 +42,42 @@ export class FileStorageService {
   private async locate(storedFilePath: string): Promise<string | null> {
     const root = await this.realDir(this.rootDir());
     const resolved = await this.realDir(storedFilePath);
-    if (!root || !resolved) {
-      return null;
-    }
-
-    const relative = path.relative(root, resolved);
-    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    if (!root || !resolved || !this.isInside(root, resolved)) {
       return null;
     }
 
     return resolved;
+  }
+
+  private async destination(storedFilePath: string): Promise<string> {
+    const root = await this.requireRoot();
+    const parentReal = await this.realDir(path.dirname(storedFilePath));
+    if (!parentReal) {
+      throw new Error('Каталог для записи недоступен');
+    }
+    if (!this.isInside(root, parentReal)) {
+      throw new Error('Путь вне каталога загрузок');
+    }
+
+    const base = path.basename(storedFilePath);
+    if (base.length === 0 || base === '.' || base === '..') {
+      throw new Error('Некорректное имя файла');
+    }
+
+    return path.join(parentReal, base);
+  }
+
+  private async requireRoot(): Promise<string> {
+    const root = await this.realDir(this.rootDir());
+    if (!root) {
+      throw new Error('Каталог загрузок недоступен');
+    }
+    return root;
+  }
+
+  private isInside(root: string, candidate: string): boolean {
+    const relative = path.relative(root, candidate);
+    return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
   }
 
   private async realDir(target: string): Promise<string | null> {

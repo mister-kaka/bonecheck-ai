@@ -54,6 +54,29 @@ describe('FileStorageService', () => {
     expect(readFileSync(empty).toString()).toBe('c');
   });
 
+  it('записывает heatmap внутри каталога загрузок', async () => {
+    const service = new FileStorageService();
+    const stored = await service.save('study-1', 'spine.dcm', Buffer.from('dicom'));
+    const heatmap = path.join(path.dirname(stored), 'heatmap.png');
+
+    await service.write(heatmap, Buffer.from('png'));
+
+    expect(readFileSync(heatmap).toString()).toBe('png');
+  });
+
+  it('не записывает файл вне каталога загрузок', async () => {
+    const service = new FileStorageService();
+    const outside = path.join(directory, '..', 'secret.png');
+    const missing = path.join(directory, 'missing-study', 'heatmap.png');
+
+    await expect(service.write(outside, Buffer.from('x'))).rejects.toThrow(
+      'Путь вне каталога загрузок',
+    );
+    await expect(service.write(missing, Buffer.from('x'))).rejects.toThrow(
+      'Каталог для записи недоступен',
+    );
+  });
+
   it('читает файл исследования и не отдаёт путь вне каталога загрузок', async () => {
     const service = new FileStorageService();
     const stored = await service.save('study-1', 'spine.dcm', Buffer.from('dicom'));

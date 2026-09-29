@@ -551,11 +551,12 @@ export class StudiesService implements OnModuleInit {
 
       const started = Date.now();
       try {
-        const result = await this.mlClient.analyze({
+        const analyzed = await this.mlClient.analyze({
           studyId: study.id,
           filePath: study.storedFilePath,
           originalFileName: study.originalFileName,
         });
+        const result = analyzed.prediction;
 
         this.validateMlResult(result);
 
@@ -568,6 +569,7 @@ export class StudiesService implements OnModuleInit {
             : roundSeconds((Date.now() - started) / 1000);
         study.status = StudyStatus.Completed;
         study.error = null;
+        await this.keepHeatmap(id, study.storedFilePath, analyzed.heatmapPng);
       } catch (error) {
         this.logger.error(
           `Ошибка обработки ML для исследования ${id}: ${
@@ -590,6 +592,27 @@ export class StudiesService implements OnModuleInit {
       this.logger.error(
         `Не удалось сохранить итог исследования ${id}`,
         error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  private async keepHeatmap(
+    id: string,
+    storedFilePath: string,
+    heatmapPng: Buffer | null,
+  ): Promise<void> {
+    if (!heatmapPng || heatmapPng.length === 0) {
+      return;
+    }
+
+    const heatmapPath = path.join(path.dirname(storedFilePath), 'heatmap.png');
+    try {
+      await this.fileStorage.write(heatmapPath, heatmapPng);
+    } catch (error) {
+      this.logger.error(
+        `Не удалось сохранить тепловую карту для исследования ${id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }

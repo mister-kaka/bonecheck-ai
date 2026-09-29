@@ -355,10 +355,6 @@ export class StudiesService implements OnModuleInit {
 
   private toExportRow(study: StudyRecord): string[] {
     const result = this.isReadableResult(study.result) ? study.result : null;
-    const probability =
-      result && result.quality_prob !== undefined
-        ? `${Math.round(result.quality_prob * 100)}%`
-        : '';
 
     return [
       study.originalFileName,
@@ -366,7 +362,6 @@ export class StudiesService implements OnModuleInit {
       result?.anatomical_region ?? '',
       result ? (result.quality_class === 0 ? 'Корректно' : 'Нарушение') : '',
       result?.violation_type ?? '',
-      probability,
       STATUS_LABEL[study.status],
     ];
   }

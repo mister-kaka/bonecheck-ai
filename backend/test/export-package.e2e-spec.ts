@@ -111,7 +111,9 @@ describe('XLSX и ZIP (сквозные тесты)', () => {
     ).toString('utf8');
     expect(oneXml).toContain('spine.dcm');
     expect(oneXml).toContain('Корректно');
-    expect(oneXml).toContain('Вероятность нарушения');
+    expect(oneXml).toContain('Поясничный отдел позвоночника');
+    expect(oneXml).toContain('Готово');
+    expect(oneXml).not.toContain('Вероятность');
     expect(oneXml).not.toContain('5%');
     expect(oneXml).toContain(formatMoscowDateTime(spine.body.createdAt));
     expect(oneXml).not.toContain(' UTC');

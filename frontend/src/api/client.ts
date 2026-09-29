@@ -59,6 +59,7 @@ export function messageFromError(
 }
 
 const REQUEST_TIMEOUT_MS = 20_000;
+const HISTORY_TIMEOUT_MS = 90_000;
 const UPLOAD_TIMEOUT_MS = 120_000;
 
 function errorFromBody(status: number, raw: string): ApiRequestError {
@@ -118,8 +119,12 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return JSON.parse(raw) as T;
 }
 
-async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+async function fetchJson<T>(
+  url: string,
+  signal?: AbortSignal,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<T> {
+  const timeout = AbortSignal.timeout(timeoutMs);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
   let response: Response;
   try {
@@ -237,6 +242,7 @@ export function listStudies(
   return fetchJson<StudyListResponse>(
     `${API_BASE_URL}/api/studies${query ? `?${query}` : ""}`,
     signal,
+    HISTORY_TIMEOUT_MS,
   );
 }
 

@@ -8,7 +8,7 @@
 
 Репозиторий: https://github.com/mister-kaka/bonecheck-ai
 
-Публичный прототип: https://bonecheck-ai.onrender.com/
+Публичный прототип (Backend + Frontend): https://bonecheck-ai.onrender.com/
 
 Презентация: https://drive.google.com/drive/folders/1zlEBlKHtzzT_uzwYWin5M9-7FRvxSmvV?usp=sharing
 

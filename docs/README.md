@@ -6,7 +6,7 @@
 
 Команда: АУРА.
 
-Публичный прототип: https://bonecheck-ai.onrender.com/
+Публичный прототип (Backend + Frontend): https://bonecheck-ai.onrender.com/
 
 Репозиторий: https://github.com/mister-kaka/bonecheck-ai
 

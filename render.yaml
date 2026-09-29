@@ -1,0 +1,32 @@
+# Blueprint публичного прототипа: интерфейс и API, без Python ML.
+# Диск /var/data сохраняет SQLite и DICOM между деплоями.
+# На бесплатном типе инстанса Render диск не подключает: для постоянного архива нужен план с диском.
+services:
+  - type: web
+    name: bonecheck-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    disk:
+      name: bonecheck-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: ML_CLIENT
+        value: mock
+      - key: DATABASE_PATH
+        value: /var/data/bonecheck.sqlite
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+
+  - type: web
+    name: bonecheck-ai
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://bonecheck-backend.onrender.com

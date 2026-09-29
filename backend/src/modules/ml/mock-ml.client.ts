@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { MlAnalyzeInput, MlAnalyzeResult, MlClient } from './ml.types';
 
-// Фиксированный ответ для тестов при ML_CLIENT=mock. В рабочем запуске не используется.
+// Фиксированный ответ, когда выбран ML_CLIENT=mock или процесс запущен на Render без ML_CLIENT=http.
 // quality_prob нет: у заглушки нет вероятности.
 @Injectable()
 export class MockMlClient implements MlClient {
